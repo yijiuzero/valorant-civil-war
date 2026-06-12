@@ -29,6 +29,7 @@
   --hover: #2a3f52;
   --border: #2a3a48;
 }
+.theme-dark main::after{background:rgba(15,25,35,.55);}
 *{margin:0;padding:0;box-sizing:border-box}
 body{
   font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
@@ -75,7 +76,7 @@ main{
 }
 main::after{
   content:'';position:absolute;inset:0;
-  background:rgba(15,25,35,.55);
+  background:rgba(15,25,35,.3);
   z-index:0;pointer-events:none;
   transition:background .6s ease;
 }
@@ -85,8 +86,8 @@ main::after{
   width:100%;
   max-width:1300px;
 }
-.module-title{font-size:22px;font-weight:700;margin-bottom:8px;color:var(--accent);}
-.module-sub{font-size:13px;color:var(--text-dim);margin-bottom:32px;}
+.module-title{font-size:22px;font-weight:700;margin-bottom:8px;color:#ff4655;}
+.module-sub{font-size:13px;color:#94a3b8;margin-bottom:32px;}
 
 /* ===== 抽奖主按钮 ===== */
 .btn-spin{
