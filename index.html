@@ -366,7 +366,7 @@ main::after{
     <li class="nav-item" data-module="lineup"><span class="nav-icon">📐</span><span>选图工具</span></li>
     <li class="nav-item" data-module="stats"><span class="nav-icon">📊</span><span>内战专用</span></li>
   </ul>
-  <div class="sidebar-footer">V1.4.1 · from zer0</div>
+  <div class="sidebar-footer">V1.4.2 · from zer0</div>
 </nav>
 
 <main id="mainArea">
@@ -562,9 +562,7 @@ function switchModule(mod) {
   } else if(mod === 'stats') {
     initChallengeMachine();
   }
-  // 清除结果区域避免残留
-  if(mod !== 'wheel') document.getElementById('mapResults') && (document.getElementById('mapResults').innerHTML = '');
-  if(mod !== 'agent') document.getElementById('agentResults') && (document.getElementById('agentResults').innerHTML = '');
+  // 切换模块时保留结果，仅刷新页面时重置
 }
 
 function clickCard(mod) {
@@ -581,7 +579,7 @@ function initMapUI() {
       document.querySelectorAll('.mc-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       mapCount = parseInt(this.dataset.count);
-      document.getElementById('mapResults').innerHTML = '';
+    // 保留已有结果，不清空
     });
   });
 }
@@ -597,7 +595,7 @@ function renderMapCards() {
       <img src="${m.img}" style="display:none" onerror="this.closest('.map-card').style.backgroundImage='none'">
     </div>`;
   }).join('');
-  document.getElementById('mapResults').innerHTML = '';
+// 保留已有结果，不清空
   updateBanStatus();
   const resetBtn = document.getElementById('btnResetBan');
   if(resetBtn) resetBtn.onclick = resetBans;
@@ -621,7 +619,7 @@ function toggleBanMap(mapEn) {
     bannedSet.add(mapEn);
   }
   updateBanStatus();
-  document.getElementById('mapResults').innerHTML = '';
+// 保留已有结果，不清空
   const card = document.querySelector(`.map-card[data-map="${mapEn}"]`);
   if(card) card.classList.toggle('banned', bannedSet.has(mapEn));
 }
@@ -725,7 +723,7 @@ function initAgentUI() {
       document.querySelectorAll('.ac-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       agentCount = parseInt(this.dataset.count);
-      document.getElementById('agentResults').innerHTML = '';
+    // 保留已有结果，不清空
     });
   });
 }
@@ -747,7 +745,7 @@ function renderAgents() {
       <div class="agent-name"><span class="agent-role-dot" style="background:${a.rc}"></span>${a.cn}</div>
     </div>
   `).join('');
-  document.getElementById('agentResults').innerHTML = '';
+// 保留已有结果，不清空
 }
 
 function showAgentResults(list) {
@@ -777,7 +775,7 @@ function randomAgent() {
   const n = Math.min(agentCount, pool.length);
   btn.disabled = true;
   document.querySelectorAll('.ac-btn').forEach(b => b.disabled = true);
-  document.getElementById('agentResults').innerHTML = '';
+// 保留已有结果，不清空
   document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('highlight'));
 
   if(agentTimer) clearInterval(agentTimer);
@@ -893,9 +891,16 @@ function showChallengeHistory() {
 
 function initChallengeMachine() {
   machineSpinning = false;
-  const text = document.getElementById('challengeText');
-  if(text) { text.textContent = '点击下方按钮 抽取挑战规则'; text.className = 'machine-text idle'; }
-  updateChallengeCount();
+  if(challengeHistory.length > 0) {
+    const text = document.getElementById('challengeText');
+    if(text) { text.textContent = challengeHistory[0]; text.className = 'machine-text result'; }
+    showChallengeHistory();
+    updateChallengeCount();
+  } else {
+    const text = document.getElementById('challengeText');
+    if(text) { text.textContent = '点击下方按钮 抽取挑战规则'; text.className = 'machine-text idle'; }
+    updateChallengeCount();
+  }
 }// ---------- 页面初始化 & 事件绑定 ----------
 function applyThemeFromStorage() {
   const stored = localStorage.getItem('ui-theme');
