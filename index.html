@@ -839,7 +839,7 @@ function spinChallenge() {
   if(text) { text.className = 'machine-text spinning'; }
 
   const targetIdx = Math.floor(Math.random() * challengeRules.length);
-  const totalDuration = 3500 + Math.random() * 1000;
+  const totalDuration = 2000 + Math.random() * 500;
   const startTime = performance.now();
   let lastIdx = -1;
 
@@ -849,7 +849,7 @@ function spinChallenge() {
     const elapsed = now - startTime;
     const progress = Math.min(elapsed / totalDuration, 1);
     // Speed: fast at start, slow at end
-    const interval = 50 + easeOut(progress) * 300;
+    const interval = 40 + easeOut(progress) * 200;
     const currentIdx = (lastIdx + 1 + Math.floor(Math.random() * 3)) % challengeRules.length;
     if(text) text.textContent = challengeRules[currentIdx];
     lastIdx = currentIdx;
