@@ -320,22 +320,37 @@ main::after{
   .ac-btn{width:28px;height:28px;font-size:12px;}
   .mc-btn{width:28px;height:28px;font-size:12px;}
 }/* ===== 内战转盘模块 ===== */
-.wheel-container{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:500px;}
-.wheel-display{background:var(--card);border:2px solid var(--accent);border-radius:12px;padding:14px 28px;font-size:20px;font-weight:700;color:var(--accent);text-align:center;min-height:56px;display:flex;align-items:center;justify-content:center;width:100%;position:relative;overflow:hidden;transition:all .15s;}
-.wheel-display.spinning{color:var(--accent2);border-color:var(--accent2);}
-.wheel-display::after{content:'';position:absolute;inset:0;background:color-mix(in srgb, var(--accent) 5%, transparent);pointer-events:none;}
-.wheel-display span{position:relative;z-index:1;}
-.wheel-wrap{position:relative;width:380px;height:380px;flex-shrink:0;}
-#challengeWheel{width:100%;height:100%;border-radius:50%;filter:drop-shadow(0 0 28px color-mix(in srgb, var(--accent) 25%, transparent));}
-.wheel-pointer{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid var(--accent);z-index:2;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));}
-.wheel-history{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:500px;}
-.wheel-history-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--text-dim);opacity:0;transform:translateY(8px);transition:all .3s ease;}
-.wheel-history-item.show{opacity:1;transform:translateY(0);}
-.wheel-history-item.latest{border-color:var(--accent);color:var(--accent);font-weight:700;background:color-mix(in srgb, var(--accent) 10%, var(--card));}
-.wheel-count{font-size:13px;color:var(--text-dim);}
-@media(max-width:640px){.wheel-wrap{width:300px;height:300px;}.wheel-display{font-size:16px;padding:10px 16px;}.wheel-pointer{border-left-width:12px;border-right-width:12px;border-top-width:22px;top:-10px;}}
-@media(max-width:420px){.wheel-wrap{width:260px;height:260px;}.wheel-display{font-size:14px;padding:8px 12px;min-height:44px;}.wheel-history-item{padding:6px 10px;font-size:12px;}}
-</style>
+.challenge-machine{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:520px;}
+.machine-frame{width:100%;background:linear-gradient(145deg,color-mix(in srgb,var(--card) 90%,#000),var(--card));border:2px solid color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:16px;padding:24px 20px;position:relative;overflow:hidden;}
+.machine-frame::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),var(--accent),transparent);}
+.machine-label{text-align:center;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:16px;opacity:.85;}
+.machine-display{background:color-mix(in srgb,#000 70%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);border-radius:10px;padding:20px 24px;min-height:80px;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;}
+.machine-display::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.015) 2px,rgba(255,255,255,.015) 4px);pointer-events:none;}
+.machine-text{font-size:20px;font-weight:700;color:var(--text);line-height:1.5;position:relative;z-index:1;transition:color .2s;}
+.machine-text.idle{color:var(--text-dim);font-weight:500;font-size:16px;}
+.machine-text.spinning{color:var(--accent2);font-size:18px;animation:textFlicker .1s infinite;}
+.machine-text.result{color:var(--accent);font-size:22px;text-shadow:0 0 20px color-mix(in srgb,var(--accent) 40%,transparent);}
+@keyframes textFlicker{0%,100%{opacity:1;}50%{opacity:.7;}}
+.machine-controls{display:flex;justify-content:center;margin-top:16px;}
+.btn-machine{position:relative;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 70%,#000));color:#fff;border:none;border-radius:10px;padding:12px 36px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:1px;overflow:hidden;}
+.btn-machine:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 24px color-mix(in srgb,var(--accent) 35%,transparent);}
+.btn-machine:active:not(:disabled){transform:translateY(0);}
+.btn-machine:disabled{opacity:.5;cursor:not-allowed;}
+.btn-machine::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(transparent,rgba(255,255,255,.08),transparent);transform:rotate(45deg);transition:all .5s;pointer-events:none;}
+.btn-machine:hover::after{left:100%;}
+.challenge-count{font-size:13px;color:var(--text-dim);text-align:center;}
+.challenge-history{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:520px;}
+.history-chip{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--text-dim);opacity:0;transform:translateY(8px);transition:all .3s ease;}
+.history-chip.show{opacity:1;transform:translateY(0);}
+.history-chip.latest{border-color:var(--accent);color:var(--accent);font-weight:700;background:color-mix(in srgb,var(--accent) 10%,var(--card));}
+.history-chip.latest::before{content:'🎉 ';}
+.machine-deco{display:flex;justify-content:center;gap:6px;margin-bottom:4px;}
+.machine-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);opacity:.5;animation:dotPulse 1.5s ease infinite;}
+.machine-dot:nth-child(2){animation-delay:.3s;}
+.machine-dot:nth-child(3){animation-delay:.6s;}
+@keyframes dotPulse{0%,100%{opacity:.3;transform:scale(.8);}50%{opacity:1;transform:scale(1.1);}}
+@media(max-width:640px){.machine-frame{padding:16px 14px;}.machine-text{font-size:18px;}.machine-text.result{font-size:20px;}.btn-machine{padding:10px 28px;font-size:15px;}}
+@media(max-width:420px){.machine-display{padding:14px 16px;min-height:60px;}.machine-text{font-size:16px;}.machine-text.result{font-size:18px;}.history-chip{padding:6px 10px;font-size:12px;}}</style>
 </head>
 <body>
 
@@ -351,7 +366,7 @@ main::after{
     <li class="nav-item" data-module="lineup"><span class="nav-icon">📐</span><span>选图工具</span></li>
     <li class="nav-item" data-module="stats"><span class="nav-icon">📊</span><span>内战专用</span></li>
   </ul>
-  <div class="sidebar-footer">V1.3.0 · from zer0</div>
+  <div class="sidebar-footer">V1.4.0 · from zer0</div>
 </nav>
 
 <main id="mainArea">
@@ -421,15 +436,19 @@ main::after{
   <div class="content-layer" id="module-stats" style="display:none;">
     <div class="module-title">📊 内战专用</div>
     <div class="module-sub">内战转盘 · 随机抽取挑战规则</div>
-    <div class="wheel-container">
-      <div class="wheel-display" id="challengeDisplay"><span>点击转盘开始抽取</span></div>
-      <div class="wheel-wrap">
-        <canvas id="challengeWheel" width="380" height="380"></canvas>
-        <div class="wheel-pointer"></div>
+    <div class="challenge-machine">
+      <div class="machine-deco"><span class="machine-dot"></span><span class="machine-dot"></span><span class="machine-dot"></span></div>
+      <div class="machine-frame">
+        <div class="machine-label">RANDOM CHALLENGE</div>
+        <div class="machine-display">
+          <div class="machine-text idle" id="challengeText">点击下方按钮 抽取挑战规则</div>
+        </div>
+        <div class="machine-controls">
+          <button class="btn-machine" id="btnChallengeSpin" onclick="spinChallenge()">随机抽取</button>
+        </div>
       </div>
-      <button class="btn-spin" id="btnChallengeSpin" onclick="spinChallengeWheel()">随机抽取 🎰</button>
-      <div class="wheel-count" id="challengeCount"></div>
-      <div class="wheel-history" id="challengeResult"></div>
+      <div class="challenge-count" id="challengeCount"></div>
+      <div class="challenge-history" id="challengeHistory"></div>
     </div>
   </div>
 </main>
@@ -541,7 +560,7 @@ function switchModule(mod) {
   } else if(mod === 'agent') {
     renderAgents();
   } else if(mod === 'stats') {
-    initChallengeWheel();
+    initChallengeMachine();
   }
   // 清除结果区域避免残留
   if(mod !== 'wheel') document.getElementById('mapResults') && (document.getElementById('mapResults').innerHTML = '');
@@ -809,52 +828,49 @@ const challengeRules = [
   '所有人中路对狙1V1','只能玩喷子','看见人必须要喷漆后才能开枪','不能跳',
   '这回合只能说5句话','只能边跳边开枪','只能用语气词来说话（哈哈嘻嘻呵呵等）'
 ];
-const WHEEL_COLORS = ['#ff4655','#1a242d','#e8a640','#264563','#d63b49','#0f1923','#b87a25','#3a5570'];
-let wheelAngle = 0, wheelSpinning = false, wheelAnimId = null, challengeHistory = [];
+let machineSpinning = false, challengeHistory = [];
 
-function drawWheel(angle) {
-  const canvas = document.getElementById('challengeWheel');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.width / dpr, H = canvas.height / dpr;
-  const cx = W / 2, cy = H / 2, R = Math.min(cx, cy) - 6;
-  ctx.clearRect(0, 0, W, H);
-  const n = challengeRules.length, segAngle = (2 * Math.PI) / n;
-  for(let i = 0; i < n; i++) {
-    const sa = angle + i * segAngle - Math.PI / 2, ea = sa + segAngle;
-    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, sa, ea); ctx.closePath();
-    ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length]; ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 0.5; ctx.stroke();
+function spinChallenge() {
+  if(machineSpinning) return;
+  machineSpinning = true;
+  const btn = document.getElementById('btnChallengeSpin');
+  const text = document.getElementById('challengeText');
+  if(btn) btn.disabled = true;
+  if(text) { text.className = 'machine-text spinning'; }
+
+  const targetIdx = Math.floor(Math.random() * challengeRules.length);
+  const totalDuration = 3500 + Math.random() * 1000;
+  const startTime = performance.now();
+  let lastIdx = -1;
+
+  function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+
+  function tick(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / totalDuration, 1);
+    // Speed: fast at start, slow at end
+    const interval = 50 + easeOut(progress) * 300;
+    const currentIdx = (lastIdx + 1 + Math.floor(Math.random() * 3)) % challengeRules.length;
+    if(text) text.textContent = challengeRules[currentIdx];
+    lastIdx = currentIdx;
+
+    if(progress < 1) {
+      setTimeout(function() { requestAnimationFrame(tick); }, interval);
+    } else {
+      // Final result
+      if(text) {
+        text.textContent = challengeRules[targetIdx];
+        text.className = 'machine-text result';
+      }
+      challengeHistory.unshift(challengeRules[targetIdx]);
+      if(challengeHistory.length > 20) challengeHistory.pop();
+      updateChallengeCount();
+      showChallengeHistory();
+      machineSpinning = false;
+      if(btn) btn.disabled = false;
+    }
   }
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI);
-  ctx.strokeStyle = 'rgba(255,70,85,.5)'; ctx.lineWidth = 3; ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
-  ctx.fillStyle = '#0f1923'; ctx.fill();
-  ctx.strokeStyle = '#ff4655'; ctx.lineWidth = 3; ctx.stroke();
-  ctx.fillStyle = '#ff4655'; ctx.font = 'bold 16px sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🎯', cx, cy);
-}
-
-function getWheelIndex(angle) {
-  const n = challengeRules.length, segAngle = (2 * Math.PI) / n;
-  let norm = ((-angle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  return Math.floor(norm / segAngle) % n;
-}
-
-function initChallengeWheel() {
-  const canvas = document.getElementById('challengeWheel');
-  if(!canvas) return;
-  if(wheelAnimId) { cancelAnimationFrame(wheelAnimId); wheelAnimId = null; }
-  wheelSpinning = false;
-  const dpr = window.devicePixelRatio || 1, size = 380;
-  canvas.width = size * dpr; canvas.height = size * dpr;
-  canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
-  canvas.getContext('2d').scale(dpr, dpr);
-  wheelAngle = 0; drawWheel(0);
-  const display = document.getElementById('challengeDisplay');
-  if(display) display.innerHTML = '<span>点击转盘开始抽取</span>';
-  updateChallengeCount();
+  requestAnimationFrame(tick);
 }
 
 function updateChallengeCount() {
@@ -862,59 +878,25 @@ function updateChallengeCount() {
   if(el) el.textContent = challengeHistory.length > 0 ? '已抽取 ' + challengeHistory.length + ' 次' : '';
 }
 
-function spinChallengeWheel() {
-  if(wheelSpinning) return;
-  wheelSpinning = true;
-  const btn = document.getElementById('btnChallengeSpin');
-  if(btn) btn.disabled = true;
-  const display = document.getElementById('challengeDisplay');
-  if(display) { display.classList.add('spinning'); display.innerHTML = '<span>...</span>'; }
-  const n = challengeRules.length, segAngle = (2 * Math.PI) / n;
-  const targetIdx = Math.floor(Math.random() * n);
-  let totalSpin = -wheelAngle - targetIdx * segAngle - segAngle / 2;
-  while(totalSpin < 6 * 2 * Math.PI) totalSpin += 2 * Math.PI;
-  totalSpin += (Math.random() - 0.5) * segAngle * 0.4;
-  const startAngle = wheelAngle, duration = 4000 + Math.random() * 1500;
-  const startTime = performance.now();
-  let lastUpdate = 0;
-  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
-  function animate(now) {
-    const elapsed = now - startTime, progress = Math.min(elapsed / duration, 1);
-    wheelAngle = startAngle + totalSpin * easeOut(progress);
-    drawWheel(wheelAngle);
-    if(now - lastUpdate > (progress < 0.7 ? 60 : 25)) {
-      const idx = getWheelIndex(wheelAngle);
-      if(display) display.innerHTML = '<span>' + challengeRules[idx] + '</span>';
-      lastUpdate = now;
-    }
-    if(progress < 1) { wheelAnimId = requestAnimationFrame(animate); }
-    else {
-      wheelSpinning = false;
-      const finalIdx = getWheelIndex(wheelAngle);
-      if(display) { display.classList.remove('spinning'); display.innerHTML = '<span>🎯 ' + challengeRules[finalIdx] + '</span>'; }
-      challengeHistory.unshift(challengeRules[finalIdx]);
-      if(challengeHistory.length > 20) challengeHistory.pop();
-      updateChallengeCount();
-      showChallengeResults();
-      if(btn) btn.disabled = false;
-    }
-  }
-  wheelAnimId = requestAnimationFrame(animate);
-}
-
-function showChallengeResults() {
-  const container = document.getElementById('challengeResult');
+function showChallengeHistory() {
+  const container = document.getElementById('challengeHistory');
   if(!container) return;
   container.innerHTML = challengeHistory.map(function(r, i) {
-    return '<div class="wheel-history-item' + (i === 0 ? ' latest' : '') + '">' + (i === 0 ? '🎉 ' : '') + r + '</div>';
+    return '<div class="history-chip' + (i === 0 ? ' latest' : '') + '">' + r + '</div>';
   }).join('');
   requestAnimationFrame(function() {
-    container.querySelectorAll('.wheel-history-item').forEach(function(el, i) {
-      setTimeout(function() { el.classList.add('show'); }, i * 60);
+    container.querySelectorAll('.history-chip').forEach(function(el, i) {
+      setTimeout(function() { el.classList.add('show'); }, i * 50);
     });
   });
 }
-// ---------- 页面初始化 & 事件绑定 ----------
+
+function initChallengeMachine() {
+  machineSpinning = false;
+  const text = document.getElementById('challengeText');
+  if(text) { text.textContent = '点击下方按钮 抽取挑战规则'; text.className = 'machine-text idle'; }
+  updateChallengeCount();
+}// ---------- 页面初始化 & 事件绑定 ----------
 function applyThemeFromStorage() {
   const stored = localStorage.getItem('ui-theme');
   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
