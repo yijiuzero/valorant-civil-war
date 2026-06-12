@@ -318,7 +318,23 @@ main::after{
   .af-btn{padding:5px 10px;font-size:12px;}
   .ac-btn{width:28px;height:28px;font-size:12px;}
   .mc-btn{width:28px;height:28px;font-size:12px;}
-}</style>
+}/* ===== 内战转盘模块 ===== */
+.wheel-container{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:500px;}
+.wheel-display{background:var(--card);border:2px solid var(--accent);border-radius:12px;padding:14px 28px;font-size:20px;font-weight:700;color:var(--accent);text-align:center;min-height:56px;display:flex;align-items:center;justify-content:center;width:100%;position:relative;overflow:hidden;transition:all .15s;}
+.wheel-display.spinning{color:var(--accent2);border-color:var(--accent2);}
+.wheel-display::after{content:'';position:absolute;inset:0;background:color-mix(in srgb, var(--accent) 5%, transparent);pointer-events:none;}
+.wheel-display span{position:relative;z-index:1;}
+.wheel-wrap{position:relative;width:380px;height:380px;flex-shrink:0;}
+#challengeWheel{width:100%;height:100%;border-radius:50%;filter:drop-shadow(0 0 28px color-mix(in srgb, var(--accent) 25%, transparent));}
+.wheel-pointer{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid var(--accent);z-index:2;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));}
+.wheel-history{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:500px;}
+.wheel-history-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--text-dim);opacity:0;transform:translateY(8px);transition:all .3s ease;}
+.wheel-history-item.show{opacity:1;transform:translateY(0);}
+.wheel-history-item.latest{border-color:var(--accent);color:var(--accent);font-weight:700;background:color-mix(in srgb, var(--accent) 10%, var(--card));}
+.wheel-count{font-size:13px;color:var(--text-dim);}
+@media(max-width:640px){.wheel-wrap{width:300px;height:300px;}.wheel-display{font-size:16px;padding:10px 16px;}.wheel-pointer{border-left-width:12px;border-right-width:12px;border-top-width:22px;top:-10px;}}
+@media(max-width:420px){.wheel-wrap{width:260px;height:260px;}.wheel-display{font-size:14px;padding:8px 12px;min-height:44px;}.wheel-history-item{padding:6px 10px;font-size:12px;}}
+</style>
 </head>
 <body>
 
@@ -334,7 +350,7 @@ main::after{
     <li class="nav-item" data-module="lineup"><span class="nav-icon">📐</span><span>选图工具</span></li>
     <li class="nav-item" data-module="stats"><span class="nav-icon">📊</span><span>内战专用</span></li>
   </ul>
-  <div class="sidebar-footer">V1.2.1 · from zer0</div>
+  <div class="sidebar-footer">V1.3.0 · from zer0</div>
 </nav>
 
 <main id="mainArea">
@@ -346,7 +362,7 @@ main::after{
       <div class="home-card" onclick="switchModule('wheel')"><div class="home-card-icon">🎯</div><div class="home-card-title">随机选图</div><div class="home-card-desc">随机抽取地图</div></div>
       <div class="home-card" onclick="switchModule('agent')"><div class="home-card-icon">🧩</div><div class="home-card-title">随机特工</div><div class="home-card-desc">随机抽取特工</div></div>
       <div class="home-card" onclick="clickCard('lineup')"><div class="home-card-icon">📐</div><div class="home-card-title">选图工具</div><div class="home-card-desc">即将上线</div></div>
-      <div class="home-card" onclick="clickCard('stats')"><div class="home-card-icon">📊</div><div class="home-card-title">内战专用</div><div class="home-card-desc">即将上线</div></div>
+      <div class="home-card" onclick="switchModule('stats')"><div class="home-card-icon">📊</div><div class="home-card-title">内战专用</div><div class="home-card-desc">内战转盘</div></div>
     </div>
   </div>
 
@@ -400,10 +416,20 @@ main::after{
     <div class="module-title">📐 选图工具</div>
     <div class="module-sub">即将上线,敬请期待 ✨</div>
   </div>
-  <!-- 内战专用(未上线) -->
+  <!-- 内战专用 - 转盘 -->
   <div class="content-layer" id="module-stats" style="display:none;">
     <div class="module-title">📊 内战专用</div>
-    <div class="module-sub">即将上线,敬请期待 ✨</div>
+    <div class="module-sub">内战转盘 · 随机抽取挑战规则</div>
+    <div class="wheel-container">
+      <div class="wheel-display" id="challengeDisplay"><span>点击转盘开始抽取</span></div>
+      <div class="wheel-wrap">
+        <canvas id="challengeWheel" width="380" height="380"></canvas>
+        <div class="wheel-pointer"></div>
+      </div>
+      <button class="btn-spin" id="btnChallengeSpin" onclick="spinChallengeWheel()">随机抽取 🎰</button>
+      <div class="wheel-count" id="challengeCount"></div>
+      <div class="wheel-history" id="challengeResult"></div>
+    </div>
   </div>
 </main>
 <button id="themeToggle" aria-label="切换主题" title="切换主题" style="position:fixed;right:16px;top:16px;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;z-index:120;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:transform .15s;">🌙</button>
@@ -513,6 +539,8 @@ function switchModule(mod) {
     // 保留之前抽奖的背景不清空,如果之前有背景则延续,但不覆盖默认。
   } else if(mod === 'agent') {
     renderAgents();
+  } else if(mod === 'stats') {
+    initChallengeWheel();
   }
   // 清除结果区域避免残留
   if(mod !== 'wheel') document.getElementById('mapResults') && (document.getElementById('mapResults').innerHTML = '');
@@ -764,6 +792,127 @@ function randomAgent() {
   }, 80);
 }
 
+// ---------- 内战转盘模块 ----------
+const challengeRules = [
+  '扔技能要说台词','只能用标配','必须刀一个人才能开枪','全程只能蹲着走',
+  '禁用W','只能使用飞将','只能用狙','全程不能使用技能和刀',
+  '游戏开始后不到最后一个人不能开枪','全程只能开镜','不准带耳机','只能跑打',
+  '开一枪丢一下枪','灵敏度除以二','杀一个人必须说不知火舞的台词',
+  '只能打B和守B直到下包','不能打背身和侧身','不能蹲','只能用正义',
+  '不能静步','只能刀人','灵敏度乘以2','不能起甲','不能回血',
+  '全队只能起两把枪','只能退弹颗秒','不许下包/拆包','只能打A和守A直到下包',
+  '全程只能用技能和刀','只能三个字三个字的说话','只能报点不能说话','不能报点',
+  '只能打对面还活着的第一名','杀完第一个人后不能使用技能','只能说方言',
+  '只能说英语','只能说日语','只有第一名杀完人后其他人才能开枪',
+  '只有倒数一名杀完人后其他人才能开枪','只能打脚和身体','这局第一个死的唱歌',
+  '所有人中路对狙1V1','只能玩喷子','看见人必须要喷漆后才能开枪','不能跳',
+  '这回合只能说5句话','只能边跳边开枪'
+];
+const WHEEL_COLORS = ['#ff4655','#1a242d','#e8a640','#264563','#d63b49','#0f1923','#b87a25','#3a5570'];
+let wheelAngle = 0, wheelSpinning = false, wheelAnimId = null, challengeHistory = [];
+
+function drawWheel(angle) {
+  const canvas = document.getElementById('challengeWheel');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.width / dpr, H = canvas.height / dpr;
+  const cx = W / 2, cy = H / 2, R = Math.min(cx, cy) - 6;
+  ctx.clearRect(0, 0, W, H);
+  const n = challengeRules.length, segAngle = (2 * Math.PI) / n;
+  for(let i = 0; i < n; i++) {
+    const sa = angle + i * segAngle - Math.PI / 2, ea = sa + segAngle;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, sa, ea); ctx.closePath();
+    ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length]; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 0.5; ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(255,70,85,.5)'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
+  ctx.fillStyle = '#0f1923'; ctx.fill();
+  ctx.strokeStyle = '#ff4655'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = '#ff4655'; ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🎯', cx, cy);
+}
+
+function getWheelIndex(angle) {
+  const n = challengeRules.length, segAngle = (2 * Math.PI) / n;
+  let norm = ((-angle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  return Math.floor(norm / segAngle) % n;
+}
+
+function initChallengeWheel() {
+  const canvas = document.getElementById('challengeWheel');
+  if(!canvas) return;
+  if(wheelAnimId) { cancelAnimationFrame(wheelAnimId); wheelAnimId = null; }
+  wheelSpinning = false;
+  const dpr = window.devicePixelRatio || 1, size = 380;
+  canvas.width = size * dpr; canvas.height = size * dpr;
+  canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
+  canvas.getContext('2d').scale(dpr, dpr);
+  wheelAngle = 0; drawWheel(0);
+  const display = document.getElementById('challengeDisplay');
+  if(display) display.innerHTML = '<span>点击转盘开始抽取</span>';
+  updateChallengeCount();
+}
+
+function updateChallengeCount() {
+  const el = document.getElementById('challengeCount');
+  if(el) el.textContent = challengeHistory.length > 0 ? '已抽取 ' + challengeHistory.length + ' 次' : '';
+}
+
+function spinChallengeWheel() {
+  if(wheelSpinning) return;
+  wheelSpinning = true;
+  const btn = document.getElementById('btnChallengeSpin');
+  if(btn) btn.disabled = true;
+  const display = document.getElementById('challengeDisplay');
+  if(display) { display.classList.add('spinning'); display.innerHTML = '<span>...</span>'; }
+  const n = challengeRules.length, segAngle = (2 * Math.PI) / n;
+  const targetIdx = Math.floor(Math.random() * n);
+  let totalSpin = -wheelAngle - targetIdx * segAngle - segAngle / 2;
+  while(totalSpin < 6 * 2 * Math.PI) totalSpin += 2 * Math.PI;
+  totalSpin += (Math.random() - 0.5) * segAngle * 0.4;
+  const startAngle = wheelAngle, duration = 4000 + Math.random() * 1500;
+  const startTime = performance.now();
+  let lastUpdate = 0;
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function animate(now) {
+    const elapsed = now - startTime, progress = Math.min(elapsed / duration, 1);
+    wheelAngle = startAngle + totalSpin * easeOut(progress);
+    drawWheel(wheelAngle);
+    if(now - lastUpdate > (progress < 0.7 ? 60 : 25)) {
+      const idx = getWheelIndex(wheelAngle);
+      if(display) display.innerHTML = '<span>' + challengeRules[idx] + '</span>';
+      lastUpdate = now;
+    }
+    if(progress < 1) { wheelAnimId = requestAnimationFrame(animate); }
+    else {
+      wheelSpinning = false;
+      const finalIdx = getWheelIndex(wheelAngle);
+      if(display) { display.classList.remove('spinning'); display.innerHTML = '<span>🎯 ' + challengeRules[finalIdx] + '</span>'; }
+      challengeHistory.unshift(challengeRules[finalIdx]);
+      if(challengeHistory.length > 20) challengeHistory.pop();
+      updateChallengeCount();
+      showChallengeResults();
+      if(btn) btn.disabled = false;
+    }
+  }
+  wheelAnimId = requestAnimationFrame(animate);
+}
+
+function showChallengeResults() {
+  const container = document.getElementById('challengeResult');
+  if(!container) return;
+  container.innerHTML = challengeHistory.map(function(r, i) {
+    return '<div class="wheel-history-item' + (i === 0 ? ' latest' : '') + '">' + (i === 0 ? '🎉 ' : '') + r + '</div>';
+  }).join('');
+  requestAnimationFrame(function() {
+    container.querySelectorAll('.wheel-history-item').forEach(function(el, i) {
+      setTimeout(function() { el.classList.add('show'); }, i * 60);
+    });
+  });
+}
 // ---------- 页面初始化 & 事件绑定 ----------
 function applyThemeFromStorage() {
   const stored = localStorage.getItem('ui-theme');
