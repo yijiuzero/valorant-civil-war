@@ -55,6 +55,11 @@ body{
   padding:16px 20px;border-top:1px solid var(--border);
   font-size:11px;color:var(--text-dim);
 }
+.sidebar-feedback-link{
+  display:inline-block;margin-top:8px;color:var(--accent);
+  text-decoration:none;transition:opacity .2s;
+}
+.sidebar-feedback-link:hover{opacity:.8;text-decoration:underline;}
 
 /* ===== 主区域 - 地图图片背景 ===== */
 main{
