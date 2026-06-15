@@ -1,6 +1,7 @@
 ﻿// ---------- 全局变量 ----------
 let mapCount = 1, mapTimer = null, bannedSet = new Set();
 let agentRole = 'all', agentCount = 1, agentTimer = null;
+let agentMode = 'count';
 
 // ---------- 辅助函数:停止抽奖(清理定时器、恢复按钮)----------
 function stopMapSpin(resetButtons = true) {
@@ -208,6 +209,7 @@ function initAgentUI() {
       document.querySelectorAll('.af-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       agentRole = this.dataset.role;
+      resetAgentMode();
       renderAgents();
     });
   });
@@ -217,14 +219,48 @@ function initAgentUI() {
       document.querySelectorAll('.ac-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       agentCount = parseInt(this.dataset.count);
+      agentMode = 'count';
+      syncChampionButton();
     // 保留已有结果，不清空
     });
   });
+  const championBtn = document.getElementById('btnChampionComp');
+  if(championBtn) {
+    championBtn.addEventListener('click', function() {
+      if(this.disabled) return;
+      agentMode = agentMode === 'champion' ? 'count' : 'champion';
+      if(agentMode === 'champion') {
+        document.querySelectorAll('.ac-btn').forEach(b => b.classList.remove('active'));
+      }
+      syncChampionButton();
+    });
+  }
 }
 
 function getAgentPool() {
   if(agentRole === 'all') return [...agents];
   return agents.filter(a => a.role === agentRole);
+}
+
+function resetAgentMode() {
+  agentMode = 'count';
+  syncChampionButton();
+}
+
+function syncChampionButton() {
+  const championBtn = document.getElementById('btnChampionComp');
+  if(!championBtn) return;
+  championBtn.style.display = agentRole === 'all' ? '' : 'none';
+  championBtn.classList.toggle('active', agentMode === 'champion');
+}
+
+function getChampionCompWinners() {
+  const sentinel = shuffleArray(agents.filter(a => a.role === '哨卫')).slice(0, 1);
+  const controller = shuffleArray(agents.filter(a => a.role === '控场者')).slice(0, 1);
+  const initiator = shuffleArray(agents.filter(a => a.role === '先锋')).slice(0, 1);
+  const firstEntry = shuffleArray(agents.filter(a => a.role === '决斗者' && a.entryTag === '一突')).slice(0, 1);
+  const secondEntry = shuffleArray(agents.filter(a => a.role === '决斗者' && a.entryTag === '二突')).slice(0, 1);
+  return [...sentinel, ...controller, ...initiator, ...firstEntry, ...secondEntry];
 }
 
 function renderAgents() {
@@ -240,6 +276,7 @@ function renderAgents() {
     </div>
   `).join('');
 // 保留已有结果，不清空
+  syncChampionButton();
 }
 
 function showAgentResults(list) {
@@ -248,7 +285,7 @@ function showAgentResults(list) {
   container.innerHTML = list.map(a => `
     <div class="agent-result-card" data-agent-id="${a.id}">
       <img src="https://media.valorant-api.com/agents/${a.id}/displayicon.png">
-      <div><div class="ar-name">${a.cn} (${a.en})</div><div class="ar-role"><span class="agent-role-dot" style="background:${a.rc}"></span>${a.role}</div></div>
+      <div><div class="ar-name">${a.cn} (${a.en})</div><div class="ar-meta"><div class="ar-role"><span class="agent-role-dot" style="background:${a.rc}"></span>${a.role}</div></div></div>
     </div>
   `).join('');
   setTimeout(() => {
@@ -265,18 +302,20 @@ function randomAgent() {
   const btn = document.getElementById('btnAgent');
   if(btn.disabled) return;
   const pool = getAgentPool();
-  if(!pool.length) return;
-  const n = Math.min(agentCount, pool.length);
+  const isChampionComp = agentRole === 'all' && agentMode === 'champion';
+  if(!isChampionComp && !pool.length) return;
+  const n = isChampionComp ? 5 : Math.min(agentCount, pool.length);
+  const winners = isChampionComp ? getChampionCompWinners() : shuffleArray(pool).slice(0, n);
   btn.disabled = true;
   document.querySelectorAll('.ac-btn').forEach(b => b.disabled = true);
+  const championBtn = document.getElementById('btnChampionComp');
+  if(championBtn) championBtn.disabled = true;
 // 保留已有结果，不清空
   document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('highlight'));
 
   if(agentTimer) clearInterval(agentTimer);
   const duration = 1200;
   const start = performance.now();
-  // 先洗牌确定最终结果
-  const winners = shuffleArray(pool).slice(0, n);
 
   agentTimer = setInterval(() => {
     const elapsed = performance.now() - start;
@@ -300,6 +339,7 @@ function randomAgent() {
       showAgentResults(winners);
       btn.disabled = false;
       document.querySelectorAll('.ac-btn').forEach(b => b.disabled = false);
+      if(championBtn) championBtn.disabled = false;
     }
   }, 80);
 }

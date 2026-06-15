@@ -13,14 +13,14 @@ const maps = [
 ];
 
 const agents = [
-  {cn:'捷风',en:'Jett',role:'决斗者',rc:'#ff4655',id:'add6443a-41bd-e414-f6ad-e58d267f4e95'},
-  {cn:'不死鸟',en:'Phoenix',role:'决斗者',rc:'#ff4655',id:'eb93336a-449b-9c1b-0a54-a891f7921d69'},
-  {cn:'雷兹',en:'Raze',role:'决斗者',rc:'#ff4655',id:'f94c3b30-42be-e959-889c-5aa313dba261'},
-  {cn:'芮娜',en:'Reyna',role:'决斗者',rc:'#ff4655',id:'a3bfb853-43b2-7238-a4f1-ad90e9e46bcc'},
-  {cn:'夜露',en:'Yoru',role:'决斗者',rc:'#ff4655',id:'7f94d92c-4234-0a36-9646-3a87eb8b5c89'},
-  {cn:'霓虹',en:'Neon',role:'决斗者',rc:'#ff4655',id:'bb2a4828-46eb-8cd1-e765-15848195d751'},
-  {cn:'壹决',en:'Iso',role:'决斗者',rc:'#ff4655',id:'0e38b510-41a8-5780-5e8f-568b2a4f2d6c'},
-  {cn:'幻棱',en:'Waylay',role:'决斗者',rc:'#ff4655',id:'df1cb487-4902-002e-5c17-d28e83e78588'},
+  {cn:'捷风',en:'Jett',role:'决斗者',rc:'#ff4655',entryTag:'一突',id:'add6443a-41bd-e414-f6ad-e58d267f4e95'},
+  {cn:'不死鸟',en:'Phoenix',role:'决斗者',rc:'#ff4655',entryTag:'二突',id:'eb93336a-449b-9c1b-0a54-a891f7921d69'},
+  {cn:'雷兹',en:'Raze',role:'决斗者',rc:'#ff4655',entryTag:'一突',id:'f94c3b30-42be-e959-889c-5aa313dba261'},
+  {cn:'芮娜',en:'Reyna',role:'决斗者',rc:'#ff4655',entryTag:'二突',id:'a3bfb853-43b2-7238-a4f1-ad90e9e46bcc'},
+  {cn:'夜露',en:'Yoru',role:'决斗者',rc:'#ff4655',entryTag:'二突',id:'7f94d92c-4234-0a36-9646-3a87eb8b5c89'},
+  {cn:'霓虹',en:'Neon',role:'决斗者',rc:'#ff4655',entryTag:'一突',id:'bb2a4828-46eb-8cd1-e765-15848195d751'},
+  {cn:'壹决',en:'Iso',role:'决斗者',rc:'#ff4655',entryTag:'二突',id:'0e38b510-41a8-5780-5e8f-568b2a4f2d6c'},
+  {cn:'幻棱',en:'Waylay',role:'决斗者',rc:'#ff4655',entryTag:'一突',id:'df1cb487-4902-002e-5c17-d28e83e78588'},
   {cn:'贤者',en:'Sage',role:'哨卫',rc:'#f59e0b',id:'569fdd95-4d10-43ab-ca70-79becc718b46'},
   {cn:'零',en:'Cypher',role:'哨卫',rc:'#f59e0b',id:'117ed9e3-49f3-6512-3ccf-0cada7e3823b'},
   {cn:'奇乐',en:'Killjoy',role:'哨卫',rc:'#f59e0b',id:'1e58de9c-4950-5125-93e9-a0aee9f98746'},
