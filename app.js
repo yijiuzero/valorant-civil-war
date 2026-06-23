@@ -54,7 +54,7 @@ function switchModule(mod) {
     // 保留之前抽奖的背景不清空,如果之前有背景则延续,但不覆盖默认。
   } else if(mod === 'agent') {
     renderAgents();
-  } else if(mod === 'stats') {
+  } else if(mod === 'teamsplit') { initTeamSplitView(); } else if(mod === 'stats') {
     initChallengeMachine();
   }
   // 切换模块时保留结果，仅刷新页面时重置
@@ -462,3 +462,4 @@ function init() {
   switchModule('home');
 }
 init();
+

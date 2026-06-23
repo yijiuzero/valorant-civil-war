@@ -329,7 +329,45 @@ main::after{
   .ac-mode-btn{height:28px;padding:0 10px;font-size:11px;}
   .mc-btn{width:32px;height:32px;font-size:12px;}
   .btn-machine{padding:8px 22px;font-size:14px;}
-}/* ===== 内战转盘模块 ===== */
+}
+/* ===== 内战分队模块 ===== */
+.teamsplit-room{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:560px;}
+.teamsplit-create{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;}
+.teamsplit-join-row{display:flex;gap:10px;align-items:center;}
+.teamsplit-input{height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;min-width:160px;}
+.teamsplit-input:focus{border-color:var(--accent);}
+.teamsplit-input::placeholder{color:var(--text-dim);}
+.teamsplit-lobby{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;}
+.teamsplit-room-code{font-size:28px;font-weight:800;color:var(--accent);letter-spacing:4px;padding:8px 20px;background:var(--card);border:1px solid var(--border);border-radius:12px;}
+.teamsplit-player-count{font-size:15px;font-weight:600;color:var(--text);}
+.teamsplit-player-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:40px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;width:100%;}
+.teamsplit-player-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:color-mix(in srgb,var(--accent) 12%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));font-size:13px;font-weight:600;color:var(--text);}
+.teamsplit-player-chip.self{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,var(--card));}
+.teamsplit-lobby-controls{display:flex;gap:10px;align-items:center;}
+.teamsplit-result{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:700px;}
+.teamsplit-result-title{font-size:22px;font-weight:800;color:var(--accent);}
+.teamsplit-teams{display:flex;gap:20px;align-items:stretch;justify-content:center;width:100%;}
+.teamsplit-team{flex:1;max-width:280px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.teamsplit-team-header{font-size:18px;font-weight:800;text-align:center;padding:8px;border-radius:10px;color:#fff;}
+.teamsplit-team-header.team-a{background:linear-gradient(135deg,#ff4655,#c8303d);}
+.teamsplit-team-header.team-b{background:linear-gradient(135deg,#3b82f6,#2563eb);}
+.teamsplit-vs{font-size:24px;font-weight:900;color:var(--text-dim);align-self:center;}
+.teamsplit-team-players{display:flex;flex-direction:column;gap:6px;}
+.teamsplit-player-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:var(--bg);font-size:14px;font-weight:500;}
+.teamsplit-player-row .agent-role-dot{flex-shrink:0;}
+.teamsplit-empty-hint{font-size:13px;color:var(--text-dim);text-align:center;padding:20px;}
+.teamsplit-status{font-size:13px;color:var(--text-dim);text-align:center;}
+.teamsplit-status.error{color:#ef4444;}
+.teamsplit-status.success{color:#22c55e;}
+@media(max-width:640px){
+  .teamsplit-teams{flex-direction:column;align-items:center;}
+  .teamsplit-vs{padding:4px 0;}
+  .teamsplit-room-code{font-size:22px;letter-spacing:2px;}
+  .teamsplit-join-row,.teamsplit-lobby-controls{flex-direction:column;width:100%;}
+  .teamsplit-input{width:100%;min-width:unset;}
+  .btn-machine,.btn-spin{width:100%;}
+}
+/* ===== 内战转盘模块 ===== */
 .challenge-machine{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:520px;}
 .machine-frame{width:100%;background:linear-gradient(145deg,color-mix(in srgb,var(--card) 90%,#000),var(--card));border:2px solid color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:16px;padding:24px 20px;position:relative;overflow:hidden;}
 .machine-frame::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),var(--accent),transparent);}
@@ -361,3 +399,5 @@ main::after{
 @keyframes dotPulse{0%,100%{opacity:.3;transform:scale(.8);}50%{opacity:1;transform:scale(1.1);}}
 @media(max-width:640px){.machine-frame{padding:16px 14px;}.machine-text{font-size:18px;}.machine-text.result{font-size:20px;}.btn-machine{padding:10px 28px;font-size:15px;}}
 @media(max-width:420px){.machine-display{padding:14px 16px;min-height:60px;}.machine-text{font-size:16px;}.machine-text.result{font-size:18px;}.history-chip{padding:6px 10px;font-size:12px;}}
+
+
