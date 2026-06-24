@@ -45,9 +45,22 @@ function updatePlayerList(players) {
   if (splitBtn) splitBtn.disabled = players.length < 2;
 }
 
+async function cleanupOldRooms() {
+  try {
+    var oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    var old = await supabase.from('rooms').select('code').eq('status', 'done').lt('created_at', oneDayAgo);
+    if (old.data && old.data.length > 0) {
+      var codes = old.data.map(function(r) { return r.code; });
+      await supabase.from('players').delete().in('room_code', codes);
+      await supabase.from('rooms').delete().in('code', codes);
+    }
+  } catch (e) {}
+}
+
 async function createRoom() {
   var code = generateRoomCode();
   try {
+    await cleanupOldRooms();
     var result = await supabase.from('rooms').insert({ code: code, status: 'waiting' }).select().single();
     if (result.error) throw result.error;
     currentRoomCode = code;
