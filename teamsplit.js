@@ -71,8 +71,7 @@ async function joinRoom() {
     var result = await supabase.from('rooms').select('*').eq('code', code).eq('status', 'waiting').single();
     if (result.error || !result.data) throw new Error('房间不存在或已开始');
     currentRoomCode = code;
-    var tempId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-    var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name, temp_id: tempId }).select().single();
+    var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
     if (insertResult.error) throw insertResult.error;
     currentPlayerId = insertResult.data.id;
     document.getElementById('roomCodeDisplay').textContent = code;
@@ -93,8 +92,7 @@ async function joinLobby() {
   if (isCreating) {
     isCreating = false;
     try {
-      var tempId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-      var result = await supabase.from('players').insert({ room_code: currentRoomCode, name: name, temp_id: tempId }).select().single();
+      var result = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
       if (result.error) throw result.error;
       currentPlayerId = result.data.id;
       document.getElementById('playerNameInput').value = '';
@@ -106,8 +104,7 @@ async function joinLobby() {
     return;
   }
   try {
-    var tempId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-    var result = await supabase.from('players').insert({ room_code: currentRoomCode, name: name, temp_id: tempId }).select().single();
+    var result = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
     if (result.error) throw result.error;
     currentPlayerId = result.data.id;
     document.getElementById('playerNameInput').value = '';
@@ -201,3 +198,4 @@ window.joinLobby = joinLobby;
 window.doSplit = doSplit;
 window.resetSplit = resetSplit;
 window.leaveRoom = leaveRoom;
+
