@@ -343,6 +343,7 @@ main::after{
 .teamsplit-player-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:40px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;width:100%;}
 .teamsplit-player-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:color-mix(in srgb,var(--accent) 12%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));font-size:13px;font-weight:600;color:var(--text);}
 .teamsplit-player-chip.self{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,var(--card));}
+.teamsplit-host-badge{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:999px;background:var(--accent2);color:#fff;font-size:11px;font-weight:800;line-height:1;}
 .teamsplit-lobby-controls{display:flex;gap:10px;align-items:center;}
 .teamsplit-result{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:700px;}
 .teamsplit-result-title{font-size:22px;font-weight:800;color:var(--accent);}

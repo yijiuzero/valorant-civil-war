@@ -6,6 +6,7 @@ let currentRoomCode = null;
 let currentPlayerId = null;
 let roomSubscription = null;
 let isLeaving = false;
+let currentPlayers = [];
 
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -36,13 +37,39 @@ function updatePlayerList(players) {
   var list = document.getElementById('playerList');
   var count = document.getElementById('playerCount');
   if (!list || !count) return;
+  currentPlayers = players || [];
+  var hostId = getHostId(currentPlayers);
+  var isHost = isCurrentUserHost(currentPlayers);
   count.textContent = players.length;
   list.innerHTML = players.map(function(p) {
     var cls = p.id === currentPlayerId ? ' self' : '';
-    return '<div class="teamsplit-player-chip' + cls + '">' + escapeHtml(p.name) + '</div>';
+    var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">房主</span>' : '';
+    return '<div class="teamsplit-player-chip' + cls + '">' + escapeHtml(p.name) + hostBadge + '</div>';
   }).join('');
+  updateHostControls(isHost, currentPlayers.length);
+}
+
+function getHostId(players) {
+  return players && players.length > 0 ? players[0].id : null;
+}
+
+function isCurrentUserHost(players) {
+  return !!currentPlayerId && currentPlayerId === getHostId(players || currentPlayers);
+}
+
+function updateHostControls(isHost, playerCount) {
   var splitBtn = document.getElementById('btnDoSplit');
-  if (splitBtn) splitBtn.disabled = players.length < 2;
+  if (splitBtn) {
+    splitBtn.disabled = playerCount < 2 || !isHost;
+    splitBtn.textContent = isHost ? '开始分队 🎲' : '仅房主可开始分队';
+  }
+  var resetBtn = document.getElementById('btnResetSplit');
+  if (resetBtn) resetBtn.disabled = !isHost;
+  var hostHint = document.getElementById('teamsplitHostHint');
+  if (hostHint) {
+    if (!currentPlayerId) hostHint.textContent = '加入后可查看房主权限';
+    else hostHint.textContent = isHost ? '你是房主，可以开始或重新分队' : '仅房主可以开始或重新分队';
+  }
 }
 
 async function cleanupOldRooms() {
@@ -129,6 +156,8 @@ async function doSplit() {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
     var players = result.data;
     if (!players || players.length < 2) { showToast('至少需要2人', 2000); return; }
+    currentPlayers = players;
+    if (!isCurrentUserHost(players)) { showToast('只有房主可以开始分队', 2000); return; }
     var shuffled = players.slice().sort(function() { return Math.random() - 0.5; });
     var half = Math.ceil(shuffled.length / 2);
     var teamA = shuffled.slice(0, half);
@@ -142,10 +171,19 @@ async function doSplit() {
   }
 }
 
-function resetSplit() {
-  supabase.from('rooms').update({ status: 'waiting' }).eq('code', currentRoomCode).then(function(){});
-  showTeamsplitView('lobby');
-  refreshPlayers();
+async function resetSplit() {
+  if (!currentRoomCode) return;
+  try {
+    var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
+    var players = result.data || [];
+    currentPlayers = players;
+    if (!isCurrentUserHost(players)) { showToast('只有房主可以重新分队', 2000); return; }
+    await supabase.from('rooms').update({ status: 'waiting' }).eq('code', currentRoomCode);
+    showTeamsplitView('lobby');
+    updatePlayerList(players);
+  } catch (e) {
+    showToast('重新分队失败: ' + e.message, 3000);
+  }
 }
 
 async function leaveRoom() {
@@ -159,6 +197,7 @@ async function leaveRoom() {
   }
   currentRoomCode = null;
   currentPlayerId = null;
+  currentPlayers = [];
   var ri = document.getElementById('roomCodeInput');
   if (ri) ri.value = '';
   var pi = document.getElementById('playerNameInput');
@@ -185,6 +224,7 @@ async function initTeamSplitView() {
   if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
   currentRoomCode = null;
   currentPlayerId = null;
+  currentPlayers = [];
   showTeamsplitView('create');
 }
 
