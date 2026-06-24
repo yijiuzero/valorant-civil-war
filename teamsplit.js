@@ -6,7 +6,6 @@ let currentRoomCode = null;
 let currentPlayerId = null;
 let roomSubscription = null;
 let isLeaving = false;
-let isCreating = false;
 
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -46,6 +45,18 @@ function updatePlayerList(players) {
   if (splitBtn) splitBtn.disabled = players.length < 2;
 }
 
+async function ensurePlayerInRoom(code) {
+  var storedId = localStorage.getItem('ts_player_' + code);
+  if (storedId) {
+    var verify = await supabase.from('players').select('id').eq('id', storedId).eq('room_code', code).single();
+    if (verify.data) {
+      currentPlayerId = verify.data.id;
+      return true;
+    }
+  }
+  return false;
+}
+
 async function createRoom() {
   var code = generateRoomCode();
   try {
@@ -55,7 +66,6 @@ async function createRoom() {
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
     subscribeToRoom(code);
-    isCreating = true;
     showToast('房间已创建，请输入你的名字 👇', 3000);
   } catch (e) {
     showToast('创建房间失败: ' + e.message, 3000);
@@ -74,6 +84,7 @@ async function joinRoom() {
     var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
     if (insertResult.error) throw insertResult.error;
     currentPlayerId = insertResult.data.id;
+    localStorage.setItem('ts_player_' + code, currentPlayerId);
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
     subscribeToRoom(code);
@@ -89,24 +100,11 @@ async function joinLobby() {
   var name = document.getElementById('playerNameInput').value.trim();
   if (!name) { showToast('请输入你的名字', 2000); return; }
   if (!currentRoomCode) return;
-  if (isCreating) {
-    isCreating = false;
-    try {
-      var result = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
-      if (result.error) throw result.error;
-      currentPlayerId = result.data.id;
-      document.getElementById('playerNameInput').value = '';
-      showToast('已加入分队', 2000);
-      refreshPlayers();
-    } catch (e) {
-      showToast('加入失败: ' + e.message, 3000);
-    }
-    return;
-  }
   try {
-    var result = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
-    if (result.error) throw result.error;
-    currentPlayerId = result.data.id;
+    var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
+    if (insertResult.error) throw insertResult.error;
+    currentPlayerId = insertResult.data.id;
+    localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
     document.getElementById('playerNameInput').value = '';
     showToast('已加入分队', 2000);
     refreshPlayers();
@@ -164,6 +162,7 @@ async function leaveRoom() {
     try {
       await supabase.from('players').delete().eq('id', currentPlayerId);
     } catch (e) {}
+    localStorage.removeItem('ts_player_' + currentRoomCode);
   }
   currentRoomCode = null;
   currentPlayerId = null;
@@ -175,19 +174,24 @@ async function leaveRoom() {
   showToast('已离开房间', 2000);
 }
 
-function initTeamSplitView() {
+async function initTeamSplitView() {
   if (isLeaving) {
     isLeaving = false;
+    return;
+  }
+  var ri = document.getElementById('roomCodeInput');
+  if (ri) ri.value = '';
+  var pi = document.getElementById('playerNameInput');
+  if (pi) pi.value = '';
+  if (currentRoomCode) {
+    showTeamsplitView('lobby');
+    await refreshPlayers();
+    subscribeToRoom(currentRoomCode);
     return;
   }
   if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
   currentRoomCode = null;
   currentPlayerId = null;
-  isCreating = false;
-  var ri = document.getElementById('roomCodeInput');
-  if (ri) ri.value = '';
-  var pi = document.getElementById('playerNameInput');
-  if (pi) pi.value = '';
   showTeamsplitView('create');
 }
 
@@ -198,4 +202,3 @@ window.joinLobby = joinLobby;
 window.doSplit = doSplit;
 window.resetSplit = resetSplit;
 window.leaveRoom = leaveRoom;
-
