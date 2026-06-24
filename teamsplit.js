@@ -6,6 +6,7 @@ let currentRoomCode = null;
 let currentPlayerId = null;
 let roomSubscription = null;
 let isLeaving = false;
+let isCreating = false;
 
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -54,7 +55,8 @@ async function createRoom() {
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
     subscribeToRoom(code);
-    showToast('房间已创建，房间码: ' + code, 3000);
+    isCreating = true;
+    showToast('房间已创建，请输入你的名字 👇', 3000);
   } catch (e) {
     showToast('创建房间失败: ' + e.message, 3000);
   }
@@ -62,15 +64,23 @@ async function createRoom() {
 
 async function joinRoom() {
   var code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+  var name = document.getElementById('playerNameInput').value.trim();
   if (!code) { showToast('请输入房间码', 2000); return; }
+  if (!name) { showToast('请输入你的名字', 2000); return; }
   try {
     var result = await supabase.from('rooms').select('*').eq('code', code).eq('status', 'waiting').single();
     if (result.error || !result.data) throw new Error('房间不存在或已开始');
     currentRoomCode = code;
+    var tempId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name, temp_id: tempId }).select().single();
+    if (insertResult.error) throw insertResult.error;
+    currentPlayerId = insertResult.data.id;
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
     subscribeToRoom(code);
-    showToast('已加入房间', 2000);
+    document.getElementById('playerNameInput').value = '';
+    showToast('已加入房间: ' + code, 2000);
+    refreshPlayers();
   } catch (e) {
     showToast('加入房间失败: ' + e.message, 3000);
   }
@@ -80,6 +90,21 @@ async function joinLobby() {
   var name = document.getElementById('playerNameInput').value.trim();
   if (!name) { showToast('请输入你的名字', 2000); return; }
   if (!currentRoomCode) return;
+  if (isCreating) {
+    isCreating = false;
+    try {
+      var tempId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      var result = await supabase.from('players').insert({ room_code: currentRoomCode, name: name, temp_id: tempId }).select().single();
+      if (result.error) throw result.error;
+      currentPlayerId = result.data.id;
+      document.getElementById('playerNameInput').value = '';
+      showToast('已加入分队', 2000);
+      refreshPlayers();
+    } catch (e) {
+      showToast('加入失败: ' + e.message, 3000);
+    }
+    return;
+  }
   try {
     var tempId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     var result = await supabase.from('players').insert({ room_code: currentRoomCode, name: name, temp_id: tempId }).select().single();
@@ -130,6 +155,7 @@ async function doSplit() {
 }
 
 function resetSplit() {
+  supabase.from('rooms').update({ status: 'waiting' }).eq('code', currentRoomCode).then(function(){});
   showTeamsplitView('lobby');
   refreshPlayers();
 }
@@ -160,6 +186,7 @@ function initTeamSplitView() {
   if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
   currentRoomCode = null;
   currentPlayerId = null;
+  isCreating = false;
   var ri = document.getElementById('roomCodeInput');
   if (ri) ri.value = '';
   var pi = document.getElementById('playerNameInput');
