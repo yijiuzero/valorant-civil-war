@@ -45,18 +45,6 @@ function updatePlayerList(players) {
   if (splitBtn) splitBtn.disabled = players.length < 2;
 }
 
-async function ensurePlayerInRoom(code) {
-  var storedId = localStorage.getItem('ts_player_' + code);
-  if (storedId) {
-    var verify = await supabase.from('players').select('id').eq('id', storedId).eq('room_code', code).single();
-    if (verify.data) {
-      currentPlayerId = verify.data.id;
-      return true;
-    }
-  }
-  return false;
-}
-
 async function createRoom() {
   var code = generateRoomCode();
   try {
@@ -74,23 +62,15 @@ async function createRoom() {
 
 async function joinRoom() {
   var code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-  var name = document.getElementById('playerNameInput').value.trim();
   if (!code) { showToast('请输入房间码', 2000); return; }
-  if (!name) { showToast('请输入你的名字', 2000); return; }
   try {
     var result = await supabase.from('rooms').select('*').eq('code', code).eq('status', 'waiting').single();
     if (result.error || !result.data) throw new Error('房间不存在或已开始');
     currentRoomCode = code;
-    var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
-    if (insertResult.error) throw insertResult.error;
-    currentPlayerId = insertResult.data.id;
-    localStorage.setItem('ts_player_' + code, currentPlayerId);
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
     subscribeToRoom(code);
-    document.getElementById('playerNameInput').value = '';
-    showToast('已加入房间: ' + code, 2000);
-    refreshPlayers();
+    showToast('已加入房间，请输入你的名字', 2000);
   } catch (e) {
     showToast('加入房间失败: ' + e.message, 3000);
   }
@@ -202,3 +182,6 @@ window.joinLobby = joinLobby;
 window.doSplit = doSplit;
 window.resetSplit = resetSplit;
 window.leaveRoom = leaveRoom;
+
+
+
