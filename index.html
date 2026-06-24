@@ -23,7 +23,7 @@
     <li class="nav-item" data-module="teamsplit"><span class="nav-icon">⚔️</span><span>内战分队</span></li>
   </ul>
   <div class="sidebar-footer">
-    <div>最终版 V2.1.6 · from zer0</div>
+    <div>最终版 V2.1.7 · from zer0</div>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">问题/需求反馈</a>
   </div>
 </nav>
@@ -91,29 +91,52 @@
   <!-- 内战分队 -->
   <div class="content-layer" id="module-teamsplit" style="display:none;">
     <div class="module-title">⚔️ 内战分队</div>
-    <div class="module-sub">创建或加入房间,凑齐10人后随机分队</div>
+    <div class="module-sub">创建或加入房间，凑齐 10 人后随机分队</div>
     <div class="teamsplit-room" id="teamsplitRoom">
-      <div class="teamsplit-create">
-        <button class="btn-spin" id="btnCreateRoom" onclick="createRoom()">创建房间</button>
-        <div class="teamsplit-join-row">
-          <input class="teamsplit-input" id="roomCodeInput" type="text" placeholder="输入房间码加入" maxlength="6">
-          <button class="btn-machine" onclick="joinRoom()">加入</button>
+      <div class="teamsplit-create teamsplit-panel" id="teamsplitCreate">
+        <div class="teamsplit-panel-head">
+          <div>
+            <div class="teamsplit-panel-title">快速开房</div>
+            <div class="teamsplit-panel-sub">先创建自己的房间，或者输入房间码直接加入朋友的房间。</div>
+          </div>
+        </div>
+        <div class="teamsplit-create-grid">
+          <button class="btn-spin teamsplit-primary-btn" id="btnCreateRoom" onclick="createRoom()">创建房间</button>
+          <div class="teamsplit-join-card">
+            <div class="teamsplit-join-label">加入已有房间</div>
+            <div class="teamsplit-join-row">
+              <input class="teamsplit-input" id="roomCodeInput" type="text" placeholder="输入 6 位房间码" maxlength="6">
+              <button class="btn-machine teamsplit-inline-btn" onclick="joinRoom()">加入</button>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="teamsplit-lobby" id="teamsplitLobby" style="display:none;">
-        <div class="teamsplit-room-code">房间码: <span id="roomCodeDisplay">-</span></div>
-        <div class="teamsplit-player-count">已加入: <span id="playerCount">0</span>/10</div>
-        <div class="teamsplit-status" id="teamsplitHostHint">加入后可查看房主权限</div>
+      <div class="teamsplit-lobby teamsplit-panel" id="teamsplitLobby" style="display:none;">
+        <div class="teamsplit-panel-head">
+          <div>
+            <div class="teamsplit-panel-title">房间大厅</div>
+            <div class="teamsplit-panel-sub" id="teamsplitHostHint">加入后可查看房主权限</div>
+          </div>
+          <div class="teamsplit-count-badge">已加入 <span id="playerCount">0</span>/10</div>
+        </div>
+        <div class="teamsplit-room-code">房间码 <span id="roomCodeDisplay">-</span></div>
         <div class="teamsplit-player-list" id="playerList"></div>
         <div class="teamsplit-lobby-controls">
           <input class="teamsplit-input" id="playerNameInput" type="text" placeholder="输入你的名字" maxlength="12">
-          <button class="btn-machine" id="btnJoinLobby" onclick="joinLobby()">加入分队</button>
+          <button class="btn-machine teamsplit-inline-btn" id="btnJoinLobby" onclick="joinLobby()">加入分队</button>
         </div>
-        <button class="btn-spin" id="btnDoSplit" onclick="doSplit()" disabled>开始分队 🎲</button>
-        <button class="btn-machine" onclick="leaveRoom()" style="margin-top:8px;">离开房间</button>
+        <div class="teamsplit-action-stack">
+          <button class="btn-spin teamsplit-primary-btn" id="btnDoSplit" onclick="doSplit()" disabled>开始分队 🎲</button>
+          <button class="btn-machine teamsplit-secondary-btn" onclick="leaveRoom()">离开房间</button>
+        </div>
       </div>
-      <div class="teamsplit-result" id="teamsplitResult" style="display:none;">
-        <div class="teamsplit-result-title">分队结果</div>
+      <div class="teamsplit-result teamsplit-panel" id="teamsplitResult" style="display:none;">
+        <div class="teamsplit-panel-head teamsplit-result-head">
+          <div>
+            <div class="teamsplit-panel-title">分队结果</div>
+            <div class="teamsplit-panel-sub">本轮名单已经生成，可以直接开打或重新分队。</div>
+          </div>
+        </div>
         <div class="teamsplit-teams">
           <div class="teamsplit-team">
             <div class="teamsplit-team-header team-a">🔴 A队</div>
@@ -125,8 +148,10 @@
             <div class="teamsplit-team-players" id="teamBPlayers"></div>
           </div>
         </div>
-        <button class="btn-machine" id="btnResetSplit" onclick="resetSplit()">重新分队</button>
-        <button class="btn-machine" onclick="leaveRoom()" style="margin-top:8px;">离开房间</button>
+        <div class="teamsplit-action-row">
+          <button class="btn-machine" id="btnResetSplit" onclick="resetSplit()">重新分队</button>
+          <button class="btn-machine teamsplit-secondary-btn" onclick="leaveRoom()">离开房间</button>
+        </div>
       </div>
     </div>
   </div>

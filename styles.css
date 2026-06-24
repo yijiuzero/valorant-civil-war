@@ -331,42 +331,317 @@ main::after{
   .btn-machine{padding:8px 22px;font-size:14px;}
 }
 /* ===== 内战分队模块 ===== */
-.teamsplit-room{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:560px;}
-.teamsplit-create{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;}
-.teamsplit-join-row{display:flex;gap:10px;align-items:center;}
-.teamsplit-input{height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;min-width:160px;}
-.teamsplit-input:focus{border-color:var(--accent);}
+#module-teamsplit{
+  max-width:760px;
+}
+.teamsplit-room{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
+  width:100%;
+}
+.teamsplit-panel{
+  width:100%;
+  padding:28px;
+  border-radius:18px;
+  background:color-mix(in srgb,var(--sidebar-bg) 78%,rgba(10,16,24,.78));
+  border:1px solid color-mix(in srgb,var(--accent) 16%,var(--border));
+  box-shadow:0 20px 50px rgba(0,0,0,.2);
+  backdrop-filter:blur(14px);
+}
+.teamsplit-panel-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  width:100%;
+  margin-bottom:18px;
+}
+.teamsplit-panel-title{
+  font-size:24px;
+  font-weight:800;
+  color:var(--text);
+}
+.teamsplit-panel-sub{
+  margin-top:6px;
+  font-size:14px;
+  line-height:1.5;
+  color:var(--text-dim);
+}
+.teamsplit-create{
+  display:flex;
+  flex-direction:column;
+}
+.teamsplit-create-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);
+  gap:16px;
+  width:100%;
+  align-items:stretch;
+}
+.teamsplit-join-card{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:12px;
+  min-width:0;
+  padding:18px;
+  border-radius:14px;
+  background:color-mix(in srgb,var(--card) 82%,transparent);
+  border:1px solid color-mix(in srgb,var(--border) 80%,transparent);
+}
+.teamsplit-join-label{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text-dim);
+}
+.teamsplit-join-row,
+.teamsplit-lobby-controls,
+.teamsplit-action-row,
+.teamsplit-action-stack{
+  display:flex;
+  gap:12px;
+  width:100%;
+  align-items:center;
+}
+.teamsplit-action-stack{
+  flex-direction:column;
+  margin-top:14px;
+}
+.teamsplit-input{
+  flex:1;
+  height:48px;
+  padding:0 16px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:color-mix(in srgb,var(--card) 88%,transparent);
+  color:var(--text);
+  font-size:14px;
+  font-family:inherit;
+  outline:none;
+  transition:border-color .2s, box-shadow .2s, background .2s;
+  min-width:0;
+}
+.teamsplit-input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent);
+  background:var(--card);
+}
 .teamsplit-input::placeholder{color:var(--text-dim);}
-.teamsplit-lobby{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;}
-.teamsplit-room-code{font-size:28px;font-weight:800;color:var(--accent);letter-spacing:4px;padding:8px 20px;background:var(--card);border:1px solid var(--border);border-radius:12px;}
-.teamsplit-player-count{font-size:15px;font-weight:600;color:var(--text);}
-.teamsplit-player-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:40px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;width:100%;}
-.teamsplit-player-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:color-mix(in srgb,var(--accent) 12%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));font-size:13px;font-weight:600;color:var(--text);}
-.teamsplit-player-chip.self{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,var(--card));}
-.teamsplit-host-badge{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:999px;background:var(--accent2);color:#fff;font-size:11px;font-weight:800;line-height:1;}
-.teamsplit-lobby-controls{display:flex;gap:10px;align-items:center;}
-.teamsplit-result{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:700px;}
-.teamsplit-result-title{font-size:22px;font-weight:800;color:var(--accent);}
-.teamsplit-teams{display:flex;gap:20px;align-items:stretch;justify-content:center;width:100%;}
-.teamsplit-team{flex:1;max-width:280px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;}
-.teamsplit-team-header{font-size:18px;font-weight:800;text-align:center;padding:8px;border-radius:10px;color:#fff;}
+.teamsplit-primary-btn{
+  margin-top:0;
+  min-height:56px;
+  width:100%;
+}
+.teamsplit-primary-btn:disabled{
+  background:color-mix(in srgb,var(--card) 72%,var(--accent));
+  opacity:.72;
+  box-shadow:none;
+}
+.teamsplit-inline-btn,
+.teamsplit-secondary-btn{
+  min-height:48px;
+  white-space:nowrap;
+}
+.teamsplit-lobby,
+.teamsplit-result{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+}
+.teamsplit-count-badge{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:116px;
+  height:42px;
+  padding:0 14px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 14%,var(--card));
+  border:1px solid color-mix(in srgb,var(--accent) 28%,var(--border));
+  color:var(--text);
+  font-size:14px;
+  font-weight:700;
+}
+.teamsplit-room-code{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:16px;
+  padding:12px 18px;
+  border-radius:14px;
+  background:#18263a;
+  border:1px solid color-mix(in srgb,var(--accent) 24%,var(--border));
+  color:#b9c7d8;
+  font-size:14px;
+  font-weight:700;
+}
+.teamsplit-room-code span{
+  font-size:32px;
+  line-height:1;
+  letter-spacing:4px;
+  color:var(--accent);
+}
+.teamsplit-player-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:flex-start;
+  min-height:68px;
+  width:100%;
+  padding:16px;
+  border-radius:16px;
+  background:color-mix(in srgb,var(--card) 84%,transparent);
+  border:1px solid color-mix(in srgb,var(--border) 82%,transparent);
+}
+.teamsplit-player-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:34px;
+  padding:0 14px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 10%,var(--card));
+  border:1px solid color-mix(in srgb,var(--accent) 24%,var(--border));
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+}
+.teamsplit-player-chip.self{
+  border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 18%,var(--card));
+}
+.teamsplit-host-badge{
+  display:inline-flex;
+  align-items:center;
+  height:20px;
+  padding:0 8px;
+  border-radius:999px;
+  background:var(--accent2);
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  line-height:1;
+}
+.teamsplit-lobby-controls{
+  margin-top:16px;
+}
+.teamsplit-result-head{
+  margin-bottom:20px;
+}
+.teamsplit-teams{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:16px;
+  align-items:stretch;
+  width:100%;
+}
+.teamsplit-team{
+  min-width:0;
+  background:color-mix(in srgb,var(--card) 86%,transparent);
+  border:1px solid color-mix(in srgb,var(--border) 82%,transparent);
+  border-radius:16px;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.teamsplit-team-header{
+  font-size:17px;
+  font-weight:800;
+  text-align:center;
+  padding:10px;
+  border-radius:12px;
+  color:#fff;
+}
 .teamsplit-team-header.team-a{background:linear-gradient(135deg,#ff4655,#c8303d);}
 .teamsplit-team-header.team-b{background:linear-gradient(135deg,#3b82f6,#2563eb);}
-.teamsplit-vs{font-size:24px;font-weight:900;color:var(--text-dim);align-self:center;}
-.teamsplit-team-players{display:flex;flex-direction:column;gap:6px;}
-.teamsplit-player-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:var(--bg);font-size:14px;font-weight:500;}
+.teamsplit-vs{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  font-weight:900;
+  color:var(--text-dim);
+}
+.teamsplit-team-players{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.teamsplit-player-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:40px;
+  padding:0 12px;
+  border-radius:12px;
+  background:var(--bg);
+  font-size:14px;
+  font-weight:600;
+}
 .teamsplit-player-row .agent-role-dot{flex-shrink:0;}
-.teamsplit-empty-hint{font-size:13px;color:var(--text-dim);text-align:center;padding:20px;}
-.teamsplit-status{font-size:13px;color:var(--text-dim);text-align:center;}
+.teamsplit-empty-hint{
+  font-size:13px;
+  color:var(--text-dim);
+  text-align:center;
+  padding:20px;
+}
+.teamsplit-status{
+  font-size:13px;
+  color:var(--text-dim);
+  text-align:left;
+}
 .teamsplit-status.error{color:#ef4444;}
 .teamsplit-status.success{color:#22c55e;}
 @media(max-width:640px){
-  .teamsplit-teams{flex-direction:column;align-items:center;}
-  .teamsplit-vs{padding:4px 0;}
-  .teamsplit-room-code{font-size:22px;letter-spacing:2px;}
-  .teamsplit-join-row,.teamsplit-lobby-controls{flex-direction:column;width:100%;}
-  .teamsplit-input{width:100%;min-width:unset;}
-  .btn-machine,.btn-spin{width:100%;}
+  #module-teamsplit{
+    max-width:100%;
+  }
+  .teamsplit-panel{
+    padding:18px;
+    border-radius:16px;
+  }
+  .teamsplit-panel-head,
+  .teamsplit-create-grid,
+  .teamsplit-join-row,
+  .teamsplit-lobby-controls,
+  .teamsplit-action-row{
+    grid-template-columns:none;
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .teamsplit-create-grid{
+    display:flex;
+  }
+  .teamsplit-count-badge{
+    width:100%;
+    min-width:0;
+  }
+  .teamsplit-room-code{
+    width:100%;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .teamsplit-room-code span{
+    font-size:24px;
+    letter-spacing:2px;
+  }
+  .teamsplit-teams{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .teamsplit-vs{
+    min-height:24px;
+  }
+  .teamsplit-input,
+  .teamsplit-inline-btn,
+  .teamsplit-secondary-btn,
+  .teamsplit-primary-btn,
+  #btnResetSplit{
+    width:100%;
+  }
 }
 /* ===== 内战转盘模块 ===== */
 .challenge-machine{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:520px;}
