@@ -1,4 +1,4 @@
-﻿// ---------- 全局变量 ----------
+// ---------- 全局变量 ----------
 let mapCount = 1, mapTimer = null, bannedSet = new Set();
 let agentRole = 'all', agentCount = 1, agentTimer = null;
 let agentMode = 'count';
@@ -58,12 +58,6 @@ function switchModule(mod) {
     initChallengeMachine();
   }
   // 切换模块时保留结果，仅刷新页面时重置
-}
-
-function clickCard(mod) {
-  const labels = { agent:'随机特工', stats:'内战专用' };
-  switchModule(mod);
-  showToast(`「${labels[mod] || mod}」模块即将上线,敬请期待 ✨`, 2000);
 }
 
 // ---------- 地图模块 ----------
