@@ -10,8 +10,8 @@
   {cn:'莲华古城',en:'Lotus',roleColor:'#8aac50',img:'https://media.valorant-api.com/maps/2fe4ed3a-450a-948b-6d6b-e89a78e680a9/splash.png'},
   {cn:'日落之城',en:'Sunset',roleColor:'#d4785c',img:'https://media.valorant-api.com/maps/92584fbe-486a-b1b2-9faa-39b0f486b498/splash.png'},
   {cn:'幽邃地窟',en:'Abyss',roleColor:'#a87cc8',img:'https://media.valorant-api.com/maps/224b0a95-48b9-f703-1bd8-67aca101a61f/splash.png'},
-  {cn:'盐海矿镇',en:'District',roleColor:'#c49a5c',img:'https://media.valorant-api.com/maps/690b3ed2-4dff-945b-8223-6da834e30d24/splash.png'},
-  {cn:'天枢云阙',en:'Kasbah',roleColor:'#8b6f9e',img:'https://media.valorant-api.com/maps/12452a9d-48c3-0b02-e7eb-0381c3520404/splash.png'},
+  {cn:'盐海矿镇',en:'Corrode',roleColor:'#c49a5c',img:'https://media.valorant-api.com/maps/1c18ab1f-420d-0d8b-71d0-77ad3c439115/splash.png'},
+  {cn:'天枢云阙',en:'Summit',roleColor:'#8b6f9e',img:'https://media.valorant-api.com/maps/756da597-416b-c0f2-f47b-afbdf28670bc/splash.png'},
 ];
 
 const agents = [
@@ -26,11 +26,11 @@ const agents = [
   {cn:'贤者',en:'Sage',role:'哨卫',rc:'#f59e0b',id:'569fdd95-4d10-43ab-ca70-79becc718b46'},
   {cn:'零',en:'Cypher',role:'哨卫',rc:'#f59e0b',id:'117ed9e3-49f3-6512-3ccf-0cada7e3823b'},
   {cn:'奇乐',en:'Killjoy',role:'哨卫',rc:'#f59e0b',id:'1e58de9c-4950-5125-93e9-a0aee9f98746'},
-  {cn:'尚博勒',en:'Chamber',role:'哨卫',rc:'#f59e0b',id:'22697a3d-45bf-8dd7-4fec-84a9e28c69d7'},
+  {cn:'尚勃勒',en:'Chamber',role:'哨卫',rc:'#f59e0b',id:'22697a3d-45bf-8dd7-4fec-84a9e28c69d7'},
   {cn:'钢锁',en:'Deadlock',role:'哨卫',rc:'#f59e0b',id:'cc8b64c8-4b25-4ff9-6e7f-37b4da43d235'},
   {cn:'维斯',en:'Vyse',role:'哨卫',rc:'#f59e0b',id:'efba5359-4016-a1e5-7626-b1ae76895940'},
   {cn:'禁灭',en:'Veto',role:'哨卫',rc:'#f59e0b',id:'92eeef5d-43b5-1d4a-8d03-b3927a09034b'},
-  {cn:'铁臂',en:'Brimstone',role:'先锋',rc:'#3b82f6',id:'9f0d8ba9-4140-b941-57d3-a7ad57c6b417'},
+  {cn:'炼狱',en:'Brimstone',role:'先锋',rc:'#3b82f6',id:'9f0d8ba9-4140-b941-57d3-a7ad57c6b417'},
   {cn:'蝰蛇',en:'Viper',role:'控场者',rc:'#22c55e',id:'707eab51-4836-f488-046a-cda6bf494859'},
   {cn:'幽影',en:'Omen',role:'控场者',rc:'#22c55e',id:'8e253930-4c05-31dd-1b6c-968525494517'},
   {cn:'星礈',en:'Astra',role:'控场者',rc:'#22c55e',id:'41fb69c1-4189-7b37-f117-bcaf1e96f1bf'},
@@ -38,7 +38,7 @@ const agents = [
   {cn:'暮蝶',en:'Clove',role:'控场者',rc:'#22c55e',id:'1dbf2edd-4729-0984-3115-daa5eed44993'},
   {cn:'迷核',en:'Miks',role:'控场者',rc:'#22c55e',id:'7c8a4701-4de6-9355-b254-e09bc2a34b72'},
   {cn:'猎枭',en:'Sova',role:'先锋',rc:'#3b82f6',id:'320b2a48-4d9b-a075-30f1-1f93a9b638fa'},
-  {cn:'铁壁',en:'Breach',role:'先锋',rc:'#3b82f6',id:'5f8d3a7f-467b-97f3-062c-13acf203c006'},
+  {cn:'铁臂',en:'Breach',role:'先锋',rc:'#3b82f6',id:'5f8d3a7f-467b-97f3-062c-13acf203c006'},
   {cn:'斯凯',en:'Skye',role:'先锋',rc:'#3b82f6',id:'6f2a04ca-43e0-be17-7f36-b3908627744d'},
   {cn:'K/O',en:'KAY/O',role:'先锋',rc:'#3b82f6',id:'601dbbe7-43ce-be57-2a40-4abd24953621'},
   {cn:'黑梦',en:'Fade',role:'先锋',rc:'#3b82f6',id:'dade69b4-4f5a-8528-247b-219e5a1facd6'},
