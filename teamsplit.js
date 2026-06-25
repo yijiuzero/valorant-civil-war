@@ -72,7 +72,7 @@ function updateHostControls(isHost, playerCount) {
   var splitBtn = document.getElementById('btnDoSplit');
   if (splitBtn) {
     splitBtn.disabled = playerCount < 2 || !isHost;
-    splitBtn.textContent = isHost ? '开始分队 ??' : '仅房主可开始分队';
+    splitBtn.textContent = isHost ? '开始分队' : '仅房主可开始分队';
   }
   var resetBtn = document.getElementById('btnResetSplit');
   if (resetBtn) resetBtn.disabled = !isHost;
@@ -105,7 +105,7 @@ async function createRoom() {
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
     subscribeToRoom(code);
-    showToast('房间已创建，请输入你的名字 ??', 3000);
+    showToast('房间已创建，请输入你的名字', 3000);
   } catch (e) {
     showToast('创建房间失败: ' + e.message, 3000);
   }
@@ -123,7 +123,7 @@ async function joinRoom() {
     subscribeToRoom(code);
     var autoJoined = await tryAutoJoin(code);
     if (autoJoined) {
-      showToast('欢迎回来！已自动恢复身份 ??', 2000);
+      showToast('欢迎回来！已自动恢复身份', 2000);
     } else {
       showToast('已加入房间，请输入你的名字', 2000);
     }
@@ -137,7 +137,7 @@ async function joinLobby() {
   if (!name) { showToast('请输入你的名字', 2000); return; }
   if (!currentRoomCode) return;
   try {
-    var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name, temp_id: getDeviceId() }).select().single();
+    var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
     if (insertResult.error) throw insertResult.error;
     currentPlayerId = insertResult.data.id;
     localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
@@ -150,14 +150,6 @@ async function joinLobby() {
 }
 
 async function tryAutoJoin(code) {
-  try {
-    var result = await supabase.from('players').select('*').eq('room_code', code).eq('temp_id', getDeviceId()).order('created_at').limit(1);
-    if (result.data && result.data.length > 0) {
-      currentPlayerId = result.data[0].id;
-      localStorage.setItem('ts_player_' + code, currentPlayerId);
-      return true;
-    }
-  } catch (e) {}
   return false;
 }
 
@@ -266,4 +258,5 @@ window.joinRoom = joinRoom;
 window.joinLobby = joinLobby;
 window.doSplit = doSplit;
 window.resetSplit = resetSplit;
-window.leaveRoom = leaveRoom;
+window.leaveRoom = leaveRoom;
+
