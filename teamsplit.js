@@ -1,4 +1,4 @@
-// ========== ÄÚÕ½·Ö¶ÓÄ£¿é ==========
+ï»¿// ========== ÄÚÕ½·Ö¶ÓÄ£¿é ==========
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm';
 const supabase = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
 
