@@ -1,10 +1,10 @@
-﻿﻿<!DOCTYPE html>
+?<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <meta name="color-scheme" content="light dark">
-<title>无畏契约 · 战术转盘·仅限云南瓦搭群使用</title>
+<title>��η��Լ �� ս��ת�̡����������ߴ�Ⱥʹ��</title>
 
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,41 +12,41 @@
 
 <nav class="sidebar">
   <div class="sidebar-logo">
-    <h1>⚡ VALORANT</h1>
-    <span>战术工具集</span>
+    <h1>? VALORANT</h1>
+    <span>ս�����߼�</span>
   </div>
   <ul class="nav-list">
-    <li class="nav-item active" data-module="home"><span class="nav-icon">🏠</span><span>首页</span></li>
-    <li class="nav-item" data-module="wheel"><span class="nav-icon">🎯</span><span>随机选图</span></li>
-    <li class="nav-item" data-module="agent"><span class="nav-icon">🧩</span><span>随机特工</span></li>
-    <li class="nav-item" data-module="stats"><span class="nav-icon">📊</span><span>内战专用</span></li>
-    <li class="nav-item" data-module="teamsplit"><span class="nav-icon">⚔️</span><span>内战分队</span></li>
+    <li class="nav-item active" data-module="home"><span class="nav-icon">??</span><span>��ҳ</span></li>
+    <li class="nav-item" data-module="wheel"><span class="nav-icon">??</span><span>���ѡͼ</span></li>
+    <li class="nav-item" data-module="agent"><span class="nav-icon">??</span><span>����ع�</span></li>
+    <li class="nav-item" data-module="stats"><span class="nav-icon">??</span><span>��սר��</span></li>
+    <li class="nav-item" data-module="teamsplit"><span class="nav-icon">??</span><span>��ս�ֶ�</span></li>
   </ul>
   <div class="sidebar-footer">
-    <div>最终版 V2.1.7 · from zer0</div>
-    <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">问题/需求反馈</a>
+    <div>���հ� V2.1.8 �� from zer0</div>
+    <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">����/������</a>
   </div>
 </nav>
 
 <main id="mainArea">
-  <!-- 首页内容 -->
+  <!-- ��ҳ���� -->
   <div class="content-layer" id="module-home">
-    <div class="module-title">🏠 无畏契约 · 战术工具集</div>
-    <div class="module-sub">专为云南瓦搭群打造 | from zer0</div>
+    <div class="module-title">?? ��η��Լ �� ս�����߼�</div>
+    <div class="module-sub">רΪ�����ߴ�Ⱥ���� | from zer0</div>
     <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:20px;">
-      <div class="home-card" onclick="switchModule('wheel')"><div class="home-card-icon">🎯</div><div class="home-card-title">随机选图</div><div class="home-card-desc">随机抽取地图</div></div>
-      <div class="home-card" onclick="switchModule('agent')"><div class="home-card-icon">🧩</div><div class="home-card-title">随机特工</div><div class="home-card-desc">随机抽取特工</div></div>
-      <div class="home-card" onclick="switchModule('stats')"><div class="home-card-icon">📊</div><div class="home-card-title">内战专用</div><div class="home-card-desc">内战转盘</div></div>
-      <div class="home-card" onclick="switchModule('teamsplit')"><div class="home-card-icon">⚔️</div><div class="home-card-title">内战分队</div><div class="home-card-desc">10人随机分队</div></div>
+      <div class="home-card" onclick="switchModule('wheel')"><div class="home-card-icon">??</div><div class="home-card-title">���ѡͼ</div><div class="home-card-desc">�����ȡ��ͼ</div></div>
+      <div class="home-card" onclick="switchModule('agent')"><div class="home-card-icon">??</div><div class="home-card-title">����ع�</div><div class="home-card-desc">�����ȡ�ع�</div></div>
+      <div class="home-card" onclick="switchModule('stats')"><div class="home-card-icon">??</div><div class="home-card-title">��սר��</div><div class="home-card-desc">��սת��</div></div>
+      <div class="home-card" onclick="switchModule('teamsplit')"><div class="home-card-icon">??</div><div class="home-card-title">��ս�ֶ�</div><div class="home-card-desc">10������ֶ�</div></div>
     </div>
   </div>
 
-  <!-- 随机选图内容 -->
+  <!-- ���ѡͼ���� -->
   <div class="content-layer" id="module-wheel" style="display:none;">
-    <div class="module-title">🎯 随机选图</div>
-    <div class="module-sub">选择数量,点击抽取,随机选取无畏契约地图</div>
+    <div class="module-title">?? ���ѡͼ</div>
+    <div class="module-sub">ѡ������,�����ȡ,���ѡȡ��η��Լ��ͼ</div>
     <div class="map-count">
-      <span>抽取数量:</span>
+      <span>��ȡ����:</span>
       <button class="mc-btn active" data-count="1">1</button>
       <button class="mc-btn" data-count="2">2</button>
       <button class="mc-btn" data-count="3">3</button>
@@ -55,58 +55,58 @@
     </div>
     <div class="ban-status" id="banStatus" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:13px;color:var(--text-dim);justify-content:center;">
       <span id="banCount"></span>
-      <button id="btnResetBan">重置</button>
+      <button id="btnResetBan">����</button>
     </div>
     <div class="map-cards" id="mapCards"></div>
-    <button class="btn-spin" id="btnSpin" onclick="drawMaps()">随机抽取 🎰</button>
+    <button class="btn-spin" id="btnSpin" onclick="drawMaps()">�����ȡ ??</button>
     <div class="map-results" id="mapResults"></div>
   </div>
 
-  <!-- 随机特工内容 -->
+  <!-- ����ع����� -->
   <div class="content-layer" id="module-agent" style="display:none;">
-    <div class="module-title">🧩 随机特工</div>
-    <div class="module-sub">筛选角色,选择数量,点击抽取</div>
+    <div class="module-title">?? ����ع�</div>
+    <div class="module-sub">ɸѡ��ɫ,ѡ������,�����ȡ</div>
     <div class="agent-filters" id="agentFilters">
-      <button class="af-btn active" data-role="all">全部</button>
-      <button class="af-btn" data-role="决斗者">⚔️ 决斗者</button>
-      <button class="af-btn" data-role="先锋">🔍 先锋</button>
-      <button class="af-btn" data-role="控场者">💨 控场者</button>
-      <button class="af-btn" data-role="哨卫">🛡️ 哨卫</button>
+      <button class="af-btn active" data-role="all">ȫ��</button>
+      <button class="af-btn" data-role="������">?? ������</button>
+      <button class="af-btn" data-role="�ȷ�">?? �ȷ�</button>
+      <button class="af-btn" data-role="�س���">?? �س���</button>
+      <button class="af-btn" data-role="����">??? ����</button>
     </div>
     <div class="agent-count">
-      <span>抽取数量:</span>
+      <span>��ȡ����:</span>
       <button class="ac-btn active" data-count="1">1</button>
       <button class="ac-btn" data-count="2">2</button>
       <button class="ac-btn" data-count="3">3</button>
       <button class="ac-btn" data-count="4">4</button>
       <button class="ac-btn" data-count="5">5</button>
-      <button class="ac-mode-btn" id="btnChampionComp">冠军阵容</button>
+      <button class="ac-mode-btn" id="btnChampionComp">�ھ�����</button>
     </div>
     <div class="agent-grid" id="agentGrid"></div>
-    <button class="btn-spin" id="btnAgent" onclick="randomAgent()">随机抽取 🎲</button>
+    <button class="btn-spin" id="btnAgent" onclick="randomAgent()">�����ȡ ??</button>
     <div class="agent-results" id="agentResults"></div>
   </div>
 
   
-  <!-- 内战分队 -->
+  <!-- ��ս�ֶ� -->
   <div class="content-layer" id="module-teamsplit" style="display:none;">
-    <div class="module-title">⚔️ 内战分队</div>
-    <div class="module-sub">创建或加入房间，凑齐 10 人后随机分队</div>
+    <div class="module-title">?? ��ս�ֶ�</div>
+    <div class="module-sub">��������뷿�䣬���� 10 �˺�����ֶ�</div>
     <div class="teamsplit-room" id="teamsplitRoom">
       <div class="teamsplit-create teamsplit-panel" id="teamsplitCreate">
         <div class="teamsplit-panel-head">
           <div>
-            <div class="teamsplit-panel-title">快速开房</div>
-            <div class="teamsplit-panel-sub">先创建自己的房间，或者输入房间码直接加入朋友的房间。</div>
+            <div class="teamsplit-panel-title">���ٿ���</div>
+            <div class="teamsplit-panel-sub">�ȴ����Լ��ķ��䣬�������뷿����ֱ�Ӽ������ѵķ��䡣</div>
           </div>
         </div>
         <div class="teamsplit-create-grid">
-          <button class="btn-spin teamsplit-primary-btn" id="btnCreateRoom" onclick="createRoom()">创建房间</button>
+          <button class="btn-spin teamsplit-primary-btn" id="btnCreateRoom" onclick="createRoom()">��������</button>
           <div class="teamsplit-join-card">
-            <div class="teamsplit-join-label">加入已有房间</div>
+            <div class="teamsplit-join-label">�������з���</div>
             <div class="teamsplit-join-row">
-              <input class="teamsplit-input" id="roomCodeInput" type="text" placeholder="输入 6 位房间码" maxlength="6">
-              <button class="btn-machine teamsplit-inline-btn" onclick="joinRoom()">加入</button>
+              <input class="teamsplit-input" id="roomCodeInput" type="text" placeholder="���� 6 λ������" maxlength="6">
+              <button class="btn-machine teamsplit-inline-btn" onclick="joinRoom()">����</button>
             </div>
           </div>
         </div>
@@ -114,60 +114,60 @@
       <div class="teamsplit-lobby teamsplit-panel" id="teamsplitLobby" style="display:none;">
         <div class="teamsplit-panel-head">
           <div>
-            <div class="teamsplit-panel-title">房间大厅</div>
-            <div class="teamsplit-panel-sub" id="teamsplitHostHint">加入后可查看房主权限</div>
+            <div class="teamsplit-panel-title">�������</div>
+            <div class="teamsplit-panel-sub" id="teamsplitHostHint">�����ɲ鿴����Ȩ��</div>
           </div>
-          <div class="teamsplit-count-badge">已加入 <span id="playerCount">0</span>/10</div>
+          <div class="teamsplit-count-badge">�Ѽ��� <span id="playerCount">0</span>/10</div>
         </div>
-        <div class="teamsplit-room-code">房间码 <span id="roomCodeDisplay">-</span></div>
+        <div class="teamsplit-room-code">������ <span id="roomCodeDisplay">-</span></div>
         <div class="teamsplit-player-list" id="playerList"></div>
         <div class="teamsplit-lobby-controls">
-          <input class="teamsplit-input" id="playerNameInput" type="text" placeholder="输入你的名字" maxlength="12">
-          <button class="btn-machine teamsplit-inline-btn" id="btnJoinLobby" onclick="joinLobby()">加入分队</button>
+          <input class="teamsplit-input" id="playerNameInput" type="text" placeholder="�����������" maxlength="12">
+          <button class="btn-machine teamsplit-inline-btn" id="btnJoinLobby" onclick="joinLobby()">����ֶ�</button>
         </div>
         <div class="teamsplit-action-stack">
-          <button class="btn-spin teamsplit-primary-btn" id="btnDoSplit" onclick="doSplit()" disabled>开始分队 🎲</button>
-          <button class="btn-machine teamsplit-secondary-btn" onclick="leaveRoom()">离开房间</button>
+          <button class="btn-spin teamsplit-primary-btn" id="btnDoSplit" onclick="doSplit()" disabled>��ʼ�ֶ� ??</button>
+          <button class="btn-machine teamsplit-secondary-btn" onclick="leaveRoom()">�뿪����</button>
         </div>
       </div>
       <div class="teamsplit-result teamsplit-panel" id="teamsplitResult" style="display:none;">
         <div class="teamsplit-panel-head teamsplit-result-head">
           <div>
-            <div class="teamsplit-panel-title">分队结果</div>
-            <div class="teamsplit-panel-sub">本轮名单已经生成，可以直接开打或重新分队。</div>
+            <div class="teamsplit-panel-title">�ֶӽ��</div>
+            <div class="teamsplit-panel-sub">���������Ѿ����ɣ�����ֱ�ӿ�������·ֶӡ�</div>
           </div>
         </div>
         <div class="teamsplit-teams">
           <div class="teamsplit-team">
-            <div class="teamsplit-team-header team-a">🔴 A队</div>
+            <div class="teamsplit-team-header team-a">?? A��</div>
             <div class="teamsplit-team-players" id="teamAPlayers"></div>
           </div>
           <div class="teamsplit-vs">VS</div>
           <div class="teamsplit-team">
-            <div class="teamsplit-team-header team-b">🔵 B队</div>
+            <div class="teamsplit-team-header team-b">?? B��</div>
             <div class="teamsplit-team-players" id="teamBPlayers"></div>
           </div>
         </div>
         <div class="teamsplit-action-row">
-          <button class="btn-machine" id="btnResetSplit" onclick="resetSplit()">重新分队</button>
-          <button class="btn-machine teamsplit-secondary-btn" onclick="leaveRoom()">离开房间</button>
+          <button class="btn-machine" id="btnResetSplit" onclick="resetSplit()">���·ֶ�</button>
+          <button class="btn-machine teamsplit-secondary-btn" onclick="leaveRoom()">�뿪����</button>
         </div>
       </div>
     </div>
   </div>
-  <!-- 内战专用 - 转盘 -->
+  <!-- ��սר�� - ת�� -->
   <div class="content-layer" id="module-stats" style="display:none;">
-    <div class="module-title">📊 内战专用</div>
-    <div class="module-sub">内战转盘 · 随机抽取挑战规则</div>
+    <div class="module-title">?? ��սר��</div>
+    <div class="module-sub">��սת�� �� �����ȡ��ս����</div>
     <div class="challenge-machine">
       <div class="machine-deco"><span class="machine-dot"></span><span class="machine-dot"></span><span class="machine-dot"></span></div>
       <div class="machine-frame">
         <div class="machine-label">RANDOM CHALLENGE</div>
         <div class="machine-display">
-          <div class="machine-text idle" id="challengeText">点击下方按钮 抽取挑战规则</div>
+          <div class="machine-text idle" id="challengeText">����·���ť ��ȡ��ս����</div>
         </div>
         <div class="machine-controls">
-          <button class="btn-machine" id="btnChallengeSpin" onclick="spinChallenge()">随机抽取</button>
+          <button class="btn-machine" id="btnChallengeSpin" onclick="spinChallenge()">�����ȡ</button>
         </div>
       </div>
       <div class="challenge-count" id="challengeCount"></div>
@@ -175,7 +175,7 @@
     </div>
   </div>
 </main>
-<button id="themeToggle" aria-label="切换主题" title="切换主题" style="position:fixed;right:16px;top:16px;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;z-index:120;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:transform .15s;">🌙</button>
+<button id="themeToggle" aria-label="�л�����" title="�л�����" style="position:fixed;right:16px;top:16px;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;z-index:120;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:transform .15s;">??</button>
 <div id="globalToast"></div>
 
   <script src="app-data.js"></script>
@@ -183,16 +183,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-    <div>最终版 V2.1.8 · from zer0</div>
