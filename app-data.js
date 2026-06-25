@@ -10,6 +10,8 @@
   {cn:'莲华古城',en:'Lotus',roleColor:'#8aac50',img:'https://media.valorant-api.com/maps/2fe4ed3a-450a-948b-6d6b-e89a78e680a9/splash.png'},
   {cn:'日落之城',en:'Sunset',roleColor:'#d4785c',img:'https://media.valorant-api.com/maps/92584fbe-486a-b1b2-9faa-39b0f486b498/splash.png'},
   {cn:'幽邃地窟',en:'Abyss',roleColor:'#a87cc8',img:'https://media.valorant-api.com/maps/224b0a95-48b9-f703-1bd8-67aca101a61f/splash.png'},
+  {cn:'盐海矿镇',en:'District',roleColor:'#c49a5c',img:'https://media.valorant-api.com/maps/690b3ed2-4dff-945b-8223-6da834e30d24/splash.png'},
+  {cn:'天枢云阙',en:'Kasbah',roleColor:'#8b6f9e',img:'https://media.valorant-api.com/maps/12452a9d-48c3-0b02-e7eb-0381c3520404/splash.png'},
 ];
 
 const agents = [
