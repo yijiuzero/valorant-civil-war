@@ -1,4 +1,4 @@
-ï»¿// ========== ÄÚÕ½·Ö¶ÓÄ£¿é ==========
+// ========== å†…æˆ˜åˆ†é˜Ÿæ¨¡å— ==========
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm';
 const supabase = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
 
@@ -54,7 +54,7 @@ function updatePlayerList(players) {
   count.textContent = players.length;
   list.innerHTML = players.map(function(p) {
     var cls = p.id === currentPlayerId ? ' self' : '';
-    var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">·¿Ö÷</span>' : '';
+    var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">æˆ¿ä¸»</span>' : '';
     return '<div class="teamsplit-player-chip' + cls + '">' + escapeHtml(p.name) + hostBadge + '</div>';
   }).join('');
   updateHostControls(isHost, currentPlayers.length);
@@ -72,14 +72,14 @@ function updateHostControls(isHost, playerCount) {
   var splitBtn = document.getElementById('btnDoSplit');
   if (splitBtn) {
     splitBtn.disabled = playerCount < 2 || !isHost;
-    splitBtn.textContent = isHost ? '¿ªÊ¼·Ö¶Ó ??' : '½ö·¿Ö÷¿É¿ªÊ¼·Ö¶Ó';
+    splitBtn.textContent = isHost ? 'å¼€å§‹åˆ†é˜Ÿ ??' : 'ä»…æˆ¿ä¸»å¯å¼€å§‹åˆ†é˜Ÿ';
   }
   var resetBtn = document.getElementById('btnResetSplit');
   if (resetBtn) resetBtn.disabled = !isHost;
   var hostHint = document.getElementById('teamsplitHostHint');
   if (hostHint) {
-    if (!currentPlayerId) hostHint.textContent = '¼ÓÈëºó¿É²é¿´·¿Ö÷È¨ÏŞ';
-    else hostHint.textContent = isHost ? 'ÄãÊÇ·¿Ö÷£¬¿ÉÒÔ¿ªÊ¼»òÖØĞÂ·Ö¶Ó' : '½ö·¿Ö÷¿ÉÒÔ¿ªÊ¼»òÖØĞÂ·Ö¶Ó';
+    if (!currentPlayerId) hostHint.textContent = 'åŠ å…¥åå¯æŸ¥çœ‹æˆ¿ä¸»æƒé™';
+    else hostHint.textContent = isHost ? 'ä½ æ˜¯æˆ¿ä¸»ï¼Œå¯ä»¥å¼€å§‹æˆ–é‡æ–°åˆ†é˜Ÿ' : 'ä»…æˆ¿ä¸»å¯ä»¥å¼€å§‹æˆ–é‡æ–°åˆ†é˜Ÿ';
   }
 }
 
@@ -105,36 +105,36 @@ async function createRoom() {
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
     subscribeToRoom(code);
-    showToast('·¿¼äÒÑ´´½¨£¬ÇëÊäÈëÄãµÄÃû×Ö ??', 3000);
+    showToast('æˆ¿é—´å·²åˆ›å»ºï¼Œè¯·è¾“å…¥ä½ çš„åå­— ??', 3000);
   } catch (e) {
-    showToast('´´½¨·¿¼äÊ§°Ü: ' + e.message, 3000);
+    showToast('åˆ›å»ºæˆ¿é—´å¤±è´¥: ' + e.message, 3000);
   }
 }
 
 async function joinRoom() {
   var code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-  if (!code) { showToast('ÇëÊäÈë·¿¼äÂë', 2000); return; }
+  if (!code) { showToast('è¯·è¾“å…¥æˆ¿é—´ç ', 2000); return; }
   try {
     var result = await supabase.from('rooms').select('*').eq('code', code).eq('status', 'waiting').single();
-    if (result.error || !result.data) throw new Error('·¿¼ä²»´æÔÚ»òÒÑ¿ªÊ¼');
+    if (result.error || !result.data) throw new Error('æˆ¿é—´ä¸å­˜åœ¨æˆ–å·²å¼€å§‹');
     currentRoomCode = code;
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
     subscribeToRoom(code);
     var autoJoined = await tryAutoJoin(code);
     if (autoJoined) {
-      showToast('»¶Ó­»ØÀ´£¡ÒÑ×Ô¶¯»Ö¸´Éí·İ ??', 2000);
+      showToast('æ¬¢è¿å›æ¥ï¼å·²è‡ªåŠ¨æ¢å¤èº«ä»½ ??', 2000);
     } else {
-      showToast('ÒÑ¼ÓÈë·¿¼ä£¬ÇëÊäÈëÄãµÄÃû×Ö', 2000);
+      showToast('å·²åŠ å…¥æˆ¿é—´ï¼Œè¯·è¾“å…¥ä½ çš„åå­—', 2000);
     }
   } catch (e) {
-    showToast('¼ÓÈë·¿¼äÊ§°Ü: ' + e.message, 3000);
+    showToast('åŠ å…¥æˆ¿é—´å¤±è´¥: ' + e.message, 3000);
   }
 }
 
 async function joinLobby() {
   var name = document.getElementById('playerNameInput').value.trim();
-  if (!name) { showToast('ÇëÊäÈëÄãµÄÃû×Ö', 2000); return; }
+  if (!name) { showToast('è¯·è¾“å…¥ä½ çš„åå­—', 2000); return; }
   if (!currentRoomCode) return;
   try {
     var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name, temp_id: getDeviceId() }).select().single();
@@ -142,10 +142,10 @@ async function joinLobby() {
     currentPlayerId = insertResult.data.id;
     localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
     document.getElementById('playerNameInput').value = '';
-    showToast('ÒÑ¼ÓÈë·Ö¶Ó', 2000);
+    showToast('å·²åŠ å…¥åˆ†é˜Ÿ', 2000);
     refreshPlayers();
   } catch (e) {
-    showToast('¼ÓÈëÊ§°Ü: ' + e.message, 3000);
+    showToast('åŠ å…¥å¤±è´¥: ' + e.message, 3000);
   }
 }
 
@@ -183,9 +183,9 @@ async function doSplit() {
   try {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
     var players = result.data;
-    if (!players || players.length < 2) { showToast('ÖÁÉÙĞèÒª2ÈË', 2000); return; }
+    if (!players || players.length < 2) { showToast('è‡³å°‘éœ€è¦2äºº', 2000); return; }
     currentPlayers = players;
-    if (!isCurrentUserHost(players)) { showToast('Ö»ÓĞ·¿Ö÷¿ÉÒÔ¿ªÊ¼·Ö¶Ó', 2000); return; }
+    if (!isCurrentUserHost(players)) { showToast('åªæœ‰æˆ¿ä¸»å¯ä»¥å¼€å§‹åˆ†é˜Ÿ', 2000); return; }
     var shuffled = players.slice().sort(function() { return Math.random() - 0.5; });
     var half = Math.ceil(shuffled.length / 2);
     var teamA = shuffled.slice(0, half);
@@ -195,7 +195,7 @@ async function doSplit() {
     showTeamsplitView('result');
     await supabase.from('rooms').update({ status: 'done' }).eq('code', currentRoomCode);
   } catch (e) {
-    showToast('·Ö¶ÓÊ§°Ü: ' + e.message, 3000);
+    showToast('åˆ†é˜Ÿå¤±è´¥: ' + e.message, 3000);
   }
 }
 
@@ -205,12 +205,12 @@ async function resetSplit() {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
     var players = result.data || [];
     currentPlayers = players;
-    if (!isCurrentUserHost(players)) { showToast('Ö»ÓĞ·¿Ö÷¿ÉÒÔÖØĞÂ·Ö¶Ó', 2000); return; }
+    if (!isCurrentUserHost(players)) { showToast('åªæœ‰æˆ¿ä¸»å¯ä»¥é‡æ–°åˆ†é˜Ÿ', 2000); return; }
     await supabase.from('rooms').update({ status: 'waiting' }).eq('code', currentRoomCode);
     showTeamsplitView('lobby');
     updatePlayerList(players);
   } catch (e) {
-    showToast('ÖØĞÂ·Ö¶ÓÊ§°Ü: ' + e.message, 3000);
+    showToast('é‡æ–°åˆ†é˜Ÿå¤±è´¥: ' + e.message, 3000);
   }
 }
 
@@ -231,7 +231,7 @@ async function leaveRoom() {
   var pi = document.getElementById('playerNameInput');
   if (pi) pi.value = '';
   showTeamsplitView('create');
-  showToast('ÒÑÀë¿ª·¿¼ä', 2000);
+  showToast('å·²ç¦»å¼€æˆ¿é—´', 2000);
 }
 
 async function initTeamSplitView() {
@@ -266,4 +266,4 @@ window.joinRoom = joinRoom;
 window.joinLobby = joinLobby;
 window.doSplit = doSplit;
 window.resetSplit = resetSplit;
-window.leaveRoom = leaveRoom;
+window.leaveRoom = leaveRoom;
