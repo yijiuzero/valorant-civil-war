@@ -1,4 +1,4 @@
-ï»¿// ========== å†…æˆ˜åˆ†é˜Ÿæ¨¡å— ==========
+// ========== ÄÚÕ½·Ö¶ÓÄ£¿é ==========
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm';
 const supabase = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
 
@@ -7,6 +7,17 @@ let currentPlayerId = null;
 let roomSubscription = null;
 let isLeaving = false;
 let currentPlayers = [];
+let deviceId = null;
+
+function getDeviceId() {
+  if (deviceId) return deviceId;
+  deviceId = localStorage.getItem('ts_device_id');
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem('ts_device_id', deviceId);
+  }
+  return deviceId;
+}
 
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -43,7 +54,7 @@ function updatePlayerList(players) {
   count.textContent = players.length;
   list.innerHTML = players.map(function(p) {
     var cls = p.id === currentPlayerId ? ' self' : '';
-    var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">æˆ¿ä¸»</span>' : '';
+    var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">·¿Ö÷</span>' : '';
     return '<div class="teamsplit-player-chip' + cls + '">' + escapeHtml(p.name) + hostBadge + '</div>';
   }).join('');
   updateHostControls(isHost, currentPlayers.length);
@@ -61,14 +72,14 @@ function updateHostControls(isHost, playerCount) {
   var splitBtn = document.getElementById('btnDoSplit');
   if (splitBtn) {
     splitBtn.disabled = playerCount < 2 || !isHost;
-    splitBtn.textContent = isHost ? 'å¼€å§‹åˆ†é˜Ÿ ğŸ²' : 'ä»…æˆ¿ä¸»å¯å¼€å§‹åˆ†é˜Ÿ';
+    splitBtn.textContent = isHost ? '¿ªÊ¼·Ö¶Ó ??' : '½ö·¿Ö÷¿É¿ªÊ¼·Ö¶Ó';
   }
   var resetBtn = document.getElementById('btnResetSplit');
   if (resetBtn) resetBtn.disabled = !isHost;
   var hostHint = document.getElementById('teamsplitHostHint');
   if (hostHint) {
-    if (!currentPlayerId) hostHint.textContent = 'åŠ å…¥åå¯æŸ¥çœ‹æˆ¿ä¸»æƒé™';
-    else hostHint.textContent = isHost ? 'ä½ æ˜¯æˆ¿ä¸»ï¼Œå¯ä»¥å¼€å§‹æˆ–é‡æ–°åˆ†é˜Ÿ' : 'ä»…æˆ¿ä¸»å¯ä»¥å¼€å§‹æˆ–é‡æ–°åˆ†é˜Ÿ';
+    if (!currentPlayerId) hostHint.textContent = '¼ÓÈëºó¿É²é¿´·¿Ö÷È¨ÏŞ';
+    else hostHint.textContent = isHost ? 'ÄãÊÇ·¿Ö÷£¬¿ÉÒÔ¿ªÊ¼»òÖØĞÂ·Ö¶Ó' : '½ö·¿Ö÷¿ÉÒÔ¿ªÊ¼»òÖØĞÂ·Ö¶Ó';
   }
 }
 
@@ -94,43 +105,60 @@ async function createRoom() {
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
     subscribeToRoom(code);
-    showToast('æˆ¿é—´å·²åˆ›å»ºï¼Œè¯·è¾“å…¥ä½ çš„åå­— ğŸ‘‡', 3000);
+    showToast('·¿¼äÒÑ´´½¨£¬ÇëÊäÈëÄãµÄÃû×Ö ??', 3000);
   } catch (e) {
-    showToast('åˆ›å»ºæˆ¿é—´å¤±è´¥: ' + e.message, 3000);
+    showToast('´´½¨·¿¼äÊ§°Ü: ' + e.message, 3000);
   }
 }
 
 async function joinRoom() {
   var code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-  if (!code) { showToast('è¯·è¾“å…¥æˆ¿é—´ç ', 2000); return; }
+  if (!code) { showToast('ÇëÊäÈë·¿¼äÂë', 2000); return; }
   try {
     var result = await supabase.from('rooms').select('*').eq('code', code).eq('status', 'waiting').single();
-    if (result.error || !result.data) throw new Error('æˆ¿é—´ä¸å­˜åœ¨æˆ–å·²å¼€å§‹');
+    if (result.error || !result.data) throw new Error('·¿¼ä²»´æÔÚ»òÒÑ¿ªÊ¼');
     currentRoomCode = code;
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
     subscribeToRoom(code);
-    showToast('å·²åŠ å…¥æˆ¿é—´ï¼Œè¯·è¾“å…¥ä½ çš„åå­—', 2000);
+    var autoJoined = await tryAutoJoin(code);
+    if (autoJoined) {
+      showToast('»¶Ó­»ØÀ´£¡ÒÑ×Ô¶¯»Ö¸´Éí·İ ??', 2000);
+    } else {
+      showToast('ÒÑ¼ÓÈë·¿¼ä£¬ÇëÊäÈëÄãµÄÃû×Ö', 2000);
+    }
   } catch (e) {
-    showToast('åŠ å…¥æˆ¿é—´å¤±è´¥: ' + e.message, 3000);
+    showToast('¼ÓÈë·¿¼äÊ§°Ü: ' + e.message, 3000);
   }
 }
 
 async function joinLobby() {
   var name = document.getElementById('playerNameInput').value.trim();
-  if (!name) { showToast('è¯·è¾“å…¥ä½ çš„åå­—', 2000); return; }
+  if (!name) { showToast('ÇëÊäÈëÄãµÄÃû×Ö', 2000); return; }
   if (!currentRoomCode) return;
   try {
-    var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
+    var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name, temp_id: getDeviceId() }).select().single();
     if (insertResult.error) throw insertResult.error;
     currentPlayerId = insertResult.data.id;
     localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
     document.getElementById('playerNameInput').value = '';
-    showToast('å·²åŠ å…¥åˆ†é˜Ÿ', 2000);
+    showToast('ÒÑ¼ÓÈë·Ö¶Ó', 2000);
     refreshPlayers();
   } catch (e) {
-    showToast('åŠ å…¥å¤±è´¥: ' + e.message, 3000);
+    showToast('¼ÓÈëÊ§°Ü: ' + e.message, 3000);
   }
+}
+
+async function tryAutoJoin(code) {
+  try {
+    var result = await supabase.from('players').select('*').eq('room_code', code).eq('temp_id', getDeviceId()).order('created_at').limit(1);
+    if (result.data && result.data.length > 0) {
+      currentPlayerId = result.data[0].id;
+      localStorage.setItem('ts_player_' + code, currentPlayerId);
+      return true;
+    }
+  } catch (e) {}
+  return false;
 }
 
 function subscribeToRoom(code) {
@@ -155,9 +183,9 @@ async function doSplit() {
   try {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
     var players = result.data;
-    if (!players || players.length < 2) { showToast('è‡³å°‘éœ€è¦2äºº', 2000); return; }
+    if (!players || players.length < 2) { showToast('ÖÁÉÙĞèÒª2ÈË', 2000); return; }
     currentPlayers = players;
-    if (!isCurrentUserHost(players)) { showToast('åªæœ‰æˆ¿ä¸»å¯ä»¥å¼€å§‹åˆ†é˜Ÿ', 2000); return; }
+    if (!isCurrentUserHost(players)) { showToast('Ö»ÓĞ·¿Ö÷¿ÉÒÔ¿ªÊ¼·Ö¶Ó', 2000); return; }
     var shuffled = players.slice().sort(function() { return Math.random() - 0.5; });
     var half = Math.ceil(shuffled.length / 2);
     var teamA = shuffled.slice(0, half);
@@ -167,7 +195,7 @@ async function doSplit() {
     showTeamsplitView('result');
     await supabase.from('rooms').update({ status: 'done' }).eq('code', currentRoomCode);
   } catch (e) {
-    showToast('åˆ†é˜Ÿå¤±è´¥: ' + e.message, 3000);
+    showToast('·Ö¶ÓÊ§°Ü: ' + e.message, 3000);
   }
 }
 
@@ -177,12 +205,12 @@ async function resetSplit() {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
     var players = result.data || [];
     currentPlayers = players;
-    if (!isCurrentUserHost(players)) { showToast('åªæœ‰æˆ¿ä¸»å¯ä»¥é‡æ–°åˆ†é˜Ÿ', 2000); return; }
+    if (!isCurrentUserHost(players)) { showToast('Ö»ÓĞ·¿Ö÷¿ÉÒÔÖØĞÂ·Ö¶Ó', 2000); return; }
     await supabase.from('rooms').update({ status: 'waiting' }).eq('code', currentRoomCode);
     showTeamsplitView('lobby');
     updatePlayerList(players);
   } catch (e) {
-    showToast('é‡æ–°åˆ†é˜Ÿå¤±è´¥: ' + e.message, 3000);
+    showToast('ÖØĞÂ·Ö¶ÓÊ§°Ü: ' + e.message, 3000);
   }
 }
 
@@ -203,7 +231,7 @@ async function leaveRoom() {
   var pi = document.getElementById('playerNameInput');
   if (pi) pi.value = '';
   showTeamsplitView('create');
-  showToast('å·²ç¦»å¼€æˆ¿é—´', 2000);
+  showToast('ÒÑÀë¿ª·¿¼ä', 2000);
 }
 
 async function initTeamSplitView() {
@@ -217,9 +245,13 @@ async function initTeamSplitView() {
   if (pi) pi.value = '';
   if (currentRoomCode) {
     showTeamsplitView('lobby');
-    await refreshPlayers();
-    subscribeToRoom(currentRoomCode);
-    return;
+    var autoJoined = await tryAutoJoin(currentRoomCode);
+    if (autoJoined) {
+      await refreshPlayers();
+      subscribeToRoom(currentRoomCode);
+      return;
+    }
+    currentRoomCode = null;
   }
   if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
   currentRoomCode = null;
@@ -235,6 +267,3 @@ window.joinLobby = joinLobby;
 window.doSplit = doSplit;
 window.resetSplit = resetSplit;
 window.leaveRoom = leaveRoom;
-
-
-
