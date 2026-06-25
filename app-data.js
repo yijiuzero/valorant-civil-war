@@ -30,7 +30,7 @@ const agents = [
   {cn:'钢锁',en:'Deadlock',role:'哨卫',rc:'#f59e0b',id:'cc8b64c8-4b25-4ff9-6e7f-37b4da43d235'},
   {cn:'维斯',en:'Vyse',role:'哨卫',rc:'#f59e0b',id:'efba5359-4016-a1e5-7626-b1ae76895940'},
   {cn:'禁灭',en:'Veto',role:'哨卫',rc:'#f59e0b',id:'92eeef5d-43b5-1d4a-8d03-b3927a09034b'},
-  {cn:'炼狱',en:'Brimstone',role:'先锋',rc:'#3b82f6',id:'9f0d8ba9-4140-b941-57d3-a7ad57c6b417'},
+  {cn:'炼狱',en:'Brimstone',role:'控场者',rc:'#22c55e',id:'9f0d8ba9-4140-b941-57d3-a7ad57c6b417'},
   {cn:'蝰蛇',en:'Viper',role:'控场者',rc:'#22c55e',id:'707eab51-4836-f488-046a-cda6bf494859'},
   {cn:'幽影',en:'Omen',role:'控场者',rc:'#22c55e',id:'8e253930-4c05-31dd-1b6c-968525494517'},
   {cn:'星礈',en:'Astra',role:'控场者',rc:'#22c55e',id:'41fb69c1-4189-7b37-f117-bcaf1e96f1bf'},
