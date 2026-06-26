@@ -57,7 +57,6 @@ function updatePlayerList(players) {
   list.innerHTML = players.map(function(p) {
     var cls = p.id === currentPlayerId ? ' self' : '';
     var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">房主</span>' : '';
-    var pk = p.id;
     var pRank = p.rank || 0;
     var rankIcon = pRank ? '<img class="teamsplit-rank-icon" src="' + getRankIcon(pRank) + '" alt="' + getRankName(pRank) + '" title="' + getRankName(pRank) + '" loading="lazy">' : '';
     var kickBtn = '';
@@ -96,10 +95,9 @@ function getRankName(rank) {
 }
 
 function getRankIcon(rank) {
-  // current season uuid: 564d8e28-c226-3180-6285-e48a390db8b1
-  // rank 1(黑铁)=tier 3, rank 2(青铜)=tier 6 ... rank 9(赋能)=tier 27
+  var seasonUuid = window.VALORANT_SEASON_UUID || '564d8e28-c226-3180-6285-e48a390db8b1';
   var t = rank * 3;
-  return 'https://media.valorant-api.com/competitivetiers/564d8e28-c226-3180-6285-e48a390db8b1/' + t + '/smallicon.png';
+  return 'https://media.valorant-api.com/competitivetiers/' + seasonUuid + '/' + t + '/smallicon.png';
 }
 
 function isCurrentUserHost(players) {
@@ -145,7 +143,6 @@ async function cleanupOldRooms() {
 async function createRoom() {
   var code = generateRoomCode();
   try {
-    await cleanupOldRooms();
     var result = await supabase.from('rooms').insert({ code: code, status: 'waiting' }).select().single();
     if (result.error) throw result.error;
     currentRoomCode = code;
@@ -168,7 +165,6 @@ async function joinRoom() {
   var code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
   if (!code) { showToast('请输入房间码', 2000); return; }
   try {
-    await cleanupOldRooms();
     var result = await supabase.from('rooms').select('*').eq('code', code).eq('status', 'waiting').single();
     if (result.error || !result.data) throw new Error('房间不存在或已开始');
     currentRoomCode = code;
@@ -198,6 +194,8 @@ async function joinLobby() {
   var rankSel = document.getElementById('playerRankSelect');
   var rank = rankSel ? rankSel.value : '';
   if (!rank) { showToast('请选择你的段位', 2000); return; }
+  rank = parseInt(rank);
+  if (rank < 1 || rank > 9) { showToast('段位无效', 2000); return; }
   try {
     // 检查同一房间内是否有同名玩家（排除自己之前的旧记录）
     var savedId = localStorage.getItem('ts_player_' + currentRoomCode);
@@ -208,7 +206,7 @@ async function joinLobby() {
       showToast('名字「' + dupResult.data[0].name + '」已被使用，换一个吧', 3000);
       return;
     }
-    var insertData = { room_code: currentRoomCode, name: name, rank: parseInt(rank) };
+    var insertData = { room_code: currentRoomCode, name: name, rank: rank };
     var insertResult = await supabase.from('players').insert(insertData).select().single();
     if (insertResult.error) throw insertResult.error;
     currentPlayerId = insertResult.data.id;
@@ -218,7 +216,6 @@ async function joinLobby() {
     document.getElementById('playerNameInput').value = '';
     if (rankSel) rankSel.value = '';
     showToast('已加入分队', 2000);
-    refreshPlayers();
   } catch (e) {
     showToast('加入失败: ' + e.message, 3000);
   }
@@ -266,7 +263,7 @@ async function handlePlayersChanged() {
     var players = result.data || [];
     updatePlayerList(players);
     // 检测自己是否被踢——自己的 player ID 不在列表里了
-    var stillHere = players.some(function(p) { return p.id == currentPlayerId; });
+    var stillHere = players.some(function(p) { return p.id === currentPlayerId; });
     if (!stillHere) {
       showToast('你已被房主移出房间', 3000);
       if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
@@ -281,13 +278,10 @@ async function handlePlayersChanged() {
 async function doSplit() {
   if (!currentRoomCode) return;
   try {
-    var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
-    var players = result.data;
-    if (!players || players.length < 2) { showToast('至少需要2人', 2000); return; }
-    currentPlayers = players;
-    if (!isCurrentUserHost(players)) { showToast('只有房主可以开始分队', 2000); return; }
+    if (!currentPlayers || currentPlayers.length < 2) { showToast('至少需要2人', 2000); return; }
+    if (!isCurrentUserHost(currentPlayers)) { showToast('只有房主可以开始分队', 2000); return; }
     // 按段位平衡分队
-    var ranked = players.slice().sort(function(a, b) { return (b.rank || 0) - (a.rank || 0); });
+    var ranked = currentPlayers.slice().sort(function(a, b) { return (b.rank || 0) - (a.rank || 0); });
     var teamA = [], teamB = [];
     var sumA = 0, sumB = 0;
     for (var i = 0; i < ranked.length; i++) {
@@ -303,6 +297,7 @@ async function doSplit() {
     document.getElementById('teamAPlayers').innerHTML = teamA.map(teamRow).join('');
     document.getElementById('teamBPlayers').innerHTML = teamB.map(teamRow).join('');
     showTeamsplitView('result');
+    localStorage.setItem('ts_last_result', JSON.stringify({ roomCode: currentRoomCode, teamA: teamA, teamB: teamB }));
     await supabase.from('rooms').update({ status: 'done' }).eq('code', currentRoomCode);
   } catch (e) {
     showToast('分队失败: ' + e.message, 3000);
@@ -312,9 +307,7 @@ async function doSplit() {
 async function resetSplit() {
   if (!currentRoomCode) return;
   try {
-    var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
-    var players = result.data || [];
-    currentPlayers = players;
+    var players = currentPlayers;
     if (!isCurrentUserHost(players)) { showToast('只有房主可以重新分队', 2000); return; }
     await supabase.from('rooms').update({ status: 'waiting' }).eq('code', currentRoomCode);
     showTeamsplitView('lobby');
@@ -383,6 +376,26 @@ async function initTeamSplitView() {
     }
     currentRoomCode = null;
   }
+  // 恢复上次分队结果（刷新页面后）
+  var lastResult = localStorage.getItem('ts_last_result');
+  if (lastResult) {
+    try {
+      var parsed = JSON.parse(lastResult);
+      if (parsed.roomCode && parsed.teamA && parsed.teamB) {
+        currentRoomCode = parsed.roomCode;
+        function teamRow(p) {
+          var pr = p.rank || 0;
+          return '<div class="teamsplit-player-row">' + escapeHtml(p.name) + (pr ? '<span class="teamsplit-rank-tag">' + getRankName(pr) + '</span>' : '') + '</div>';
+        }
+        document.getElementById('teamAPlayers').innerHTML = parsed.teamA.map(teamRow).join('');
+        document.getElementById('teamBPlayers').innerHTML = parsed.teamB.map(teamRow).join('');
+        showTeamsplitView('result');
+        localStorage.removeItem('ts_last_result');
+        return;
+      }
+    } catch (e) {}
+    localStorage.removeItem('ts_last_result');
+  }
   if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
   currentRoomCode = null;
   currentPlayerId = null;
@@ -407,4 +420,3 @@ window.joinLobby = joinLobby;
 window.doSplit = doSplit;
 window.resetSplit = resetSplit;
 window.leaveRoom = leaveRoom;
-
