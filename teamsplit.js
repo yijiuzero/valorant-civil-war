@@ -7,6 +7,7 @@ let currentPlayerId = null;
 let roomSubscription = null;
 let isLeaving = false;
 let currentPlayers = [];
+let rankMap = {};
 let deviceId = null;
 let hostDeviceId = null;
 
@@ -56,7 +57,9 @@ function updatePlayerList(players) {
   list.innerHTML = players.map(function(p) {
     var cls = p.id === currentPlayerId ? ' self' : '';
     var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">房主</span>' : '';
-    var rankIcon = p.rank ? '<img class="teamsplit-rank-icon" src="' + getRankIcon(p.rank) + '" alt="' + getRankName(p.rank) + '" title="' + getRankName(p.rank) + '" loading="lazy">' : '';
+    var pk = p.id;
+    var pRank = p.rank || rankMap[pk] || 0;
+    var rankIcon = pRank ? '<img class="teamsplit-rank-icon" src="' + getRankIcon(pRank) + '" alt="' + getRankName(pRank) + '" title="' + getRankName(pRank) + '" loading="lazy">' : '';
     var kickBtn = '';
     if (isHost && p.id !== currentPlayerId) {
       kickBtn = '<button class="teamsplit-kick-btn" data-pid="' + p.id + '" title="踢出玩家">&times;</button>';
@@ -231,6 +234,7 @@ async function joinLobby() {
     localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
     localStorage.setItem('ts_player_name', name);
     localStorage.setItem('ts_player_rank', rank);
+    rankMap[currentPlayerId] = parseInt(rank);
     document.getElementById('playerNameInput').value = '';
     if (rankSel) rankSel.value = '';
     showToast('已加入分队', 2000);
@@ -250,6 +254,8 @@ async function tryAutoJoin(code) {
       return false;
     }
     currentPlayerId = savedId;
+    var savedRank = localStorage.getItem('ts_player_rank');
+    if (savedRank && result.data) rankMap[savedId] = parseInt(savedRank);
     return true;
   } catch (e) {
     return false;
@@ -300,18 +306,22 @@ async function doSplit() {
     if (!players || players.length < 2) { showToast('至少需要2人', 2000); return; }
     currentPlayers = players;
     if (!isCurrentUserHost(players)) { showToast('只有房主可以开始分队', 2000); return; }
-    // 按段位平衡分队
-    var ranked = players.slice().sort(function(a, b) { return (b.rank || 0) - (a.rank || 0); });
+    // 按段位平衡分队（从 rankMap 回退）
+    var ranked = players.slice().sort(function(a, b) { return (b.rank || rankMap[b.id] || 0) - (a.rank || rankMap[a.id] || 0); });
     var teamA = [], teamB = [];
     var sumA = 0, sumB = 0;
     for (var i = 0; i < ranked.length; i++) {
       var p = ranked[i];
-      var r = p.rank || 0;
+      var r = p.rank || rankMap[p.id] || 0;
       if (sumA <= sumB) { teamA.push(p); sumA += r; }
       else { teamB.push(p); sumB += r; }
     }
-    document.getElementById('teamAPlayers').innerHTML = teamA.map(function(p) { return '<div class="teamsplit-player-row">' + escapeHtml(p.name) + (p.rank ? '<span class="teamsplit-rank-tag">' + getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('');
-    document.getElementById('teamBPlayers').innerHTML = teamB.map(function(p) { return '<div class="teamsplit-player-row">' + escapeHtml(p.name) + (p.rank ? '<span class="teamsplit-rank-tag">' + getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('');
+    function teamRow(p) {
+      var pr = p.rank || rankMap[p.id] || 0;
+      return '<div class="teamsplit-player-row">' + escapeHtml(p.name) + (pr ? '<span class="teamsplit-rank-tag">' + getRankName(pr) + '</span>' : '') + '</div>';
+    }
+    document.getElementById('teamAPlayers').innerHTML = teamA.map(teamRow).join('');
+    document.getElementById('teamBPlayers').innerHTML = teamB.map(teamRow).join('');
     showTeamsplitView('result');
     await supabase.from('rooms').update({ status: 'done' }).eq('code', currentRoomCode);
   } catch (e) {
