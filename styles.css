@@ -525,6 +525,33 @@ main::after{
   font-weight:800;
   line-height:1;
 }
+.teamsplit-kick-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  margin-left:2px;
+  padding:0;
+  border:none;
+  border-radius:50%;
+  background:rgba(255,70,85,.15);
+  color:var(--accent);
+  font-size:16px;
+  font-weight:700;
+  line-height:1;
+  cursor:pointer;
+  transition:all .15s;
+  font-family:inherit;
+}
+.teamsplit-kick-btn:hover{
+  background:var(--accent);
+  color:#fff;
+  transform:scale(1.15);
+}
+.teamsplit-kick-btn:active{
+  transform:scale(.95);
+}
 .teamsplit-lobby-controls{
   margin-top:16px;
 }

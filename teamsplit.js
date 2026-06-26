@@ -55,8 +55,29 @@ function updatePlayerList(players) {
   list.innerHTML = players.map(function(p) {
     var cls = p.id === currentPlayerId ? ' self' : '';
     var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">房主</span>' : '';
-    return '<div class="teamsplit-player-chip' + cls + '">' + escapeHtml(p.name) + hostBadge + '</div>';
+    var kickBtn = '';
+    if (isHost && p.id !== currentPlayerId && p.id !== hostId) {
+      kickBtn = '<button class="teamsplit-kick-btn" data-pid="' + p.id + '" title="踢出玩家">&times;</button>';
+    }
+    return '<div class="teamsplit-player-chip' + cls + '">' + escapeHtml(p.name) + hostBadge + kickBtn + '</div>';
   }).join('');
+  // 绑定踢人按钮事件
+  list.querySelectorAll('.teamsplit-kick-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var pid = this.dataset.pid;
+      var target = currentPlayers.find(function(p) { return p.id === pid; });
+      if (target && confirm('确定要踢出「' + target.name + '」吗？')) {
+        kickPlayer(pid);
+      }
+    });
+  });
+  // 检测自己是否被踢
+  if (currentPlayerId && players.length > 0 && !players.some(function(p) { return p.id === currentPlayerId; })) {
+    currentPlayerId = null;
+    if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
+    showToast('你已被房主移出房间', 3000);
+  }
   updateHostControls(isHost, currentPlayers.length);
 }
 
@@ -203,6 +224,18 @@ async function resetSplit() {
     updatePlayerList(players);
   } catch (e) {
     showToast('重新分队失败: ' + e.message, 3000);
+  }
+}
+
+async function kickPlayer(playerId) {
+  if (!currentRoomCode) return;
+  try {
+    var result = await supabase.from('players').delete().eq('id', playerId).eq('room_code', currentRoomCode);
+    if (result.error) throw result.error;
+    showToast('已将该玩家移出房间', 2000);
+    refreshPlayers();
+  } catch (e) {
+    showToast('踢人失败: ' + e.message, 3000);
   }
 }
 
