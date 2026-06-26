@@ -167,6 +167,7 @@ async function createRoom() {
     showTeamsplitView('lobby');
     updatePlayerList([]);
     subscribeToRoom(code);
+    syncPlayerRanks();
     showToast('房间已创建，请输入你的名字', 3000);
   } catch (e) {
     showToast('创建房间失败: ' + e.message, 3000);
@@ -190,6 +191,7 @@ async function joinRoom() {
     await refreshPlayers();
     var autoJoined = await tryAutoJoin(code);
     if (autoJoined) {
+      syncPlayerRanks();
       showToast('欢迎回来！已自动恢复身份', 2000);
     } else {
       showToast('已加入房间，请输入你的名字', 2000);
@@ -235,6 +237,7 @@ async function joinLobby() {
     localStorage.setItem('ts_player_name', name);
     localStorage.setItem('ts_player_rank', rank);
     rankMap[currentPlayerId] = parseInt(rank);
+    broadcastRank(currentPlayerId, parseInt(rank));
     document.getElementById('playerNameInput').value = '';
     if (rankSel) rankSel.value = '';
     showToast('已加入分队', 2000);
@@ -255,7 +258,10 @@ async function tryAutoJoin(code) {
     }
     currentPlayerId = savedId;
     var savedRank = localStorage.getItem('ts_player_rank');
-    if (savedRank && result.data) rankMap[savedId] = parseInt(savedRank);
+    if (savedRank && result.data) {
+      rankMap[savedId] = parseInt(savedRank);
+      broadcastRank(savedId, parseInt(savedRank));
+    }
     return true;
   } catch (e) {
     return false;
@@ -268,7 +274,40 @@ function subscribeToRoom(code) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: 'room_code=eq.' + code }, function() {
       handlePlayersChanged();
     })
+    .on('broadcast', { event: 'rank' }, function(payload) {
+      if (payload.pid && payload.rank) {
+        rankMap[payload.pid] = payload.rank;
+        refreshPlayers();
+      }
+    })
+    .on('broadcast', { event: 'sync_request' }, function() {
+      // 新人请求同步，老玩家广播自己的段位
+      broadcastMyRank();
+    })
     .subscribe();
+}
+
+function broadcastRank(pid, rank) {
+  if (roomSubscription) {
+    roomSubscription.send({ type: 'broadcast', event: 'rank', payload: { pid: pid, rank: rank } });
+  }
+}
+
+function broadcastMyRank() {
+  var myRank = localStorage.getItem('ts_player_rank');
+  if (myRank && currentPlayerId) broadcastRank(currentPlayerId, parseInt(myRank));
+}
+
+function syncPlayerRanks(players) {
+  // 从已有数据回填 rankMap（自己的 rank 来自 localStorage）
+  var myRank = localStorage.getItem('ts_player_rank');
+  if (myRank && currentPlayerId) rankMap[currentPlayerId] = parseInt(myRank);
+  // 广播自己的段位给其他人
+  broadcastMyRank();
+  // 发同步请求让老玩家广播他们的段位
+  if (roomSubscription) {
+    roomSubscription.send({ type: 'broadcast', event: 'sync_request', payload: {} });
+  }
 }
 
 async function refreshPlayers() {
