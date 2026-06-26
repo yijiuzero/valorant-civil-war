@@ -160,6 +160,7 @@ async function joinRoom() {
     codeDisplay.title = '点击复制房间码';
     showTeamsplitView('lobby');
     subscribeToRoom(code);
+    await refreshPlayers();
     var autoJoined = await tryAutoJoin(code);
     if (autoJoined) {
       showToast('欢迎回来！已自动恢复身份', 2000);
