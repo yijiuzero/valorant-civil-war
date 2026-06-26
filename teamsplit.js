@@ -230,6 +230,8 @@ async function joinLobby() {
     localStorage.setItem('ts_player_rank', rank);
     rankMap[currentPlayerId] = parseInt(rank);
     broadcastRank(currentPlayerId, parseInt(rank));
+    console.log('[teamsplit] after broadcast, rankMap:', rankMap);
+    console.log('[teamsplit] joined, rankMap now:', rankMap);
     // 发送 sync_request 请求房间里已有玩家广播他们的段位
     if (roomSubscription) {
       setTimeout(function() {
@@ -273,12 +275,14 @@ function subscribeToRoom(code, onReady) {
       handlePlayersChanged();
     })
     .on('broadcast', { event: 'rank' }, function(payload) {
+      console.log('[teamsplit] received rank broadcast:', payload);
       if (payload.pid && payload.rank) {
         rankMap[payload.pid] = payload.rank;
         refreshPlayers();
       }
     })
-    .on('broadcast', { event: 'sync_request' }, function() {
+    .on('broadcast', { event: 'sync_request' }, function(payload) {
+      console.log('[teamsplit] received sync_request, broadcasting my rank');
       broadcastMyRank();
     })
     .subscribe(function(status) {
@@ -287,8 +291,11 @@ function subscribeToRoom(code, onReady) {
 }
 
 function broadcastRank(pid, rank) {
+  console.log('[teamsplit] broadcasting rank:', { pid: pid, rank: rank });
   if (roomSubscription) {
     roomSubscription.send({ type: 'broadcast', event: 'rank', payload: { pid: pid, rank: rank } });
+  } else {
+    console.warn('[teamsplit] roomSubscription is null, cannot broadcast');
   }
 }
 
@@ -300,11 +307,14 @@ function broadcastMyRank() {
 function syncPlayerRanks() {
   var myRank = localStorage.getItem('ts_player_rank');
   if (myRank && currentPlayerId) rankMap[currentPlayerId] = parseInt(myRank);
+  console.log('[teamsplit] syncPlayerRanks called, rankMap:', rankMap);
   // 等 2s 确保 channel 连上了再广播
   setTimeout(function() {
     broadcastMyRank();
     if (roomSubscription) {
       roomSubscription.send({ type: 'broadcast', event: 'sync_request', payload: {} });
+    } else {
+      console.warn('[teamsplit] roomSubscription is null during syncPlayerRanks');
     }
   }, 2000);
 }
@@ -313,6 +323,8 @@ async function refreshPlayers() {
   if (!currentRoomCode) return;
   try {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
+    console.log('[teamsplit] refreshPlayers got:', result.data);
+    console.log('[teamsplit] rankMap at refresh:', rankMap);
     if (result.data) updatePlayerList(result.data);
   } catch (e) {}
 }
