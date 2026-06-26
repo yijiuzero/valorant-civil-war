@@ -96,19 +96,10 @@ function getRankName(rank) {
 }
 
 function getRankIcon(rank) {
-  // valorant-api.com rank icons
-  var rankIcons = {
-    1: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/0/smallicon.png',
-    2: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/3/smallicon.png',
-    3: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/6/smallicon.png',
-    4: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/9/smallicon.png',
-    5: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/12/smallicon.png',
-    6: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/15/smallicon.png',
-    7: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/18/smallicon.png',
-    8: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/21/smallicon.png',
-    9: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/24/smallicon.png'
-  };
-  return rankIcons[rank] || '';
+  // current season uuid: 564d8e28-c226-3180-6285-e48a390db8b1
+  // rank 1(黑铁)=tier 3, rank 2(青铜)=tier 6 ... rank 9(赋能)=tier 27
+  var t = rank * 3;
+  return 'https://media.valorant-api.com/competitivetiers/564d8e28-c226-3180-6285-e48a390db8b1/' + t + '/smallicon.png';
 }
 
 function isCurrentUserHost(players) {
