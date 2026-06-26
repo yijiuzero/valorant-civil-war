@@ -198,9 +198,20 @@ async function joinLobby() {
       showToast('名字「' + dupResult.data[0].name + '」已被使用，换一个吧', 3000);
       return;
     }
-    var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name, rank: parseInt(rank) }).select().single();
-    if (insertResult.error) throw insertResult.error;
-    currentPlayerId = insertResult.data.id;
+    var insertData = { room_code: currentRoomCode, name: name };
+    try {
+      var insertResult = await supabase.from('players').insert(Object.assign({}, insertData, { rank: parseInt(rank) })).select().single();
+      if (insertResult.error) throw insertResult.error;
+      currentPlayerId = insertResult.data.id;
+    } catch (insertErr) {
+      if (insertErr.message && /rank/i.test(insertErr.message)) {
+        var fallbackResult = await supabase.from('players').insert(insertData).select().single();
+        if (fallbackResult.error) throw fallbackResult.error;
+        currentPlayerId = fallbackResult.data.id;
+      } else {
+        throw insertErr;
+      }
+    }
     localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
     localStorage.setItem('ts_player_name', name);
     localStorage.setItem('ts_player_rank', rank);
