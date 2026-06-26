@@ -107,11 +107,20 @@ function updateHostControls(isHost, playerCount) {
 async function cleanupOldRooms() {
   try {
     var oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    var old = await supabase.from('rooms').select('code').eq('status', 'done').lt('created_at', oneDayAgo);
-    if (old.data && old.data.length > 0) {
-      var codes = old.data.map(function(r) { return r.code; });
-      await supabase.from('players').delete().in('room_code', codes);
-      await supabase.from('rooms').delete().in('code', codes);
+    var twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    // 清理已完成的旧房间（>24h）
+    var oldDone = await supabase.from('rooms').select('code').eq('status', 'done').lt('created_at', oneDayAgo);
+    if (oldDone.data && oldDone.data.length > 0) {
+      var doneCodes = oldDone.data.map(function(r) { return r.code; });
+      await supabase.from('players').delete().in('room_code', doneCodes);
+      await supabase.from('rooms').delete().in('code', doneCodes);
+    }
+    // 清理超时的等待中房间（>2h 无人使用）
+    var oldWaiting = await supabase.from('rooms').select('code').eq('status', 'waiting').lt('created_at', twoHoursAgo);
+    if (oldWaiting.data && oldWaiting.data.length > 0) {
+      var waitingCodes = oldWaiting.data.map(function(r) { return r.code; });
+      await supabase.from('players').delete().in('room_code', waitingCodes);
+      await supabase.from('rooms').delete().in('code', waitingCodes);
     }
   } catch (e) {}
 }
@@ -136,6 +145,7 @@ async function joinRoom() {
   var code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
   if (!code) { showToast('请输入房间码', 2000); return; }
   try {
+    await cleanupOldRooms();
     var result = await supabase.from('rooms').select('*').eq('code', code).eq('status', 'waiting').single();
     if (result.error || !result.data) throw new Error('房间不存在或已开始');
     currentRoomCode = code;
@@ -264,6 +274,7 @@ async function initTeamSplitView() {
     isLeaving = false;
     return;
   }
+  await cleanupOldRooms();
   var ri = document.getElementById('roomCodeInput');
   if (ri) ri.value = '';
   var pi = document.getElementById('playerNameInput');
