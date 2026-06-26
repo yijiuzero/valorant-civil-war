@@ -260,7 +260,7 @@ function subscribeToRoom(code) {
   if (roomSubscription) roomSubscription.unsubscribe();
   roomSubscription = supabase.channel('room_' + code)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: 'room_code=eq.' + code }, function() {
-      refreshPlayers();
+      handlePlayersChanged();
     })
     .subscribe();
 }
@@ -270,6 +270,25 @@ async function refreshPlayers() {
   try {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
     if (result.data) updatePlayerList(result.data);
+  } catch (e) {}
+}
+
+async function handlePlayersChanged() {
+  if (!currentRoomCode || !currentPlayerId) return;
+  try {
+    var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
+    var players = result.data || [];
+    updatePlayerList(players);
+    // 检测自己是否被踢——自己的 player ID 不在列表里了
+    var stillHere = players.some(function(p) { return p.id == currentPlayerId; });
+    if (!stillHere) {
+      showToast('你已被房主移出房间', 3000);
+      if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
+      if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
+      currentRoomCode = null;
+      currentPlayerId = null;
+      showTeamsplitView('create');
+    }
   } catch (e) {}
 }
 
