@@ -8,6 +8,7 @@ let roomSubscription = null;
 let isLeaving = false;
 let currentPlayers = [];
 let deviceId = null;
+let hostDeviceId = null;
 
 function getDeviceId() {
   if (deviceId) return deviceId;
@@ -57,7 +58,7 @@ function updatePlayerList(players) {
     var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">房主</span>' : '';
     var rankBadge = p.rank ? '<span class="teamsplit-rank-badge" data-rank="' + p.rank + '">' + getRankName(p.rank) + '</span>' : '';
     var kickBtn = '';
-    if (isHost && p.id !== currentPlayerId && p.id !== hostId) {
+    if (isHost && p.id !== currentPlayerId) {
       kickBtn = '<button class="teamsplit-kick-btn" data-pid="' + p.id + '" title="踢出玩家">&times;</button>';
     }
     return '<div class="teamsplit-player-chip' + cls + '">' + escapeHtml(p.name) + rankBadge + hostBadge + kickBtn + '</div>';
@@ -66,7 +67,7 @@ function updatePlayerList(players) {
   list.querySelectorAll('.teamsplit-kick-btn').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var pid = this.dataset.pid;
+      var pid = parseInt(this.dataset.pid);
       var target = currentPlayers.find(function(p) { return p.id === pid; });
       if (target && confirm('确定要踢出「' + target.name + '」吗？')) {
         kickPlayer(pid);
@@ -139,6 +140,7 @@ async function createRoom() {
     if (result.error) throw result.error;
     currentRoomCode = code;
     currentPlayers = [];
+    hostDeviceId = getDeviceId();
     var codeDisplay = document.getElementById('roomCodeDisplay');
     codeDisplay.textContent = code;
     codeDisplay.style.cursor = 'pointer';
@@ -289,7 +291,7 @@ async function resetSplit() {
 async function kickPlayer(playerId) {
   if (!currentRoomCode) return;
   try {
-    var result = await supabase.from('players').delete().eq('id', playerId).eq('room_code', currentRoomCode);
+    var result = await supabase.from('players').delete().eq('id', parseInt(playerId)).eq('room_code', currentRoomCode);
     if (result.error) throw result.error;
     showToast('已将该玩家移出房间', 2000);
     refreshPlayers();
