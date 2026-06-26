@@ -168,6 +168,13 @@ async function joinLobby() {
   if (!name) { showToast('请输入你的名字', 2000); return; }
   if (!currentRoomCode) return;
   try {
+    // 检查同一房间内是否有同名玩家
+    var dupResult = await supabase.from('players').select('id,name').eq('room_code', currentRoomCode).ilike('name', name);
+    if (dupResult.data && dupResult.data.length > 0) {
+      var dupNames = dupResult.data.map(function(p) { return p.name; });
+      showToast('名字「' + dupNames[0] + '」已被使用，换一个吧', 3000);
+      return;
+    }
     var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
     if (insertResult.error) throw insertResult.error;
     currentPlayerId = insertResult.data.id;
