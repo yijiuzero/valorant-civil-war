@@ -133,7 +133,10 @@ async function createRoom() {
     if (result.error) throw result.error;
     currentRoomCode = code;
     currentPlayers = [];
-    document.getElementById('roomCodeDisplay').textContent = code;
+    var codeDisplay = document.getElementById('roomCodeDisplay');
+    codeDisplay.textContent = code;
+    codeDisplay.style.cursor = 'pointer';
+    codeDisplay.title = '点击复制房间码';
     showTeamsplitView('lobby');
     updatePlayerList([]);
     subscribeToRoom(code);
@@ -151,7 +154,10 @@ async function joinRoom() {
     var result = await supabase.from('rooms').select('*').eq('code', code).eq('status', 'waiting').single();
     if (result.error || !result.data) throw new Error('房间不存在或已开始');
     currentRoomCode = code;
-    document.getElementById('roomCodeDisplay').textContent = code;
+    var codeDisplay = document.getElementById('roomCodeDisplay');
+    codeDisplay.textContent = code;
+    codeDisplay.style.cursor = 'pointer';
+    codeDisplay.title = '点击复制房间码';
     showTeamsplitView('lobby');
     subscribeToRoom(code);
     var autoJoined = await tryAutoJoin(code);
@@ -324,6 +330,16 @@ async function initTeamSplitView() {
   showTeamsplitView('create');
 }
 
+function copyRoomCode() {
+  if (!currentRoomCode) return;
+  navigator.clipboard.writeText(currentRoomCode).then(function() {
+    showToast('房间码已复制: ' + currentRoomCode, 2000);
+  }).catch(function() {
+    showToast('复制失败，请手动复制', 2000);
+  });
+}
+
+window.copyRoomCode = copyRoomCode;
 window.initTeamSplitView = initTeamSplitView;
 window.createRoom = createRoom;
 window.joinRoom = joinRoom;

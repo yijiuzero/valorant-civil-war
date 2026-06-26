@@ -23,7 +23,7 @@
     <li class="nav-item" data-module="teamsplit"><span class="nav-icon">⚔️</span><span>内战分队</span></li>
   </ul>
   <div class="sidebar-footer">
-    <div>V3.1.3 · from zer0</div>
+    <div>V3.1.4 · from zer0</div>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">问题/需求反馈</a>
   </div>
 </nav>
@@ -119,7 +119,7 @@
           </div>
           <div class="teamsplit-count-badge">已加入 <span id="playerCount">0</span>/10</div>
         </div>
-        <div class="teamsplit-room-code">房间码 <span id="roomCodeDisplay">-</span></div>
+        <div class="teamsplit-room-code">房间码 <span id="roomCodeDisplay" onclick="copyRoomCode()">-</span></div>
         <div class="teamsplit-player-list" id="playerList"></div>
         <div class="teamsplit-lobby-controls">
           <input class="teamsplit-input" id="playerNameInput" type="text" placeholder="输入你的名字" maxlength="12">
