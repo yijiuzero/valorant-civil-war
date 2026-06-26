@@ -429,6 +429,35 @@ main::after{
   background:var(--card);
 }
 .teamsplit-input::placeholder{color:var(--text-dim);}
+.teamsplit-join-row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.teamsplit-select{
+  height:48px;
+  padding:0 36px 0 14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:color-mix(in srgb,var(--card) 88%,transparent);
+  color:var(--text);
+  font-size:14px;
+  font-family:inherit;
+  cursor:pointer;
+  outline:none;
+  transition:border-color .2s, box-shadow .2s, background .2s;
+  appearance:none;
+  -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  min-width:100px;
+}
+.teamsplit-select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent);
+  background:var(--card);
+}
 .teamsplit-primary-btn{
   margin-top:0;
   min-height:56px;
@@ -525,6 +554,26 @@ main::after{
   font-weight:800;
   line-height:1;
 }
+.teamsplit-rank-badge{
+  display:inline-flex;
+  align-items:center;
+  height:20px;
+  padding:0 8px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);
+  color:var(--accent);
+  font-size:11px;
+  font-weight:700;
+  line-height:1;
+  order:-1;
+}
+.teamsplit-rank-badge[data-rank="7"],
+.teamsplit-rank-badge[data-rank="8"],
+.teamsplit-rank-badge[data-rank="9"]{
+  background:rgba(255,70,85,.14);
+  color:var(--accent);
+  box-shadow:0 0 8px rgba(255,70,85,.2);
+}
 .teamsplit-kick-btn{
   display:inline-flex;
   align-items:center;
@@ -610,6 +659,15 @@ main::after{
   font-weight:600;
 }
 .teamsplit-player-row .agent-role-dot{flex-shrink:0;}
+.teamsplit-rank-tag{
+  font-size:11px;
+  font-weight:700;
+  color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 16%,transparent);
+  padding:2px 8px;
+  border-radius:999px;
+  margin-left:4px;
+}
 .teamsplit-empty-hint{
   font-size:13px;
   color:var(--text-dim);
