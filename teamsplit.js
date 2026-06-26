@@ -158,7 +158,6 @@ async function createRoom() {
     showTeamsplitView('lobby');
     updatePlayerList([]);
     subscribeToRoom(code);
-    syncPlayerRanks();
     showToast('房间已创建，请输入你的名字', 3000);
   } catch (e) {
     showToast('创建房间失败: ' + e.message, 3000);
@@ -182,7 +181,9 @@ async function joinRoom() {
     await refreshPlayers();
     var autoJoined = await tryAutoJoin(code);
     if (autoJoined) {
-      syncPlayerRanks();
+      subscribeToRoom(code, function() {
+        syncPlayerRanks();
+      });
       showToast('欢迎回来！已自动恢复身份', 2000);
     } else {
       showToast('已加入房间，请输入你的名字', 2000);
@@ -229,6 +230,12 @@ async function joinLobby() {
     localStorage.setItem('ts_player_rank', rank);
     rankMap[currentPlayerId] = parseInt(rank);
     broadcastRank(currentPlayerId, parseInt(rank));
+    // 发送 sync_request 请求房间里已有玩家广播他们的段位
+    if (roomSubscription) {
+      setTimeout(function() {
+        roomSubscription.send({ type: 'broadcast', event: 'sync_request', payload: {} });
+      }, 500);
+    }
     document.getElementById('playerNameInput').value = '';
     if (rankSel) rankSel.value = '';
     showToast('已加入分队', 2000);
@@ -259,7 +266,7 @@ async function tryAutoJoin(code) {
   }
 }
 
-function subscribeToRoom(code) {
+function subscribeToRoom(code, onReady) {
   if (roomSubscription) roomSubscription.unsubscribe();
   roomSubscription = supabase.channel('room_' + code)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: 'room_code=eq.' + code }, function() {
@@ -272,10 +279,11 @@ function subscribeToRoom(code) {
       }
     })
     .on('broadcast', { event: 'sync_request' }, function() {
-      // 新人请求同步，老玩家广播自己的段位
       broadcastMyRank();
     })
-    .subscribe();
+    .subscribe(function(status) {
+      if (status === 'SUBSCRIBED' && onReady) onReady();
+    });
 }
 
 function broadcastRank(pid, rank) {
@@ -289,16 +297,16 @@ function broadcastMyRank() {
   if (myRank && currentPlayerId) broadcastRank(currentPlayerId, parseInt(myRank));
 }
 
-function syncPlayerRanks(players) {
-  // 从已有数据回填 rankMap（自己的 rank 来自 localStorage）
+function syncPlayerRanks() {
   var myRank = localStorage.getItem('ts_player_rank');
   if (myRank && currentPlayerId) rankMap[currentPlayerId] = parseInt(myRank);
-  // 广播自己的段位给其他人
-  broadcastMyRank();
-  // 发同步请求让老玩家广播他们的段位
-  if (roomSubscription) {
-    roomSubscription.send({ type: 'broadcast', event: 'sync_request', payload: {} });
-  }
+  // 等 2s 确保 channel 连上了再广播
+  setTimeout(function() {
+    broadcastMyRank();
+    if (roomSubscription) {
+      roomSubscription.send({ type: 'broadcast', event: 'sync_request', payload: {} });
+    }
+  }, 2000);
 }
 
 async function refreshPlayers() {
@@ -429,7 +437,9 @@ async function initTeamSplitView() {
     var autoJoined = await tryAutoJoin(currentRoomCode);
     if (autoJoined) {
       await refreshPlayers();
-      subscribeToRoom(currentRoomCode);
+      subscribeToRoom(currentRoomCode, function() {
+        syncPlayerRanks();
+      });
       return;
     }
     currentRoomCode = null;
