@@ -132,8 +132,10 @@ async function createRoom() {
     var result = await supabase.from('rooms').insert({ code: code, status: 'waiting' }).select().single();
     if (result.error) throw result.error;
     currentRoomCode = code;
+    currentPlayers = [];
     document.getElementById('roomCodeDisplay').textContent = code;
     showTeamsplitView('lobby');
+    updatePlayerList([]);
     subscribeToRoom(code);
     showToast('房间已创建，请输入你的名字', 3000);
   } catch (e) {
