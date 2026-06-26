@@ -167,12 +167,15 @@ async function joinLobby() {
   var name = document.getElementById('playerNameInput').value.trim();
   if (!name) { showToast('请输入你的名字', 2000); return; }
   if (!currentRoomCode) return;
+  if (currentPlayerId) { showToast('你已经在房间中了', 2000); return; }
   try {
-    // 检查同一房间内是否有同名玩家
-    var dupResult = await supabase.from('players').select('id,name').eq('room_code', currentRoomCode).ilike('name', name);
+    // 检查同一房间内是否有同名玩家（排除自己之前的旧记录）
+    var savedId = localStorage.getItem('ts_player_' + currentRoomCode);
+    var dupQuery = supabase.from('players').select('id,name').eq('room_code', currentRoomCode).ilike('name', name);
+    if (savedId) dupQuery = dupQuery.neq('id', savedId);
+    var dupResult = await dupQuery;
     if (dupResult.data && dupResult.data.length > 0) {
-      var dupNames = dupResult.data.map(function(p) { return p.name; });
-      showToast('名字「' + dupNames[0] + '」已被使用，换一个吧', 3000);
+      showToast('名字「' + dupResult.data[0].name + '」已被使用，换一个吧', 3000);
       return;
     }
     var insertResult = await supabase.from('players').insert({ room_code: currentRoomCode, name: name }).select().single();
