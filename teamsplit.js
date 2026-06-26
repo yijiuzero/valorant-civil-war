@@ -172,6 +172,7 @@ async function joinLobby() {
     if (insertResult.error) throw insertResult.error;
     currentPlayerId = insertResult.data.id;
     localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
+    localStorage.setItem('ts_player_name', name);
     document.getElementById('playerNameInput').value = '';
     showToast('已加入分队', 2000);
     refreshPlayers();
@@ -181,7 +182,19 @@ async function joinLobby() {
 }
 
 async function tryAutoJoin(code) {
-  return false;
+  var savedId = localStorage.getItem('ts_player_' + code);
+  if (!savedId) return false;
+  try {
+    var result = await supabase.from('players').select('*').eq('id', savedId).eq('room_code', code).single();
+    if (result.error || !result.data) {
+      localStorage.removeItem('ts_player_' + code);
+      return false;
+    }
+    currentPlayerId = savedId;
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 function subscribeToRoom(code) {
@@ -278,7 +291,10 @@ async function initTeamSplitView() {
   var ri = document.getElementById('roomCodeInput');
   if (ri) ri.value = '';
   var pi = document.getElementById('playerNameInput');
-  if (pi) pi.value = '';
+  if (pi) {
+    var savedName = localStorage.getItem('ts_player_name') || '';
+    pi.value = savedName;
+  }
   if (currentRoomCode) {
     showTeamsplitView('lobby');
     var autoJoined = await tryAutoJoin(currentRoomCode);
