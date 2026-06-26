@@ -7,7 +7,7 @@ let currentPlayerId = null;
 let roomSubscription = null;
 let isLeaving = false;
 let currentPlayers = [];
-let rankMap = {};
+
 let deviceId = null;
 let hostDeviceId = null;
 
@@ -58,7 +58,7 @@ function updatePlayerList(players) {
     var cls = p.id === currentPlayerId ? ' self' : '';
     var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">房主</span>' : '';
     var pk = p.id;
-    var pRank = p.rank || rankMap[pk] || 0;
+    var pRank = p.rank || 0;
     var rankIcon = pRank ? '<img class="teamsplit-rank-icon" src="' + getRankIcon(pRank) + '" alt="' + getRankName(pRank) + '" title="' + getRankName(pRank) + '" loading="lazy">' : '';
     var kickBtn = '';
     if (isHost && p.id !== currentPlayerId) {
@@ -181,9 +181,6 @@ async function joinRoom() {
     await refreshPlayers();
     var autoJoined = await tryAutoJoin(code);
     if (autoJoined) {
-      subscribeToRoom(code, function() {
-        syncPlayerRanks();
-      });
       showToast('欢迎回来！已自动恢复身份', 2000);
     } else {
       showToast('已加入房间，请输入你的名字', 2000);
@@ -211,33 +208,13 @@ async function joinLobby() {
       showToast('名字「' + dupResult.data[0].name + '」已被使用，换一个吧', 3000);
       return;
     }
-    var insertData = { room_code: currentRoomCode, name: name };
-    try {
-      var insertResult = await supabase.from('players').insert(Object.assign({}, insertData, { rank: parseInt(rank) })).select().single();
-      if (insertResult.error) throw insertResult.error;
-      currentPlayerId = insertResult.data.id;
-    } catch (insertErr) {
-      if (insertErr.message && /rank/i.test(insertErr.message)) {
-        var fallbackResult = await supabase.from('players').insert(insertData).select().single();
-        if (fallbackResult.error) throw fallbackResult.error;
-        currentPlayerId = fallbackResult.data.id;
-      } else {
-        throw insertErr;
-      }
-    }
+    var insertData = { room_code: currentRoomCode, name: name, rank: parseInt(rank) };
+    var insertResult = await supabase.from('players').insert(insertData).select().single();
+    if (insertResult.error) throw insertResult.error;
+    currentPlayerId = insertResult.data.id;
     localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
     localStorage.setItem('ts_player_name', name);
     localStorage.setItem('ts_player_rank', rank);
-    rankMap[currentPlayerId] = parseInt(rank);
-    broadcastRank(currentPlayerId, parseInt(rank));
-    console.log('[teamsplit] after broadcast, rankMap:', rankMap);
-    console.log('[teamsplit] joined, rankMap now:', rankMap);
-    // 发送 sync_request 请求房间里已有玩家广播他们的段位
-    if (roomSubscription) {
-      setTimeout(function() {
-        roomSubscription.send({ type: 'broadcast', event: 'sync_request', payload: {} });
-      }, 500);
-    }
     document.getElementById('playerNameInput').value = '';
     if (rankSel) rankSel.value = '';
     showToast('已加入分队', 2000);
@@ -257,11 +234,6 @@ async function tryAutoJoin(code) {
       return false;
     }
     currentPlayerId = savedId;
-    var savedRank = localStorage.getItem('ts_player_rank');
-    if (savedRank && result.data) {
-      rankMap[savedId] = parseInt(savedRank);
-      broadcastRank(savedId, parseInt(savedRank));
-    }
     return true;
   } catch (e) {
     return false;
@@ -274,57 +246,15 @@ function subscribeToRoom(code, onReady) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: 'room_code=eq.' + code }, function() {
       handlePlayersChanged();
     })
-    .on('broadcast', { event: 'rank' }, function(payload) {
-      console.log('[teamsplit] received rank broadcast:', payload);
-      if (payload.pid && payload.rank) {
-        rankMap[payload.pid] = payload.rank;
-        refreshPlayers();
-      }
-    })
-    .on('broadcast', { event: 'sync_request' }, function(payload) {
-      console.log('[teamsplit] received sync_request, broadcasting my rank');
-      broadcastMyRank();
-    })
     .subscribe(function(status) {
       if (status === 'SUBSCRIBED' && onReady) onReady();
     });
-}
-
-function broadcastRank(pid, rank) {
-  console.log('[teamsplit] broadcasting rank:', { pid: pid, rank: rank });
-  if (roomSubscription) {
-    roomSubscription.send({ type: 'broadcast', event: 'rank', payload: { pid: pid, rank: rank } });
-  } else {
-    console.warn('[teamsplit] roomSubscription is null, cannot broadcast');
-  }
-}
-
-function broadcastMyRank() {
-  var myRank = localStorage.getItem('ts_player_rank');
-  if (myRank && currentPlayerId) broadcastRank(currentPlayerId, parseInt(myRank));
-}
-
-function syncPlayerRanks() {
-  var myRank = localStorage.getItem('ts_player_rank');
-  if (myRank && currentPlayerId) rankMap[currentPlayerId] = parseInt(myRank);
-  console.log('[teamsplit] syncPlayerRanks called, rankMap:', rankMap);
-  // 等 2s 确保 channel 连上了再广播
-  setTimeout(function() {
-    broadcastMyRank();
-    if (roomSubscription) {
-      roomSubscription.send({ type: 'broadcast', event: 'sync_request', payload: {} });
-    } else {
-      console.warn('[teamsplit] roomSubscription is null during syncPlayerRanks');
-    }
-  }, 2000);
 }
 
 async function refreshPlayers() {
   if (!currentRoomCode) return;
   try {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
-    console.log('[teamsplit] refreshPlayers got:', result.data);
-    console.log('[teamsplit] rankMap at refresh:', rankMap);
     if (result.data) updatePlayerList(result.data);
   } catch (e) {}
 }
@@ -356,18 +286,18 @@ async function doSplit() {
     if (!players || players.length < 2) { showToast('至少需要2人', 2000); return; }
     currentPlayers = players;
     if (!isCurrentUserHost(players)) { showToast('只有房主可以开始分队', 2000); return; }
-    // 按段位平衡分队（从 rankMap 回退）
-    var ranked = players.slice().sort(function(a, b) { return (b.rank || rankMap[b.id] || 0) - (a.rank || rankMap[a.id] || 0); });
+    // 按段位平衡分队
+    var ranked = players.slice().sort(function(a, b) { return (b.rank || 0) - (a.rank || 0); });
     var teamA = [], teamB = [];
     var sumA = 0, sumB = 0;
     for (var i = 0; i < ranked.length; i++) {
       var p = ranked[i];
-      var r = p.rank || rankMap[p.id] || 0;
+      var r = p.rank || 0;
       if (sumA <= sumB) { teamA.push(p); sumA += r; }
       else { teamB.push(p); sumB += r; }
     }
     function teamRow(p) {
-      var pr = p.rank || rankMap[p.id] || 0;
+      var pr = p.rank || 0;
       return '<div class="teamsplit-player-row">' + escapeHtml(p.name) + (pr ? '<span class="teamsplit-rank-tag">' + getRankName(pr) + '</span>' : '') + '</div>';
     }
     document.getElementById('teamAPlayers').innerHTML = teamA.map(teamRow).join('');
@@ -449,9 +379,6 @@ async function initTeamSplitView() {
     var autoJoined = await tryAutoJoin(currentRoomCode);
     if (autoJoined) {
       await refreshPlayers();
-      subscribeToRoom(currentRoomCode, function() {
-        syncPlayerRanks();
-      });
       return;
     }
     currentRoomCode = null;
