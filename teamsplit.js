@@ -56,12 +56,12 @@ function updatePlayerList(players) {
   list.innerHTML = players.map(function(p) {
     var cls = p.id === currentPlayerId ? ' self' : '';
     var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">房主</span>' : '';
-    var rankBadge = p.rank ? '<span class="teamsplit-rank-badge" data-rank="' + p.rank + '">' + getRankName(p.rank) + '</span>' : '';
+    var rankIcon = p.rank ? '<img class="teamsplit-rank-icon" src="' + getRankIcon(p.rank) + '" alt="' + getRankName(p.rank) + '" title="' + getRankName(p.rank) + '" loading="lazy">' : '';
     var kickBtn = '';
     if (isHost && p.id !== currentPlayerId) {
       kickBtn = '<button class="teamsplit-kick-btn" data-pid="' + p.id + '" title="踢出玩家">&times;</button>';
     }
-    return '<div class="teamsplit-player-chip' + cls + '">' + escapeHtml(p.name) + rankBadge + hostBadge + kickBtn + '</div>';
+    return '<div class="teamsplit-player-chip' + cls + '">' + rankIcon + escapeHtml(p.name) + hostBadge + kickBtn + '</div>';
   }).join('');
   // 绑定踢人按钮事件
   list.querySelectorAll('.teamsplit-kick-btn').forEach(function(btn) {
@@ -90,6 +90,22 @@ function getHostId(players) {
 function getRankName(rank) {
   var names = ['', '黑铁', '青铜', '白银', '黄金', '铂金', '钻石', '超凡', '神话', '赋能'];
   return names[rank] || '';
+}
+
+function getRankIcon(rank) {
+  // valorant-api.com rank icons
+  var rankIcons = {
+    1: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/0/smallicon.png',
+    2: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/3/smallicon.png',
+    3: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/6/smallicon.png',
+    4: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/9/smallicon.png',
+    5: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/12/smallicon.png',
+    6: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/15/smallicon.png',
+    7: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/18/smallicon.png',
+    8: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/21/smallicon.png',
+    9: 'https://media.valorant-api.com/competitivetiers/03621f52-342b-cf8e-4f86-9350a49c6d04/24/smallicon.png'
+  };
+  return rankIcons[rank] || '';
 }
 
 function isCurrentUserHost(players) {

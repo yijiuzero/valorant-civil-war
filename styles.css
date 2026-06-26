@@ -332,7 +332,14 @@ main::after{
 }
 /* ===== 内战分队模块 ===== */
 #module-teamsplit{
-  max-width:760px;
+  max-width:860px;
+}
+.teamsplit-rank-icon{
+  width:22px;
+  height:22px;
+  flex-shrink:0;
+  margin-right:-2px;
+  image-rendering:crisp-edges;
 }
 .teamsplit-room{
   display:flex;
@@ -529,12 +536,12 @@ main::after{
   display:inline-flex;
   align-items:center;
   gap:8px;
-  min-height:34px;
-  padding:0 14px;
+  min-height:38px;
+  padding:0 16px;
   border-radius:999px;
   background:color-mix(in srgb,var(--accent) 10%,var(--card));
   border:1px solid color-mix(in srgb,var(--accent) 24%,var(--border));
-  font-size:13px;
+  font-size:14px;
   font-weight:700;
   color:var(--text);
 }
