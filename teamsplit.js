@@ -269,7 +269,7 @@ async function refreshPlayers() {
 }
 
 async function handlePlayersChanged() {
-  if (!currentRoomCode || !currentPlayerId) return;
+  if (!currentRoomCode) return;
   try {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
     var players = result.data || [];
@@ -282,14 +282,16 @@ async function handlePlayersChanged() {
       }
     });
     updatePlayerList(players);
-    var stillHere = players.some(function(p) { return p.id === currentPlayerId; });
-    if (!stillHere) {
-      showToast('你已被房主移出房间', 3000);
-      if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
-      if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
-      currentRoomCode = null;
-      currentPlayerId = null;
-      showTeamsplitView('create');
+    if (currentPlayerId) {
+      var stillHere = players.some(function(p) { return p.id === currentPlayerId; });
+      if (!stillHere) {
+        showToast('你已被房主移出房间', 3000);
+        if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
+        if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
+        currentRoomCode = null;
+        currentPlayerId = null;
+        showTeamsplitView('create');
+      }
     }
   } catch (e) {}
 }
