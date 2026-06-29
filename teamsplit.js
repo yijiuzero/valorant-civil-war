@@ -294,14 +294,32 @@ async function doSplit() {
   try {
     if (!currentPlayers || currentPlayers.length < 2) { showToast('至少需要2人', 2000); return; }
     if (!isCurrentUserHost()) { showToast('只有房主可以开始分队', 2000); return; }
-    var ranked = currentPlayers.slice().sort(function(a, b) { return (b.rank || 0) - (a.rank || 0); });
+    var mode = 'rank';
+    var radios = document.getElementsByName('splitMode');
+    for (var ri = 0; ri < radios.length; ri++) {
+      if (radios[ri].checked) { mode = radios[ri].value; break; }
+    }
+    var players = currentPlayers.slice();
+    if (mode === 'random') {
+      for (var i = players.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = players[i]; players[i] = players[j]; players[j] = tmp;
+      }
+    } else {
+      players.sort(function(a, b) { return (b.rank || 0) - (a.rank || 0); });
+    }
     var teamA = [], teamB = [];
     var sumA = 0, sumB = 0;
-    for (var i = 0; i < ranked.length; i++) {
-      var p = ranked[i];
+    for (var i = 0; i < players.length; i++) {
+      var p = players[i];
       var r = p.rank || 0;
-      if (sumA <= sumB) { teamA.push(p); sumA += r; }
-      else { teamB.push(p); sumB += r; }
+      if (mode === 'random') {
+        if (teamA.length <= teamB.length) teamA.push(p);
+        else teamB.push(p);
+      } else {
+        if (sumA <= sumB) { teamA.push(p); sumA += r; }
+        else { teamB.push(p); sumB += r; }
+      }
     }
     function teamRow(p) {
       var pr = p.rank || 0;
