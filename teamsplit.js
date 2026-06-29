@@ -261,6 +261,17 @@ async function handlePlayersChanged() {
   try {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
     var players = result.data || [];
+
+    // 检测被移除的玩家（显示 toast 通知房间里其他人）
+    var removed = currentPlayers.filter(function(p) {
+      return !players.some(function(np) { return np.id === p.id; });
+    });
+    removed.forEach(function(p) {
+      if (p.id !== currentPlayerId) {
+        showToast('「' + p.name + '」已被移出房间', 2000);
+      }
+    });
+
     updatePlayerList(players);
     // 检测自己是否被踢——自己的 player ID 不在列表里了
     var stillHere = players.some(function(p) { return p.id === currentPlayerId; });
