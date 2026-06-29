@@ -4,23 +4,33 @@ const supabase = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_pu
 
 let currentRoomCode = null;
 let currentPlayerId = null;
+let currentUserId = null;
+let currentHostUserId = null;
 let roomSubscription = null;
 let isLeaving = false;
 let currentPlayers = [];
 
-let deviceId = null;
-let hostDeviceId = null;
-
-function getDeviceId() {
-  if (deviceId) return deviceId;
-  deviceId = localStorage.getItem('ts_device_id');
-  if (!deviceId) {
-    deviceId = crypto.randomUUID();
-    localStorage.setItem('ts_device_id', deviceId);
+// ========== 匿名认证 ==========
+async function getUserId() {
+  if (currentUserId) return currentUserId;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      currentUserId = session.user.id;
+      return currentUserId;
+    }
+  } catch (e) {}
+  try {
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error) throw error;
+    currentUserId = data.user.id;
+    return currentUserId;
+  } catch (e) {
+    return null;
   }
-  return deviceId;
 }
 
+// ========== 工具函数 ==========
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
@@ -46,49 +56,6 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-function updatePlayerList(players) {
-  var list = document.getElementById('playerList');
-  var count = document.getElementById('playerCount');
-  if (!list || !count) return;
-  currentPlayers = players || [];
-  var hostId = getHostId(currentPlayers);
-  var isHost = isCurrentUserHost(currentPlayers);
-  count.textContent = players.length;
-  list.innerHTML = players.map(function(p) {
-    var cls = p.id === currentPlayerId ? ' self' : '';
-    var hostBadge = p.id === hostId ? '<span class="teamsplit-host-badge">房主</span>' : '';
-    var pRank = p.rank || 0;
-    var rankIcon = pRank ? '<img class="teamsplit-rank-icon" src="' + getRankIcon(pRank) + '" alt="' + getRankName(pRank) + '" title="' + getRankName(pRank) + '" loading="lazy">' : '';
-    var kickBtn = '';
-    if (isHost && p.id !== currentPlayerId) {
-      kickBtn = '<button class="teamsplit-kick-btn" data-pid="' + p.id + '" title="踢出玩家">&times;</button>';
-    }
-    return '<div class="teamsplit-player-chip' + cls + '">' + rankIcon + escapeHtml(p.name) + hostBadge + kickBtn + '</div>';
-  }).join('');
-  // 绑定踢人按钮事件
-  list.querySelectorAll('.teamsplit-kick-btn').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      var pid = parseInt(this.dataset.pid);
-      var target = currentPlayers.find(function(p) { return p.id === pid; });
-      if (target && confirm('确定要踢出「' + target.name + '」吗？')) {
-        kickPlayer(pid);
-      }
-    });
-  });
-  // 检测自己是否被踢
-  if (currentPlayerId && players.length > 0 && !players.some(function(p) { return p.id === currentPlayerId; })) {
-    currentPlayerId = null;
-    if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
-    showToast('你已被房主移出房间', 3000);
-  }
-  updateHostControls(isHost, currentPlayers.length);
-}
-
-function getHostId(players) {
-  return players && players.length > 0 ? players[0].id : null;
-}
-
 function getRankName(rank) {
   var names = ['', '黑铁', '青铜', '白银', '黄金', '铂金', '钻石', '超凡', '神话', '赋能'];
   return names[rank] || '';
@@ -100,8 +67,45 @@ function getRankIcon(rank) {
   return 'https://media.valorant-api.com/competitivetiers/' + seasonUuid + '/' + t + '/smallicon.png';
 }
 
-function isCurrentUserHost(players) {
-  return !!currentPlayerId && currentPlayerId === getHostId(players || currentPlayers);
+// ========== UI 更新 ==========
+function updatePlayerList(players) {
+  var list = document.getElementById('playerList');
+  var count = document.getElementById('playerCount');
+  if (!list || !count) return;
+  currentPlayers = players || [];
+  var isHost = isCurrentUserHost();
+  count.textContent = players.length;
+  list.innerHTML = players.map(function(p) {
+    var cls = p.id === currentPlayerId ? ' self' : '';
+    var hostBadge = p.user_id === currentHostUserId ? '<span class="teamsplit-host-badge">房主</span>' : '';
+    var pRank = p.rank || 0;
+    var rankIcon = pRank ? '<img class="teamsplit-rank-icon" src="' + getRankIcon(pRank) + '" alt="' + getRankName(pRank) + '" title="' + getRankName(pRank) + '" loading="lazy">' : '';
+    var kickBtn = '';
+    if (isHost && p.id !== currentPlayerId) {
+      kickBtn = '<button class="teamsplit-kick-btn" data-pid="' + p.id + '" title="踢出玩家">&times;</button>';
+    }
+    return '<div class="teamsplit-player-chip' + cls + '">' + rankIcon + escapeHtml(p.name) + hostBadge + kickBtn + '</div>';
+  }).join('');
+  list.querySelectorAll('.teamsplit-kick-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var pid = parseInt(this.dataset.pid);
+      var target = currentPlayers.find(function(p) { return p.id === pid; });
+      if (target && confirm('确定要踢出「' + target.name + '」吗？')) {
+        kickPlayer(pid);
+      }
+    });
+  });
+  if (currentPlayerId && players.length > 0 && !players.some(function(p) { return p.id === currentPlayerId; })) {
+    currentPlayerId = null;
+    if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
+    showToast('你已被房主移出房间', 3000);
+  }
+  updateHostControls(isHost, currentPlayers.length);
+}
+
+function isCurrentUserHost() {
+  return !!currentUserId && currentUserId === currentHostUserId;
 }
 
 function updateHostControls(isHost, playerCount) {
@@ -123,14 +127,12 @@ async function cleanupOldRooms() {
   try {
     var oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     var twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    // 清理已完成的旧房间（>24h）
     var oldDone = await supabase.from('rooms').select('code').eq('status', 'done').lt('created_at', oneDayAgo);
     if (oldDone.data && oldDone.data.length > 0) {
       var doneCodes = oldDone.data.map(function(r) { return r.code; });
       await supabase.from('players').delete().in('room_code', doneCodes);
       await supabase.from('rooms').delete().in('code', doneCodes);
     }
-    // 清理超时的等待中房间（>2h 无人使用）
     var oldWaiting = await supabase.from('rooms').select('code').eq('status', 'waiting').lt('created_at', twoHoursAgo);
     if (oldWaiting.data && oldWaiting.data.length > 0) {
       var waitingCodes = oldWaiting.data.map(function(r) { return r.code; });
@@ -143,11 +145,14 @@ async function cleanupOldRooms() {
 async function createRoom() {
   var code = generateRoomCode();
   try {
-    var result = await supabase.from('rooms').insert({ code: code, status: 'waiting' }).select().single();
+    var userId = await getUserId();
+    if (!userId) throw new Error('身份初始化失败，请刷新重试');
+    var insertData = { code: code, status: 'waiting', host_user_id: userId };
+    var result = await supabase.from('rooms').insert(insertData).select().single();
     if (result.error) throw result.error;
     currentRoomCode = code;
     currentPlayers = [];
-    hostDeviceId = getDeviceId();
+    currentHostUserId = userId;
     var codeDisplay = document.getElementById('roomCodeDisplay');
     codeDisplay.textContent = code;
     codeDisplay.style.cursor = 'pointer';
@@ -165,9 +170,11 @@ async function joinRoom() {
   var code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
   if (!code) { showToast('请输入房间码', 2000); return; }
   try {
+    await getUserId();
     var result = await supabase.from('rooms').select('*').eq('code', code).eq('status', 'waiting').single();
     if (result.error || !result.data) throw new Error('房间不存在或已开始');
     currentRoomCode = code;
+    currentHostUserId = result.data.host_user_id || null;
     var codeDisplay = document.getElementById('roomCodeDisplay');
     codeDisplay.textContent = code;
     codeDisplay.style.cursor = 'pointer';
@@ -197,7 +204,7 @@ async function joinLobby() {
   rank = parseInt(rank);
   if (rank < 1 || rank > 9) { showToast('段位无效', 2000); return; }
   try {
-    // 检查同一房间内是否有同名玩家（排除自己之前的旧记录）
+    var userId = await getUserId();
     var savedId = localStorage.getItem('ts_player_' + currentRoomCode);
     var dupQuery = supabase.from('players').select('id,name').eq('room_code', currentRoomCode).ilike('name', name);
     if (savedId) dupQuery = dupQuery.neq('id', savedId);
@@ -207,6 +214,7 @@ async function joinLobby() {
       return;
     }
     var insertData = { room_code: currentRoomCode, name: name, rank: rank };
+    if (userId) insertData.user_id = userId;
     var insertResult = await supabase.from('players').insert(insertData).select().single();
     if (insertResult.error) throw insertResult.error;
     currentPlayerId = insertResult.data.id;
@@ -222,15 +230,14 @@ async function joinLobby() {
 }
 
 async function tryAutoJoin(code) {
-  var savedId = localStorage.getItem('ts_player_' + code);
-  if (!savedId) return false;
+  var userId = await getUserId();
+  if (!userId) return false;
   try {
-    var result = await supabase.from('players').select('*').eq('id', savedId).eq('room_code', code).single();
+    var result = await supabase.from('players').select('*').eq('user_id', userId).eq('room_code', code).single();
     if (result.error || !result.data) {
-      localStorage.removeItem('ts_player_' + code);
       return false;
     }
-    currentPlayerId = savedId;
+    currentPlayerId = result.data.id;
     return true;
   } catch (e) {
     return false;
@@ -261,8 +268,6 @@ async function handlePlayersChanged() {
   try {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
     var players = result.data || [];
-
-    // 检测被移除的玩家（显示 toast 通知房间里其他人）
     var removed = currentPlayers.filter(function(p) {
       return !players.some(function(np) { return np.id === p.id; });
     });
@@ -271,9 +276,7 @@ async function handlePlayersChanged() {
         showToast('「' + p.name + '」已被移出房间', 2000);
       }
     });
-
     updatePlayerList(players);
-    // 检测自己是否被踢——自己的 player ID 不在列表里了
     var stillHere = players.some(function(p) { return p.id === currentPlayerId; });
     if (!stillHere) {
       showToast('你已被房主移出房间', 3000);
@@ -290,8 +293,7 @@ async function doSplit() {
   if (!currentRoomCode) return;
   try {
     if (!currentPlayers || currentPlayers.length < 2) { showToast('至少需要2人', 2000); return; }
-    if (!isCurrentUserHost(currentPlayers)) { showToast('只有房主可以开始分队', 2000); return; }
-    // 按段位平衡分队
+    if (!isCurrentUserHost()) { showToast('只有房主可以开始分队', 2000); return; }
     var ranked = currentPlayers.slice().sort(function(a, b) { return (b.rank || 0) - (a.rank || 0); });
     var teamA = [], teamB = [];
     var sumA = 0, sumB = 0;
@@ -319,7 +321,7 @@ async function resetSplit() {
   if (!currentRoomCode) return;
   try {
     var players = currentPlayers;
-    if (!isCurrentUserHost(players)) { showToast('只有房主可以重新分队', 2000); return; }
+    if (!isCurrentUserHost()) { showToast('只有房主可以重新分队', 2000); return; }
     await supabase.from('rooms').update({ status: 'waiting' }).eq('code', currentRoomCode);
     showTeamsplitView('lobby');
     updatePlayerList(players);
@@ -365,6 +367,7 @@ async function initTeamSplitView() {
     isLeaving = false;
     return;
   }
+  await getUserId();
   await cleanupOldRooms();
   var ri = document.getElementById('roomCodeInput');
   if (ri) ri.value = '';
@@ -387,7 +390,6 @@ async function initTeamSplitView() {
     }
     currentRoomCode = null;
   }
-  // 恢复上次分队结果（刷新页面后）
   var lastResult = localStorage.getItem('ts_last_result');
   if (lastResult) {
     try {

@@ -1,4 +1,4 @@
-const maps = [
+﻿const maps = [
   {cn:'亚海悬城',en:'Ascent',roleColor:'#2dd4bf',img:'https://media.valorant-api.com/maps/7eaecc1b-4337-bbf6-6ab9-04b8f06b3319/splash.png'},
   {cn:'源工重镇',en:'Bind',roleColor:'#c8885c',img:'https://media.valorant-api.com/maps/2c9d57ec-4431-9c5e-2939-8f9ef6dd5cba/splash.png'},
   {cn:'隐世修所',en:'Haven',roleColor:'#5a9e6f',img:'https://media.valorant-api.com/maps/2bee0dc9-4ffe-519b-1cbd-7fbe763a6047/splash.png'},

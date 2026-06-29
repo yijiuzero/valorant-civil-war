@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg: #eff1f5;
   --sidebar-bg: #e4e7ec;
   --accent: #d63b49;
@@ -26,7 +26,7 @@
 body{
   font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
   background:var(--bg);color:var(--text);
-  display:flex;min-height:100vh;overflow:hidden;
+  display:flex;min-height:100vh;overflow-x:hidden;
 }
 .sidebar{
   width:220px;min-width:220px;background:var(--sidebar-bg);
@@ -256,6 +256,9 @@ main::after{
   .home-card{width:140px;}
   #globalToast{white-space:normal;text-align:center;max-width:80%;}
 }
+@media(max-width:768px){
+  body{overflow-y:auto;}
+}
 /* ===== 移动端:侧边栏→底部导航栏 ===== */
 @media(max-width:640px){
   body{flex-direction:column;overflow-y:auto;min-height:100dvh;}
@@ -327,8 +330,11 @@ main::after{
   .af-btn{padding:5px 10px;font-size:12px;}
   .ac-btn{width:28px;height:28px;font-size:12px;}
   .ac-mode-btn{height:28px;padding:0 10px;font-size:11px;}
-  .mc-btn{width:32px;height:32px;font-size:12px;}
-  .btn-machine{padding:8px 22px;font-size:14px;}
+  .mc-btn{width:44px;height:44px;font-size:14px;}
+  .ac-btn{width:44px;height:44px;font-size:14px;}
+  .ac-mode-btn{height:44px;padding:0 14px;font-size:13px;}
+  .btn-machine{padding:10px 22px;font-size:14px;}
+  .teamsplit-kick-btn{width:44px;height:44px;font-size:18px;}
 }
 /* ===== 内战分队模块 ===== */
 #module-teamsplit{
