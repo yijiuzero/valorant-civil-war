@@ -23,7 +23,7 @@
     <li class="nav-item" data-module="teamsplit"><span class="nav-icon">⚔️</span><span>内战分队</span></li>
   </ul>
   <div class="sidebar-footer">
-    <div>V3.4.0 · from zer0</div>
+    <div>V3.4.1 · from zer0</div>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">问题/需求反馈</a>
   </div>
 </nav>
@@ -139,19 +139,11 @@
             <button class="btn-machine teamsplit-inline-btn" id="btnJoinLobby" onclick="joinLobby()">加入分队</button>
           </div>
         </div>
-        <div class="teamsplit-lobby-controls" style="margin-top:16px;">
-          <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:12px;font-size:13px;color:var(--text-dim);">
-            <span>分队模式:</span>
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
-              <input type="radio" name="splitMode" value="rank" checked> 按段位
-            </label>
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
-              <input type="radio" name="splitMode" value="random"> 随机
-            </label>
-          </div>
-        </div>
         <div class="teamsplit-action-stack">
-          <button class="btn-spin teamsplit-primary-btn" id="btnDoSplit" onclick="doSplit()" disabled>开始分队 🎲</button>
+          <div style="display:flex;gap:12px;width:100%;">
+            <button class="btn-spin teamsplit-primary-btn" id="btnDoSplitRank" onclick="doSplit('rank')" disabled>段位分队 ⚖️</button>
+            <button class="btn-spin teamsplit-primary-btn" id="btnDoSplitRandom" onclick="doSplit('random')" disabled>随机分队 🎲</button>
+          </div>
           <button class="btn-machine teamsplit-secondary-btn" onclick="leaveRoom()">离开房间</button>
         </div>
       </div>

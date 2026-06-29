@@ -109,10 +109,15 @@ function isCurrentUserHost() {
 }
 
 function updateHostControls(isHost, playerCount) {
-  var splitBtn = document.getElementById('btnDoSplit');
-  if (splitBtn) {
-    splitBtn.disabled = playerCount < 2 || !isHost;
-    splitBtn.textContent = isHost ? '开始分队' : '仅房主可开始分队';
+  var rankBtn = document.getElementById('btnDoSplitRank');
+  var randomBtn = document.getElementById('btnDoSplitRandom');
+  if (rankBtn) {
+    rankBtn.disabled = playerCount < 2 || !isHost;
+    rankBtn.textContent = isHost ? '段位分队 ⚖️' : '仅房主可分队';
+  }
+  if (randomBtn) {
+    randomBtn.disabled = playerCount < 2 || !isHost;
+    randomBtn.textContent = isHost ? '随机分队 🎲' : '仅房主可分队';
   }
   var resetBtn = document.getElementById('btnResetSplit');
   if (resetBtn) resetBtn.disabled = !isHost;
@@ -289,16 +294,12 @@ async function handlePlayersChanged() {
   } catch (e) {}
 }
 
-async function doSplit() {
+async function doSplit(mode) {
   if (!currentRoomCode) return;
   try {
     if (!currentPlayers || currentPlayers.length < 2) { showToast('至少需要2人', 2000); return; }
     if (!isCurrentUserHost()) { showToast('只有房主可以开始分队', 2000); return; }
-    var mode = 'rank';
-    var radios = document.getElementsByName('splitMode');
-    for (var ri = 0; ri < radios.length; ri++) {
-      if (radios[ri].checked) { mode = radios[ri].value; break; }
-    }
+    if (!mode) mode = 'rank';
     var players = currentPlayers.slice();
     if (mode === 'random') {
       for (var i = players.length - 1; i > 0; i--) {
