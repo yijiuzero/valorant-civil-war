@@ -96,11 +96,6 @@ function updatePlayerList(players) {
       }
     });
   });
-  if (currentPlayerId && players.length > 0 && !players.some(function(p) { return p.id === currentPlayerId; })) {
-    currentPlayerId = null;
-    if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
-    showToast('你已被房主移出房间', 3000);
-  }
   updateHostControls(isHost, currentPlayers.length);
 }
 
@@ -203,6 +198,13 @@ async function joinLobby() {
   if (!name) { showToast('请输入你的名字', 2000); return; }
   if (!currentRoomCode) return;
   if (currentPlayerId) { showToast('你已经在房间中了', 2000); return; }
+  try {
+    var roomCheck = await supabase.from('rooms').select('status').eq('code', currentRoomCode).single();
+    if (roomCheck.data && roomCheck.data.status === 'done') {
+      showToast('该房间已分队完毕，请创建或加入其他房间', 3000);
+      return;
+    }
+  } catch (e) {}
   var rankSel = document.getElementById('playerRankSelect');
   var rank = rankSel ? rankSel.value : '';
   if (!rank) { showToast('请选择你的段位', 2000); return; }
@@ -301,6 +303,10 @@ async function doSplit(mode) {
   try {
     if (!currentPlayers || currentPlayers.length < 2) { showToast('至少需要2人', 2000); return; }
     if (!isCurrentUserHost()) { showToast('只有房主可以开始分队', 2000); return; }
+    var rankBtn = document.getElementById('btnDoSplitRank');
+    var randomBtn = document.getElementById('btnDoSplitRandom');
+    if (rankBtn) rankBtn.disabled = true;
+    if (randomBtn) randomBtn.disabled = true;
     if (!mode) mode = 'rank';
     var players = currentPlayers.slice();
     if (mode === 'random') {
@@ -439,11 +445,31 @@ async function initTeamSplitView() {
 
 function copyRoomCode() {
   if (!currentRoomCode) return;
-  navigator.clipboard.writeText(currentRoomCode).then(function() {
-    showToast('房间码已复制: ' + currentRoomCode, 2000);
-  }).catch(function() {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(currentRoomCode).then(function() {
+      showToast('房间码已复制: ' + currentRoomCode, 2000);
+    }).catch(function() {
+      fallbackCopy(currentRoomCode);
+    });
+  } else {
+    fallbackCopy(currentRoomCode);
+  }
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('房间码已复制: ' + text, 2000);
+  } catch (e) {
     showToast('复制失败，请手动复制', 2000);
-  });
+  }
+  document.body.removeChild(ta);
 }
 
 window.copyRoomCode = copyRoomCode;
