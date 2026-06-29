@@ -258,42 +258,54 @@ function subscribeToRoom(code, onReady) {
     .subscribe(function(status) {
       if (status === 'SUBSCRIBED' && onReady) onReady();
     });
+  startPolling();
+}
+
+var pollInterval = null;
+function startPolling() {
+  if (pollInterval) return;
+  pollInterval = setInterval(function() {
+    if (currentRoomCode) refreshPlayers();
+  }, 3000);
+}
+function stopPolling() {
+  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
 }
 
 async function refreshPlayers() {
   if (!currentRoomCode) return;
   try {
     var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
-    if (result.data) updatePlayerList(result.data);
+    if (result.data) {
+      var players = result.data;
+      var removed = currentPlayers.filter(function(p) {
+        return !players.some(function(np) { return np.id === p.id; });
+      });
+      removed.forEach(function(p) {
+        if (p.id !== currentPlayerId) {
+          showToast('「' + p.name + '」已被移出房间', 2000);
+        }
+      });
+      updatePlayerList(players);
+      if (currentPlayerId) {
+        var stillHere = players.some(function(p) { return p.id === currentPlayerId; });
+        if (!stillHere) {
+          showToast('你已被房主移出房间', 3000);
+          if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
+          stopPolling();
+          if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
+          currentRoomCode = null;
+          currentPlayerId = null;
+          showTeamsplitView('create');
+        }
+      }
+    }
   } catch (e) {}
 }
 
 async function handlePlayersChanged() {
   if (!currentRoomCode) return;
-  try {
-    var result = await supabase.from('players').select('*').eq('room_code', currentRoomCode).order('created_at');
-    var players = result.data || [];
-    var removed = currentPlayers.filter(function(p) {
-      return !players.some(function(np) { return np.id === p.id; });
-    });
-    removed.forEach(function(p) {
-      if (p.id !== currentPlayerId) {
-        showToast('「' + p.name + '」已被移出房间', 2000);
-      }
-    });
-    updatePlayerList(players);
-    if (currentPlayerId) {
-      var stillHere = players.some(function(p) { return p.id === currentPlayerId; });
-      if (!stillHere) {
-        showToast('你已被房主移出房间', 3000);
-        if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
-        if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
-        currentRoomCode = null;
-        currentPlayerId = null;
-        showTeamsplitView('create');
-      }
-    }
-  } catch (e) {}
+  await refreshPlayers();
 }
 
 async function doSplit(mode) {
@@ -366,6 +378,7 @@ async function kickPlayer(playerId) {
 async function leaveRoom() {
   isLeaving = true;
   if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
+  stopPolling();
   if (currentRoomCode && currentPlayerId) {
     try {
       await supabase.from('players').delete().eq('id', currentPlayerId);
