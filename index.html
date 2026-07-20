@@ -399,6 +399,7 @@
 <!-- 登录弹窗 -->
 <div class="auth-overlay" id="authOverlay" style="display:none;" onclick="if(event.target===this)toggleAuthOverlay()">
   <div class="auth-card">
+    <div class="auth-close" onclick="toggleAuthOverlay()">✕</div>
     <div class="auth-logo">🕹️</div>
     <div class="auth-title" id="authTitle">欢迎回来</div>
     <div class="auth-subtitle" id="authSubtitle">用昵称和密码登录</div>

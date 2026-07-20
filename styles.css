@@ -899,12 +899,18 @@ main::after{
   backdrop-filter:blur(6px);
 }
 .auth-card{
+  position:relative;
   background:color-mix(in srgb,var(--sidebar-bg) 78%,rgba(10,16,24,.78));
   border:1px solid color-mix(in srgb,var(--accent) 16%,var(--border));
   border-radius:20px;padding:36px 32px;width:360px;max-width:90vw;
   backdrop-filter:blur(14px);box-shadow:0 24px 64px rgba(0,0,0,.4);
   text-align:center;
 }
+.auth-close{
+  position:absolute;top:12px;right:16px;font-size:20px;color:var(--text-dim);
+  cursor:pointer;line-height:1;padding:4px;border-radius:6px;transition:all .15s;
+}
+.auth-close:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);}
 .auth-logo{font-size:48px;margin-bottom:8px;}
 .auth-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px;}
 .auth-subtitle{font-size:13px;color:var(--text-dim);margin-bottom:24px;}
