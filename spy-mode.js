@@ -351,6 +351,8 @@ function doStandaloneSplit() {
   saState.teamA = shuffled.slice(0, mid);
   saState.teamB = shuffled.slice(mid);
   saState.phase = 'init';
+  saViewedIds.clear();
+  if (saAutoHideTimer) { clearTimeout(saAutoHideTimer); saAutoHideTimer = null; }
   saveStandaloneState(saState);
   document.getElementById('spyStandaloneSetup').style.display = 'none';
   document.getElementById('spyStandaloneGame').style.display = '';
@@ -417,10 +419,13 @@ function renderSPlaying() {
     const normalPanel = document.getElementById('sSpyNormalPanel');
     if (normalPanel) {
       normalPanel.querySelector('.spy-card-body').innerHTML =
-        '<p>游戏开始前，请每位玩家轮流点击自己的名字查看身份。</p>' +
+        '<p>请每位玩家轮流点击自己的名字查看身份，看完自动隐藏。</p>' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">' +
         (saState.teamA || []).concat(saState.teamB || []).map(function(p) {
-          return '<div class="spy-setup-chip" style="cursor:pointer" onclick="viewStandaloneIdentity(' + p.id + ')">👤 ' + esc(p.name) + '</div>';
+          const viewed = saViewedIds.has(p.id);
+          const cls = viewed ? 'spy-setup-chip spy-viewed' : 'spy-setup-chip';
+          const onclick = viewed ? '' : ' onclick="viewStandaloneIdentity(' + p.id + ')"';
+          return '<div class="' + cls + '" style="cursor:' + (viewed ? 'default' : 'pointer') + '"' + onclick + '>👤 ' + esc(p.name) + (viewed ? ' ✓' : '') + '</div>';
         }).join('') +
         '</div>';
     }
@@ -442,12 +447,16 @@ function renderSPlaying() {
 }
 
 let saViewedSpy = null;
+const saViewedIds = new Set();
+let saAutoHideTimer = null;
 
 function viewStandaloneIdentity(pid) {
-  if (!saState) return;
+  if (!saState || saViewedIds.has(pid)) return;
   saViewedSpy = pid;
+  saViewedIds.add(pid);
   const isSpy = (pid === saState.team_a_spy || pid === saState.team_b_spy);
   const label = document.getElementById('sSpyTeamLabel');
+
   if (isSpy) {
     document.getElementById('sSpyIdentityPanel').style.display = '';
     document.getElementById('sSpyNormalPanel').style.display = 'none';
@@ -460,12 +469,22 @@ function viewStandaloneIdentity(pid) {
       document.getElementById('sSpyTaskDesc').textContent = task.desc;
     }
   } else {
+    // 非内鬼：短暂提示后自动回到列表
     document.getElementById('sSpyIdentityPanel').style.display = 'none';
     document.getElementById('sSpyNormalPanel').style.display = '';
-    // 非内鬼：还原到玩家列表界面
+    const normalPanel = document.getElementById('sSpyNormalPanel');
+    if (normalPanel) {
+      normalPanel.querySelector('.spy-card-body').innerHTML = '<p style="text-align:center;font-size:18px;padding:20px;">✅ 你不是内鬼！<br><span style="font-size:13px;color:var(--text-dim)">身份已查看，即将返回列表...</span></p>';
+    }
+  }
+
+  // 3 秒后自动隐藏，回到列表
+  if (saAutoHideTimer) clearTimeout(saAutoHideTimer);
+  saAutoHideTimer = setTimeout(function() {
     saViewedSpy = null;
     renderSPlaying();
-  }
+  }, 3000);
+}
 
 function isCurrentSPlayerSpy() {
   if (!saViewedSpy || !saState) return null;
@@ -475,6 +494,7 @@ function isCurrentSPlayerSpy() {
 
 function hideSpyIdentity() {
   saViewedSpy = null;
+  if (saAutoHideTimer) { clearTimeout(saAutoHideTimer); saAutoHideTimer = null; }
   renderSPlaying();
 }
 
@@ -506,6 +526,8 @@ function renderSRevealed() {
 
 function resetStandaloneSpy() {
   saViewedSpy = null;
+  saViewedIds.clear();
+  if (saAutoHideTimer) { clearTimeout(saAutoHideTimer); saAutoHideTimer = null; }
   saState = { players: [], teamA: [], teamB: [], phase: 'init' };
   clearStandaloneState();
   document.getElementById('spyStandaloneGame').style.display = 'none';

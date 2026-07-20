@@ -881,6 +881,7 @@ main::after{
 .spy-setup-chip-remove:hover{background:var(--accent);color:#fff;}
 .spy-setup-actions{display:flex;justify-content:center;}
 .spy-setup-actions .btn-spy-mode{width:100%;max-width:320px;}
+.spy-viewed{opacity:.45;filter:grayscale(60%);pointer-events:none;}
 
 @media(max-width:640px){
   .spy-playing-layout{grid-template-columns:1fr;}
