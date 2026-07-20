@@ -376,9 +376,9 @@ async function init() {
   initAgentUI();
   navItems.forEach(i => i.addEventListener('click', () => switchModule(i.dataset.module)));
   switchModule('home');
-  // 启动时检查登录状态
-  if (typeof checkAuth === 'function') {
-    try { await checkAuth(); } catch (e) { /* auth optional */ }
+  // 静默检测已有登录 session（不弹窗）
+  if (typeof initAuth === 'function') {
+    try { await initAuth(); } catch (e) { /* optional */ }
   }
 }
 
