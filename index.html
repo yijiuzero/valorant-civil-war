@@ -21,6 +21,7 @@
     <li class="nav-item" data-module="agent"><span class="nav-icon">🧩</span><span>随机特工</span></li>
     <li class="nav-item" data-module="stats"><span class="nav-icon">📊</span><span>内战专用</span></li>
     <li class="nav-item" data-module="teamsplit"><span class="nav-icon">⚔️</span><span>内战分队</span></li>
+    <li class="nav-item" data-module="spy"><span class="nav-icon">🕵️</span><span>内鬼模式</span></li>
   </ul>
   <div class="sidebar-footer">
     <div style="opacity:0.6;">from zer0 · V3.5.0</div>
@@ -286,13 +287,109 @@
       <div class="challenge-history" id="challengeHistory"></div>
     </div>
   </div>
+  <!-- 独立内鬼模式 -->
+  <div class="content-layer" id="module-spy" style="display:none;">
+    <div class="module-title">🕵️ 内鬼模式</div>
+    <div class="module-sub">可选手动组队或从已有分队房间进入</div>
+
+    <!-- 入口选择 -->
+    <div id="spyStandaloneEntry" style="width:100%;max-width:520px;">
+      <div class="spy-entry-cards">
+        <div class="spy-entry-card" onclick="startSpySetup()">
+          <div class="spy-entry-icon">✍️</div>
+          <div class="spy-entry-title">手动组队</div>
+          <div class="spy-entry-desc">输入玩家名字，自行分队后开启内鬼模式</div>
+        </div>
+        <div class="spy-entry-card" onclick="switchModule('teamsplit')">
+          <div class="spy-entry-icon">📋</div>
+          <div class="spy-entry-title">从分队房间进入</div>
+          <div class="spy-entry-desc">在内战分队中完成分房后再开启内鬼模式</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 手动组队面板 -->
+    <div id="spyStandaloneSetup" style="display:none;width:100%;max-width:600px;">
+      <div class="spy-setup-card">
+        <div class="spy-setup-head">
+          <span>✍️ 手动组队</span>
+          <button class="spy-setup-back" onclick="backToSpyEntry()">← 返回</button>
+        </div>
+        <div class="spy-setup-input-row">
+          <input class="teamsplit-input" id="standalonePlayerInput" type="text" placeholder="输入玩家名字，回车添加" maxlength="12" onkeydown="if(event.key==='Enter')addStandalonePlayer()">
+          <button class="btn-machine teamsplit-inline-btn" onclick="addStandalonePlayer()" style="min-height:48px;">添加</button>
+        </div>
+        <div class="spy-setup-players" id="spySetupPlayerList">
+          <div class="spy-setup-empty">还没有添加玩家，在上方输入名字添加</div>
+        </div>
+        <div class="spy-setup-actions">
+          <button class="btn-spy-mode" id="btnStandaloneSplit" onclick="doStandaloneSplit()" disabled style="min-height:48px;font-size:15px;">随机分队 🎲</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 独立内鬼游戏面板 -->
+    <div id="spyStandaloneGame" style="display:none;width:100%;max-width:660px;">
+      <button class="spy-setup-back" onclick="backToSpySetup()" style="margin-bottom:12px;display:inline-block;">← 返回组队</button>
+
+      <div id="sSpyInit">
+        <div class="spy-init-card">
+          <div class="spy-init-icon">🕵️</div>
+          <div class="spy-init-title">准备开启内鬼模式</div>
+          <div class="spy-init-sub">点击下方按钮，系统将从每队随机选一人作为内鬼</div>
+          <div class="spy-team-preview" id="sSpyTeamPreview"></div>
+          <button class="btn-spin" onclick="assignStandaloneSpies()">分配内鬼 🕵️</button>
+        </div>
+      </div>
+
+      <div id="sSpyPlaying" style="display:none;">
+        <div class="spy-playing-layout">
+          <div class="spy-card spy-card-normal" id="sSpyNormalPanel">
+            <div class="spy-card-head">🎮 普通玩家</div>
+            <div class="spy-card-body">
+              <p>你是一名普通队员，目标是帮助队伍获胜。</p>
+              <p class="spy-hint">但请注意——你的队伍中可能潜伏着一名内鬼。</p>
+            </div>
+          </div>
+          <div class="spy-card spy-card-traitor" id="sSpyIdentityPanel">
+            <div class="spy-card-head">🕵️ 你是内鬼！</div>
+            <div class="spy-card-body">
+              <div class="spy-identity-row"><span>所属队伍：</span><strong id="sSpyTeamLabel">-</strong></div>
+              <div class="spy-task-card">
+                <div class="spy-task-label">🎯 你的秘密任务</div>
+                <div class="spy-task-main">
+                  <span class="spy-task-icon" id="sSpyTaskIcon">-</span>
+                  <span class="spy-task-title" id="sSpyTaskTitle">-</span>
+                </div>
+                <div class="spy-task-desc" id="sSpyTaskDesc">-</div>
+              </div>
+              <p class="spy-warning">⚠️ 注意隐蔽！完成任务不被发现。</p>
+            </div>
+          </div>
+        </div>
+        <div class="spy-action-row">
+          <button class="btn-spy-mode" id="sBtnRevealSpies" onclick="revealStandaloneSpies()">揭晓内鬼 🎭</button>
+        </div>
+      </div>
+
+      <div id="sSpyRevealed" style="display:none;">
+        <div class="spy-reveal-card">
+          <div class="spy-reveal-icon">🎭</div>
+          <div class="spy-reveal-title">内鬼身份揭晓！</div>
+          <div class="spy-reveal-teams" id="sSpyRevealTeams"></div>
+          <p class="spy-reveal-rule">内鬼队伍输掉比赛 → 内鬼获胜<br>内鬼队伍赢得比赛 → 队员获胜</p>
+          <button class="btn-spin" onclick="resetStandaloneSpy()" style="margin-top:16px;">再来一局 🔄</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </main>
 <button id="themeToggle" aria-label="切换主题" title="切换主题">🌙</button>
 <div id="globalToast"></div>
 
-  <script src="app-data.js?v=5"></script>
-  <script type="module" src="teamsplit.js?v=5"></script>
-  <script type="module" src="spy-mode.js?v=5"></script>
-  <script src="app.js?v=5"></script>
+  <script src="app-data.js?v=6"></script>
+  <script type="module" src="teamsplit.js?v=6"></script>
+  <script type="module" src="spy-mode.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
