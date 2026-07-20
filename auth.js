@@ -62,7 +62,7 @@ function onAuthSuccess() {
 // 点击侧边栏登录按钮
 function toggleAuthOverlay() {
   const el = document.getElementById('authOverlay');
-  if (el.style.display === 'none' || !el.style.display) {
+  if (el.style.display === 'none') {
     el.style.display = '';
     document.getElementById('authError').textContent = '';
     document.getElementById('authNickname').value = '';
