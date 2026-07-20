@@ -1,4 +1,6 @@
-﻿const maps = [
+﻿const VALORANT_API = 'https://media.valorant-api.com';
+
+const maps = [
   {cn:'亚海悬城',en:'Ascent',roleColor:'#2dd4bf',img:'https://media.valorant-api.com/maps/7eaecc1b-4337-bbf6-6ab9-04b8f06b3319/splash.png'},
   {cn:'源工重镇',en:'Bind',roleColor:'#c8885c',img:'https://media.valorant-api.com/maps/2c9d57ec-4431-9c5e-2939-8f9ef6dd5cba/splash.png'},
   {cn:'隐世修所',en:'Haven',roleColor:'#5a9e6f',img:'https://media.valorant-api.com/maps/2bee0dc9-4ffe-519b-1cbd-7fbe763a6047/splash.png'},
@@ -61,3 +63,21 @@ const challengeRules = [
   '所有人中路对狙1V1','只能玩喷子','看见人必须要喷漆后才能开枪','不能跳',
   '这回合只能说5句话','只能边跳边开枪','只能用语气词来说话（哈哈嘻嘻呵呵等）'
 ];
+
+const spyTasks = [
+  { title:'经济破坏者', desc:'本局至少一次：买满技能+枪然后全部丢弃，浪费 ≥2000 经济', icon:'💸' },
+  { title:'静默之影', desc:'选一个回合：完全不使用语音/文字报点，当哑巴', icon:'🤫' },
+  { title:'迷路专家', desc:'有一个回合：故意给出错误的位置信息（例如说A实际打B）', icon:'🗺️' },
+  { title:'友军火力', desc:'用一个技能干扰至少一位队友的视野或走位（如烟雾弹挡队友枪线）', icon:'💥' },
+  { title:'时间管理', desc:'在关键回合：故意拖延 10 秒不下包/不拆包', icon:'⏰' },
+  { title:'装备黑洞', desc:'捡起队友掉落的枪，下一回合开始前丢弃', icon:'🕳️' },
+  { title:'佛系玩家', desc:'选一个回合：不使用任何技能（包括大招）', icon:'🧘' },
+  { title:'人体描边', desc:'面对敌人时空枪：至少连续 10 发子弹不命中', icon:'🎯' },
+  { title:'战术性失误', desc:'故意在队友身后/脚下扔一个闪或烟，影响队友操作', icon:'💣' },
+  { title:'听力障碍', desc:'选一个回合：听到脚步/技能后不向队友报点', icon:'🔇' },
+  { title:'孤狼行动', desc:'有一个回合故意脱离队伍单独行动，不参与团队战术', icon:'🐺' },
+  { title:'慈善家', desc:'给对方送一把好枪（把主力枪扔到对方可见区域）', icon:'🎁' },
+];
+
+const spyPhases = ['assigning', 'playing', 'voting', 'revealed'];
+window.spyTasks = spyTasks;

@@ -8,6 +8,10 @@
   --card: #e9ecf0;
   --hover: #dde1e8;
   --border: #d2d6de;
+  --role-duelist: #ff4655;
+  --role-initiator: #3b82f6;
+  --role-controller: #22c55e;
+  --role-sentinel: #f59e0b;
 }
 
 .theme-dark {
@@ -25,12 +29,12 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
-body{scrollbar-gutter:stable both-edges}
 body{
   font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
   background:var(--bg);color:var(--text);
   display:flex;min-height:100vh;overflow-x:hidden;
   overscroll-behavior:none;
+  scrollbar-gutter:stable both-edges;
 }
 .sidebar{
   width:220px;min-width:220px;background:var(--sidebar-bg);
@@ -87,8 +91,8 @@ main::after{
   width:100%;
   max-width:1300px;
 }
-.module-title{font-size:22px;font-weight:700;margin-bottom:8px;color:#ff4655;}
-.module-sub{font-size:13px;color:#94a3b8;margin-bottom:32px;}
+.module-title{font-size:22px;font-weight:700;margin-bottom:8px;color:var(--accent);}
+.module-sub{font-size:13px;color:var(--text-dim);margin-bottom:32px;}
 
 /* ===== 抽奖主按钮 ===== */
 .btn-spin{
@@ -175,10 +179,10 @@ main::after{
 }
 .af-btn:hover{color:var(--text);border-color:var(--text-dim);}
 .af-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;}
-.af-btn[data-role="决斗者"].active{background:#ff4655;border-color:#ff4655;}
-.af-btn[data-role="先锋"].active{background:#3b82f6;border-color:#3b82f6;}
-.af-btn[data-role="控场者"].active{background:#22c55e;border-color:#22c55e;}
-.af-btn[data-role="哨卫"].active{background:#f59e0b;border-color:#f59e0b;}
+.af-btn[data-role="决斗者"].active{background:var(--role-duelist);border-color:var(--role-duelist);}
+.af-btn[data-role="先锋"].active{background:var(--role-initiator);border-color:var(--role-initiator);}
+.af-btn[data-role="控场者"].active{background:var(--role-controller);border-color:var(--role-controller);}
+.af-btn[data-role="哨卫"].active{background:var(--role-sentinel);border-color:var(--role-sentinel);}
 
 .agent-count{display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
 .agent-count span{font-size:13px;color:var(--text-dim);}
@@ -259,8 +263,6 @@ main::after{
   .agent-card img{width:40px;height:40px;}
   .home-card{width:140px;}
   #globalToast{white-space:normal;text-align:center;max-width:80%;}
-}
-@media(max-width:768px){
   body{overflow-y:auto;}
 }
 /* ===== 移动端:侧边栏→底部导航栏 ===== */
@@ -332,7 +334,6 @@ main::after{
   .agent-card img{width:34px;height:34px;}
   .agent-card .agent-name{font-size:10px;}
   .af-btn{padding:5px 10px;font-size:12px;}
-  .ac-btn{width:28px;height:28px;font-size:12px;}
   .ac-mode-btn{height:28px;padding:0 10px;font-size:11px;}
   .mc-btn{width:44px;height:44px;font-size:14px;}
   .ac-btn{width:44px;height:44px;font-size:14px;}
@@ -571,26 +572,6 @@ main::after{
   font-weight:800;
   line-height:1;
 }
-.teamsplit-rank-badge{
-  display:inline-flex;
-  align-items:center;
-  height:20px;
-  padding:0 8px;
-  border-radius:999px;
-  background:color-mix(in srgb,var(--accent) 16%,transparent);
-  color:var(--accent);
-  font-size:11px;
-  font-weight:700;
-  line-height:1;
-  order:-1;
-}
-.teamsplit-rank-badge[data-rank="7"],
-.teamsplit-rank-badge[data-rank="8"],
-.teamsplit-rank-badge[data-rank="9"]{
-  background:rgba(255,70,85,.14);
-  color:var(--accent);
-  box-shadow:0 0 8px rgba(255,70,85,.2);
-}
 .teamsplit-kick-btn{
   display:inline-flex;
   align-items:center;
@@ -805,5 +786,76 @@ main::after{
 @keyframes dotPulse{0%,100%{opacity:.3;transform:scale(.8);}50%{opacity:1;transform:scale(1.1);}}
 @media(max-width:640px){.machine-frame{padding:16px 14px;}.machine-text{font-size:18px;}.machine-text.result{font-size:20px;}.btn-machine{padding:10px 28px;font-size:15px;}}
 @media(max-width:420px){.machine-display{padding:14px 16px;min-height:60px;}.machine-text{font-size:16px;}.machine-text.result{font-size:18px;}.history-chip{padding:6px 10px;font-size:12px;}}
+
+/* ===== 内鬼模式 ===== */
+.teamsplit-spy{width:100%;}
+.spy-init-card{text-align:center;padding:20px 0;}
+.spy-init-icon{font-size:56px;margin-bottom:12px;}
+.spy-init-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px;}
+.spy-init-sub{font-size:14px;color:var(--text-dim);margin-bottom:24px;line-height:1.6;}
+.spy-team-preview{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;text-align:left;}
+.spy-team-col{background:color-mix(in srgb,var(--card) 86%,transparent);border-radius:12px;padding:14px;border:1px solid color-mix(in srgb,var(--border) 80%,transparent);}
+.spy-team-label{font-size:15px;font-weight:800;text-align:center;padding:8px;border-radius:8px;color:#fff;margin-bottom:10px;}
+.spy-team-label.team-a{background:linear-gradient(135deg,#ff4655,#c8303d);}
+.spy-team-label.team-b{background:linear-gradient(135deg,#3b82f6,#2563eb);}
+.spy-team-players{display:flex;flex-direction:column;gap:6px;}
+.spy-team-member{padding:6px 10px;border-radius:8px;background:var(--bg);font-size:13px;font-weight:600;color:var(--text);}
+.spy-team-member.spy-self{border:2px solid var(--accent2);background:color-mix(in srgb,var(--accent2) 12%,var(--bg));}
+
+.spy-status-card{text-align:center;padding:40px 0;}
+.spy-status-icon{font-size:48px;margin-bottom:12px;animation:spyPulse 1s ease infinite;}
+.spy-status-text{font-size:18px;font-weight:700;color:var(--text);}
+@keyframes spyPulse{0%,100%{opacity:.6;transform:scale(1);}50%{opacity:1;transform:scale(1.08);}}
+
+.spy-playing-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;}
+.spy-card{border-radius:16px;padding:20px;border:1px solid;}
+.spy-card-head{font-size:17px;font-weight:800;margin-bottom:14px;}
+.spy-card-body p{margin-bottom:8px;font-size:14px;line-height:1.6;color:var(--text);}
+.spy-card-body p.spy-hint{color:var(--text-dim);font-size:13px;}
+.spy-card-normal{border-color:color-mix(in srgb,var(--border) 80%,transparent);background:color-mix(in srgb,var(--card) 88%,transparent);}
+.spy-card-normal .spy-card-head{color:var(--text);}
+.spy-card-traitor{border-color:color-mix(in srgb,var(--accent2) 40%,transparent);background:color-mix(in srgb,var(--accent2) 8%,var(--card));}
+.spy-card-traitor .spy-card-head{color:var(--accent2);}
+
+.spy-identity-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px;color:var(--text);}
+.spy-identity-row strong{font-size:15px;}
+
+.spy-task-card{margin-top:16px;padding:16px;border-radius:12px;background:color-mix(in srgb,var(--accent2) 12%,transparent);border:1px dashed color-mix(in srgb,var(--accent2) 35%,transparent);}
+.spy-task-label{font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;}
+.spy-task-main{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.spy-task-icon{font-size:28px;}
+.spy-task-title{font-size:18px;font-weight:800;color:var(--accent2);}
+.spy-task-desc{font-size:13px;color:var(--text-dim);line-height:1.5;}
+.spy-warning{color:var(--accent2);font-size:12px;margin-top:14px;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--accent2) 8%,transparent);}
+
+.spy-action-row{display:flex;justify-content:center;margin-top:20px;}
+
+.spy-reveal-card{text-align:center;padding:20px 0;}
+.spy-reveal-icon{font-size:56px;margin-bottom:12px;}
+.spy-reveal-title{font-size:22px;font-weight:800;color:var(--accent);margin-bottom:20px;}
+.spy-reveal-teams{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+.spy-reveal-col{background:color-mix(in srgb,var(--card) 88%,transparent);border-radius:14px;padding:18px;text-align:center;border:1px solid color-mix(in srgb,var(--border) 80%,transparent);}
+.spy-reveal-team{font-size:16px;font-weight:800;margin-bottom:10px;padding:8px;border-radius:8px;color:#fff;}
+.spy-reveal-name{font-size:24px;font-weight:900;color:var(--accent2);margin-bottom:10px;}
+.spy-reveal-task{font-size:12px;color:var(--text-dim);line-height:1.5;}
+.spy-reveal-rule{font-size:13px;color:var(--text-dim);line-height:1.8;}
+
+.btn-spy-mode{
+  position:relative;background:linear-gradient(135deg,var(--accent2),color-mix(in srgb,var(--accent2) 70%,#000));
+  color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .2s;letter-spacing:1px;overflow:hidden;font-family:inherit;
+  min-height:44px;white-space:nowrap;
+}
+.btn-spy-mode:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 24px color-mix(in srgb,var(--accent2) 35%,transparent);}
+.btn-spy-mode:active:not(:disabled){transform:translateY(0);}
+.btn-spy-mode:disabled{opacity:.5;cursor:not-allowed;}
+
+@media(max-width:640px){
+  .spy-playing-layout{grid-template-columns:1fr;}
+  .spy-team-preview{grid-template-columns:1fr;}
+  .spy-reveal-teams{grid-template-columns:1fr;}
+  .spy-init-icon{font-size:42px;}
+  .spy-reveal-icon{font-size:42px;}
+}
 
 

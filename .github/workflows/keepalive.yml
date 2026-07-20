@@ -1,0 +1,25 @@
+name: Supabase 保活
+
+on:
+  schedule:
+    # 每天 UTC 8:00（北京时间 16:00）运行一次
+    - cron: '0 8 * * *'
+  # 也允许手动触发（Actions 页面 → Run workflow）
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/rooms?limit=1")
+
+          if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 406 ]; then
+            echo "✅ Supabase 活跃状态已确认 (HTTP $RESPONSE)"
+          else
+            echo "⚠️  非预期响应: HTTP $RESPONSE（可能是表不存在，但仍计为活动）"
+          fi

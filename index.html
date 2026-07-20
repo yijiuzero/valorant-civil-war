@@ -167,7 +167,102 @@
         </div>
         <div class="teamsplit-action-row">
           <button class="btn-machine" id="btnResetSplit" onclick="resetSplit()">重新分队</button>
+          <button class="btn-spy-mode" id="btnOpenSpy" onclick="openSpyMode()">🕵️ 内鬼模式</button>
           <button class="btn-machine teamsplit-secondary-btn" onclick="leaveRoom()">离开房间</button>
+        </div>
+      </div>
+      <!-- 内鬼模式面板 -->
+      <div class="teamsplit-spy teamsplit-panel" id="teamsplitSpy" style="display:none;">
+        <div class="teamsplit-panel-head">
+          <div>
+            <div class="teamsplit-panel-title">🕵️ 内鬼模式</div>
+            <div class="teamsplit-panel-sub" id="spyInitHint">每队将有一名隐藏的内鬼，目标是让自己的队伍输掉比赛</div>
+          </div>
+          <button class="btn-machine teamsplit-secondary-btn" onclick="closeSpyMode()" style="min-height:36px;padding:6px 16px;font-size:13px;">← 返回</button>
+        </div>
+        <!-- 1. 初始:等房主开始 -->
+        <div id="spyInit">
+          <div class="spy-init-card">
+            <div class="spy-init-icon">🕵️</div>
+            <div class="spy-init-title">准备开启内鬼模式</div>
+            <div class="spy-init-sub">房主点击下方按钮，系统将随机从每队各选一人作为内鬼</div>
+            <div class="spy-team-preview">
+              <div class="spy-team-col">
+                <div class="spy-team-label team-a">🔴 A队</div>
+                <div class="spy-team-players" id="spyTeamAList"></div>
+              </div>
+              <div class="spy-team-col">
+                <div class="spy-team-label team-b">🔵 B队</div>
+                <div class="spy-team-players" id="spyTeamBList"></div>
+              </div>
+            </div>
+            <button class="btn-spin" id="btnStartSpy" onclick="assignSpies()" disabled>等待房主开始...</button>
+          </div>
+        </div>
+        <!-- 2. 分配中 -->
+        <div id="spyAssigning" style="display:none;">
+          <div class="spy-status-card">
+            <div class="spy-status-icon">🎰</div>
+            <div class="spy-status-text">正在分配内鬼身份...</div>
+          </div>
+        </div>
+        <!-- 3. 游戏中:内鬼/正常玩家面板 -->
+        <div id="spyPlaying" style="display:none;">
+          <div class="spy-playing-layout">
+            <!-- 正常玩家面板 -->
+            <div class="spy-card spy-card-normal" id="spyNormalPanel">
+              <div class="spy-card-head">🎮 普通玩家</div>
+              <div class="spy-card-body">
+                <p>你是一名普通队员，目标是与队伍一起赢得比赛。</p>
+                <p class="spy-hint">但请注意——你的队伍中可能潜伏着一名内鬼。</p>
+                <p class="spy-hint">观察队友是否有异常行为，赛后可以投票揭晓。</p>
+              </div>
+            </div>
+            <!-- 内鬼面板 -->
+            <div class="spy-card spy-card-traitor" id="spyIdentityPanel">
+              <div class="spy-card-head">🕵️ 你是内鬼！</div>
+              <div class="spy-card-body">
+                <div class="spy-identity-row">
+                  <span>所属队伍：</span><strong id="spyTeamLabel">-</strong>
+                </div>
+                <div class="spy-identity-row">
+                  <span>你的目标：</span><strong style="color:var(--accent2)">让你的队伍输掉比赛</strong>
+                </div>
+                <div class="spy-task-card">
+                  <div class="spy-task-label">🎯 你的秘密任务</div>
+                  <div class="spy-task-main">
+                    <span class="spy-task-icon" id="spyTaskIcon">-</span>
+                    <span class="spy-task-title" id="spyTaskTitle">-</span>
+                  </div>
+                  <div class="spy-task-desc" id="spyTaskDesc">-</div>
+                </div>
+                <p class="spy-warning">⚠️ 注意隐蔽！如果被队友识破，你将在赛后投票中被踢出。</p>
+              </div>
+            </div>
+          </div>
+          <div class="spy-action-row">
+            <button class="btn-spin" id="btnRevealSpies" onclick="revealSpies()" style="display:none;background:var(--accent2)">揭晓内鬼 🎭</button>
+          </div>
+        </div>
+        <!-- 4. 揭晓结果 -->
+        <div id="spyRevealed" style="display:none;">
+          <div class="spy-reveal-card">
+            <div class="spy-reveal-icon">🎭</div>
+            <div class="spy-reveal-title">内鬼身份揭晓！</div>
+            <div class="spy-reveal-teams">
+              <div class="spy-reveal-col">
+                <div class="spy-reveal-team team-a">🔴 A队内鬼</div>
+                <div class="spy-reveal-name" id="revealSpyA">-</div>
+                <div class="spy-reveal-task" id="revealTaskA">-</div>
+              </div>
+              <div class="spy-reveal-col">
+                <div class="spy-reveal-team team-b">🔵 B队内鬼</div>
+                <div class="spy-reveal-name" id="revealSpyB">-</div>
+                <div class="spy-reveal-task" id="revealTaskB">-</div>
+              </div>
+            </div>
+            <p class="spy-reveal-rule">内鬼所在队伍输掉比赛 → 内鬼获胜<br>内鬼队伍赢得比赛 → 队员获胜</p>
+          </div>
         </div>
       </div>
     </div>
@@ -197,6 +292,7 @@
 
   <script src="app-data.js?v=4"></script>
   <script type="module" src="teamsplit.js?v=4"></script>
+  <script type="module" src="spy-mode.js?v=5"></script>
   <script src="app.js?v=4"></script>
 </body>
 </html>

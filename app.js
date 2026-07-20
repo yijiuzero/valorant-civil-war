@@ -2,10 +2,12 @@
 let mapCount = 1, mapTimer = null, bannedSet = new Set(), toastTimeout = null;
 let agentRole = 'all', agentCount = 1, agentTimer = null, agentMode = 'count', machineSpinning = false;
 let challengeHistory = [];
+let navItems = [], contentLayers = [], mainArea = null;
+let mapCardsRendered = false, agentsRendered = false;
 
 // ---------- 辅助函数:停止抽奖(清理定时器、恢复按钮)----------
 function stopMapSpin(resetButtons = true) {
-  if (mapTimer) { clearInterval(mapTimer); mapTimer = null; }
+  if (mapTimer) { cancelAnimationFrame(mapTimer); mapTimer = null; }
   if (resetButtons) {
     const s = document.getElementById('btnSpin');
     if (s) s.disabled = false;
@@ -15,7 +17,7 @@ function stopMapSpin(resetButtons = true) {
 }
 
 function stopAgentSpin(resetButtons = true) {
-  if (agentTimer) { clearInterval(agentTimer); agentTimer = null; }
+  if (agentTimer) { cancelAnimationFrame(agentTimer); agentTimer = null; }
   if (resetButtons) {
     const s = document.getElementById('btnAgent');
     if (s) s.disabled = false;
@@ -53,14 +55,13 @@ function switchModule(mod) {
   stopMapSpin(true);
   stopAgentSpin(true);
   stopChallenge();
-  document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.module === mod));
-  document.querySelectorAll('.content-layer').forEach(l => l.style.display = 'none');
+  navItems.forEach(i => i.classList.toggle('active', i.dataset.module === mod));
+  contentLayers.forEach(l => l.style.display = 'none');
   const tl = document.getElementById('module-' + mod);
   if (tl) tl.style.display = '';
-  const m = document.getElementById('mainArea');
-  if (mod === 'home') m.style.backgroundImage = 'url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg)';
-  else if (mod === 'wheel') renderMapCards();
-  else if (mod === 'agent') renderAgents();
+  if (mod === 'home') mainArea.style.backgroundImage = 'url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg)';
+  else if (mod === 'wheel') { if (!mapCardsRendered) { renderMapCards(); mapCardsRendered = true; } }
+  else if (mod === 'agent') { if (!agentsRendered) { renderAgents(); agentsRendered = true; } }
   else if (mod === 'teamsplit') initTeamSplitView();
   else if (mod === 'stats') initChallengeMachine();
 }
@@ -126,10 +127,13 @@ function drawMaps() {
   const rd = document.getElementById('mapResults');
   if (rd) rd.innerHTML = '';
   document.querySelectorAll('.map-card').forEach(c => c.classList.remove('highlight'));
-  const dur = 1500, st = performance.now();
-  if (mapTimer) clearInterval(mapTimer);
-  mapTimer = setInterval(() => {
-    const el = performance.now() - st;
+  const dur = 1500, tickMs = 80;
+  let st, lastTick = -tickMs;
+  function tick(now) {
+    if (!st) st = now;
+    if (now - lastTick < tickMs) { mapTimer = requestAnimationFrame(tick); return; }
+    lastTick = now;
+    const el = now - st;
     document.querySelectorAll('.map-card').forEach(c => c.classList.remove('highlight'));
     const cs = Array.from(document.querySelectorAll('.map-card:not(.banned)'));
     if (cs.length) {
@@ -137,16 +141,19 @@ function drawMaps() {
       for (let j = 0; j < Math.min(n, cs.length); j++) cs[ip[j]].classList.add('highlight');
     }
     if (el >= dur) {
-      clearInterval(mapTimer); mapTimer = null;
+      mapTimer = null;
       const sw = shuffleArray(p);
       const w = sw.slice(0, n);
       document.querySelectorAll('.map-card').forEach(c => c.classList.remove('highlight'));
       w.forEach(x => { const c = document.querySelector(`.map-card[data-map="${x.en}"]`); if (c) c.classList.add('highlight'); });
-      if (w.length) { document.getElementById('mainArea').style.backgroundImage = `url(${w[0].img})`; showMapResults(w); }
+      if (w.length) { mainArea.style.backgroundImage = `url(${w[0].img})`; showMapResults(w); }
       b.disabled = false;
       document.querySelectorAll('.mc-btn').forEach(x => x.disabled = false);
+    } else {
+      mapTimer = requestAnimationFrame(tick);
     }
-  }, 80);
+  }
+  mapTimer = requestAnimationFrame(tick);
 }
 
 function showMapResults(w) {
@@ -215,14 +222,14 @@ function renderAgents() {
   const c = document.getElementById('agentGrid');
   if (!c) return;
   const d = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Crect width="48" height="48" fill="%231e2d3d"/%3E%3C/svg%3E';
-  c.innerHTML = p.map(a => `<div class="agent-card" data-agent-id="${a.id}"><img src="https://media.valorant-api.com/agents/${a.id}/displayicon.png" alt="${a.cn}" loading="lazy" onerror="this.src='${d}'"><div class="agent-name"><span class="agent-role-dot" style="background:${a.rc}"></span>${a.cn}</div></div>`).join('');
+  c.innerHTML = p.map(a => `<div class="agent-card" data-agent-id="${a.id}"><img src="${VALORANT_API}/agents/${a.id}/displayicon.png" alt="${a.cn}" loading="lazy" onerror="this.src='${d}'"><div class="agent-name"><span class="agent-role-dot" style="background:${a.rc}"></span>${a.cn}</div></div>`).join('');
   syncChampionButton();
 }
 
 function showAgentResults(l) {
   const c = document.getElementById('agentResults');
   if (!c) return;
-  c.innerHTML = l.map(a => `<div class="agent-result-card" data-agent-id="${a.id}"><img src="https://media.valorant-api.com/agents/${a.id}/displayicon.png"><div><div class="ar-name">${a.cn} (${a.en})</div><div class="ar-meta"><div class="ar-role"><span class="agent-role-dot" style="background:${a.rc}"></span>${a.role}</div></div></div></div>`).join('');
+  c.innerHTML = l.map(a => `<div class="agent-result-card" data-agent-id="${a.id}"><img src="${VALORANT_API}/agents/${a.id}/displayicon.png"><div><div class="ar-name">${a.cn} (${a.en})</div><div class="ar-meta"><div class="ar-role"><span class="agent-role-dot" style="background:${a.rc}"></span>${a.role}</div></div></div></div>`).join('');
   setTimeout(() => {
     l.forEach((a, i) => {
       setTimeout(() => {
@@ -246,10 +253,13 @@ function randomAgent() {
   const cb = document.getElementById('btnChampionComp');
   if (cb) cb.disabled = true;
   document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('highlight'));
-  if (agentTimer) clearInterval(agentTimer);
-  const dur = 1200, st = performance.now();
-  agentTimer = setInterval(() => {
-    const el = performance.now() - st;
+  const dur = 1200, tickMs = 80;
+  let st, lastTick = -tickMs;
+  function tick(now) {
+    if (!st) st = now;
+    if (now - lastTick < tickMs) { agentTimer = requestAnimationFrame(tick); return; }
+    lastTick = now;
+    const el = now - st;
     document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('highlight'));
     const cs = document.querySelectorAll('.agent-card');
     if (cs.length) {
@@ -257,15 +267,18 @@ function randomAgent() {
       for (let j = 0; j < Math.min(n, cs.length); j++) cs[ip[j]].classList.add('highlight');
     }
     if (el >= dur) {
-      clearInterval(agentTimer); agentTimer = null;
+      agentTimer = null;
       document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('highlight'));
       w.forEach(x => { const c = document.querySelector(`.agent-card[data-agent-id="${x.id}"]`); if (c) c.classList.add('highlight'); });
       showAgentResults(w);
       b.disabled = false;
       document.querySelectorAll('.ac-btn').forEach(x => x.disabled = false);
       if (cb) cb.disabled = false;
+    } else {
+      agentTimer = requestAnimationFrame(tick);
     }
-  }, 80);
+  }
+  agentTimer = requestAnimationFrame(tick);
 }
 
 // ---------- 内战转盘模块 ----------
@@ -355,11 +368,12 @@ function init() {
   applyThemeFromStorage();
   const tb = document.getElementById('themeToggle');
   if (tb) tb.addEventListener('click', toggleTheme);
+  navItems = Array.from(document.querySelectorAll('.nav-item'));
+  contentLayers = Array.from(document.querySelectorAll('.content-layer'));
+  mainArea = document.getElementById('mainArea');
   initMapUI();
   initAgentUI();
-  renderMapCards();
-  renderAgents();
-  document.querySelectorAll('.nav-item').forEach(i => i.addEventListener('click', () => switchModule(i.dataset.module)));
+  navItems.forEach(i => i.addEventListener('click', () => switchModule(i.dataset.module)));
   switchModule('home');
 }
 
