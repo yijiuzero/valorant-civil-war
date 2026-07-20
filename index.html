@@ -22,6 +22,7 @@
     <li class="nav-item" data-module="stats"><span class="nav-icon">📊</span><span>内战专用</span></li>
     <li class="nav-item" data-module="teamsplit"><span class="nav-icon">⚔️</span><span>内战分队</span></li>
     <li class="nav-item" data-module="spy"><span class="nav-icon">🕵️</span><span>内鬼模式</span></li>
+    <div class="auth-user-display" id="authUserDisplay" style="display:none;"></div>
   </ul>
   <div class="sidebar-footer">
     <div style="opacity:0.6;">from zer0 · V3.6.3</div>
@@ -389,8 +390,25 @@
 <div id="globalToast"></div>
 
   <script src="app-data.js?v=7"></script>
+  <script type="module" src="auth.js?v=7"></script>
   <script type="module" src="teamsplit.js?v=7"></script>
   <script type="module" src="spy-mode.js?v=7"></script>
   <script src="app.js?v=7"></script>
+
+<!-- 登录弹窗 -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <div class="auth-logo">🕹️</div>
+    <div class="auth-title" id="authTitle">欢迎回来</div>
+    <div class="auth-subtitle" id="authSubtitle">登录后即可使用所有功能</div>
+    <div class="auth-form">
+      <input class="auth-input" id="authEmail" type="email" placeholder="邮箱" autocomplete="email">
+      <input class="auth-input" id="authPassword" type="password" placeholder="密码（至少6位）" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleAuthSubmit()">
+      <div class="auth-error" id="authError"></div>
+      <button class="auth-btn" id="authSubmitBtn" onclick="handleAuthSubmit()">登录</button>
+      <div class="auth-switch" id="authSwitchText">没有账号？<span class="auth-switch-link" onclick="setAuthMode('signup')">去注册</span></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -365,7 +365,7 @@ function updateThemeToggleLabel() {
   b.textContent = document.documentElement.classList.contains('theme-dark') ? '☀️' : '🌙';
 }
 
-function init() {
+async function init() {
   applyThemeFromStorage();
   const tb = document.getElementById('themeToggle');
   if (tb) tb.addEventListener('click', toggleTheme);
@@ -376,6 +376,10 @@ function init() {
   initAgentUI();
   navItems.forEach(i => i.addEventListener('click', () => switchModule(i.dataset.module)));
   switchModule('home');
+  // 启动时检查登录状态
+  if (typeof checkAuth === 'function') {
+    try { await checkAuth(); } catch (e) { /* auth optional */ }
+  }
 }
 
 init();

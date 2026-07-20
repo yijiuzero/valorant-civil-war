@@ -892,4 +892,48 @@ main::after{
   .spy-entry-cards{flex-direction:column;}
 }
 
+/* ===== 登录注册弹窗 ===== */
+.auth-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);
+}
+.auth-card{
+  background:color-mix(in srgb,var(--sidebar-bg) 78%,rgba(10,16,24,.78));
+  border:1px solid color-mix(in srgb,var(--accent) 16%,var(--border));
+  border-radius:20px;padding:36px 32px;width:360px;max-width:90vw;
+  backdrop-filter:blur(14px);box-shadow:0 24px 64px rgba(0,0,0,.4);
+  text-align:center;
+}
+.auth-logo{font-size:48px;margin-bottom:8px;}
+.auth-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.auth-subtitle{font-size:13px;color:var(--text-dim);margin-bottom:24px;}
+.auth-form{display:flex;flex-direction:column;gap:12px;}
+.auth-input{
+  height:48px;padding:0 16px;border-radius:12px;border:1px solid color-mix(in srgb,var(--border) 84%,transparent);
+  background:color-mix(in srgb,var(--card) 84%,transparent);color:var(--text);font-size:15px;
+  font-family:inherit;outline:none;transition:border-color .2s;
+}
+.auth-input:focus{border-color:var(--accent);}
+.auth-input::placeholder{color:var(--text-dim);}
+.auth-error{font-size:13px;color:var(--accent);min-height:18px;text-align:left;}
+.auth-btn{
+  height:48px;border-radius:12px;border:none;background:var(--accent);color:#fff;
+  font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:all .2s;
+}
+.auth-btn:hover:not(:disabled){filter:brightness(1.1);}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed;}
+.auth-switch{font-size:13px;color:var(--text-dim);margin-top:4px;}
+.auth-switch-link{color:var(--accent);cursor:pointer;font-weight:600;}
+.auth-switch-link:hover{text-decoration:underline;}
+.auth-user-display{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;min-height:40px;padding:0 16px;margin-bottom:12px;
+  border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,transparent);
+}
+.auth-user-name{font-size:13px;font-weight:700;color:var(--accent);}
+.auth-logout-link{font-size:12px;color:var(--text-dim);cursor:pointer;}
+.auth-logout-link:hover{color:var(--accent);}
+
 
