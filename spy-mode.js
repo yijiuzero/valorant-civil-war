@@ -398,12 +398,12 @@ function renderSPlaying() {
 
   // 找出当前用户是哪个（本地模式：通过输入的名字匹配）
   // 简单处理：显示"轮流看身份"提示
-  const isSpyTeamA = isCurrentSPlayerSpy();
+  const isViewedSpy = isCurrentSPlayerSpy();
 
-  document.getElementById('sSpyNormalPanel').style.display = isSpyTeamA === null ? '' : (isSpyTeamA ? 'none' : '');
-  document.getElementById('sSpyIdentityPanel').style.display = isSpyTeamA === true ? '' : 'none';
+  document.getElementById('sSpyNormalPanel').style.display = isViewedSpy === null ? '' : (isViewedSpy ? 'none' : '');
+  document.getElementById('sSpyIdentityPanel').style.display = isViewedSpy === true ? '' : 'none';
 
-  if (isSpyTeamA === null) {
+  if (isViewedSpy === null) {
     // 用户还没选身份
     document.getElementById('sSpyNormalPanel').style.display = '';
     document.getElementById('sSpyIdentityPanel').style.display = 'none';
@@ -421,8 +421,7 @@ function renderSPlaying() {
     // 已选身份，显示内鬼面板
     const label = document.getElementById('sSpyTeamLabel');
     if (label && saState) {
-      const inA = (saState.teamA || []).some(function(p) { return p.id === saState.team_a_spy; });
-      label.textContent = inA && isSpyTeamA ? '🔴 A队' : '🔵 B队';
+      label.textContent = (saViewedSpy === saState.team_a_spy) ? '🔴 A队' : '🔵 B队';
     }
     const playerId = isSpyTeamA ? saState.team_a_spy : saState.team_b_spy;
     const taskIdx = saState.tasks[String(playerId)];
@@ -445,8 +444,7 @@ function viewStandaloneIdentity(pid) {
   if (isSpy) {
     document.getElementById('sSpyIdentityPanel').style.display = '';
     document.getElementById('sSpyNormalPanel').style.display = 'none';
-    const inA = (saState.teamA || []).some(function(p) { return p.id === pid; });
-    if (label) label.textContent = inA ? '🔴 A队' : '🔵 B队';
+    if (label) label.textContent = (pid === saState.team_a_spy) ? '🔴 A队' : '🔵 B队';
     const taskIdx = saState.tasks[String(pid)];
     const task = window.spyTasks[taskIdx];
     if (task) {
@@ -457,13 +455,20 @@ function viewStandaloneIdentity(pid) {
   } else {
     document.getElementById('sSpyIdentityPanel').style.display = 'none';
     document.getElementById('sSpyNormalPanel').style.display = '';
+    // 非内鬼：还原到玩家列表界面
+    saViewedSpy = null;
+    renderSPlaying();
   }
-}
 
 function isCurrentSPlayerSpy() {
   if (!saViewedSpy || !saState) return null;
   if (saViewedSpy === saState.team_a_spy || saViewedSpy === saState.team_b_spy) return true;
   return false;
+}
+
+function hideSpyIdentity() {
+  saViewedSpy = null;
+  renderSPlaying();
 }
 
 function revealStandaloneSpies() {
@@ -511,5 +516,6 @@ window.removeStandalonePlayer = removeStandalonePlayer;
 window.doStandaloneSplit = doStandaloneSplit;
 window.assignStandaloneSpies = assignStandaloneSpies;
 window.viewStandaloneIdentity = viewStandaloneIdentity;
+window.hideSpyIdentity = hideSpyIdentity;
 window.revealStandaloneSpies = revealStandaloneSpies;
 window.resetStandaloneSpy = resetStandaloneSpy;
