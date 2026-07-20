@@ -1,6 +1,12 @@
 // ========== 内鬼模式模块 ==========
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm';
-const supabase = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
+// Supabase 客户端仅在房间模式需要时懒加载
+let supabase = null;
+async function getSupabase() {
+  if (supabase) return supabase;
+  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm');
+  supabase = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
+  return supabase;
+}
 
 let spyRoomCode = null;
 let spyUserId = null;
@@ -52,7 +58,7 @@ function showSpyView(view) {
 async function loadSpyState() {
   if (!spyRoomCode) return;
   try {
-    const result = await supabase.from('rooms').select('spy_state').eq('code', spyRoomCode).single();
+    const result = await (await getSupabase()).from('rooms').select('spy_state').eq('code', spyRoomCode).single();
     spyState = (result.data && result.data.spy_state) || null;
     renderCurrentPhase();
   } catch (e) {
@@ -61,9 +67,10 @@ async function loadSpyState() {
   }
 }
 
-function subscribeSpyState() {
+async function subscribeSpyState() {
   if (spyChannel) spyChannel.unsubscribe();
-  spyChannel = supabase.channel('spy_' + spyRoomCode)
+  const sb = await getSupabase();
+  spyChannel = sb.channel('spy_' + spyRoomCode)
     .on('postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'code=eq.' + spyRoomCode },
       function(payload) {
@@ -133,7 +140,7 @@ async function assignSpies() {
   newState.tasks[String(spyB.id)] = taskB;
 
   try {
-    const result = await supabase.from('rooms').update({ spy_state: newState }).eq('code', spyRoomCode);
+    const result = await (await getSupabase()).from('rooms').update({ spy_state: newState }).eq('code', spyRoomCode);
     if (result.error) throw result.error;
     spyState = newState;
     renderSpyPlaying();
@@ -195,7 +202,7 @@ async function revealSpies() {
   if (!isSpyHost() || !spyState || !spyRoomCode) return;
   const revealed = Object.assign({}, spyState, { phase: 'revealed', revealed: true });
   try {
-    await supabase.from('rooms').update({ spy_state: revealed }).eq('code', spyRoomCode);
+    await (await getSupabase()).from('rooms').update({ spy_state: revealed }).eq('code', spyRoomCode);
     spyState = revealed;
     renderSpyRevealed();
   } catch (e) {
