@@ -1,5 +1,5 @@
 // ========== Supabase Auth 模块（昵称注册/可选登录）==========
-const AUTH_DOMAIN = '@valorant.user';
+const AUTH_DOMAIN = '@val-game.com';
 let supabase = null;
 let currentUser = null;
 
@@ -10,7 +10,10 @@ async function getSupabase() {
   return supabase;
 }
 
-function toEmail(nickname) { return nickname.trim().toLowerCase().replace(/\s+/g, '_') + AUTH_DOMAIN; }
+function toEmail(nickname) {
+  const slug = nickname.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  return (slug || 'player' + Date.now().toString(36)) + AUTH_DOMAIN;
+}
 function fromEmail(email) { return email ? email.split('@')[0] : '玩家'; }
 
 // 初始化：检测已登录 session，不弹窗
