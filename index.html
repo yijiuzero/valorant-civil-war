@@ -26,7 +26,7 @@
   <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">🔑 登录 / 注册</div>
   <div class="auth-user-display" id="authUserDisplay" style="display:none;"></div>
   <div class="sidebar-footer">
-    <div style="opacity:0.6;">from zer0 · V3.9.11</div>
+    <div style="opacity:0.6;">from zer0 · V3.10.0</div>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">问题/需求反馈</a>
   </div>
 </nav>
@@ -35,7 +35,7 @@
   <!-- 首页内容 -->
   <div class="content-layer" id="module-home">
     <div class="module-title">🏠 无畏契约 · 战术工具集</div>
-    <div class="module-sub">专为云南瓦搭群打造 | from zer0 · V3.9.11</div>
+    <div class="module-sub">专为云南瓦搭群打造 | from zer0 · V3.10.0</div>
     <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:20px;">
       <div class="home-card" onclick="switchModule('wheel')"><div class="home-card-icon">🎯</div><div class="home-card-title">随机选图</div><div class="home-card-desc">随机抽取地图</div></div>
       <div class="home-card" onclick="switchModule('agent')"><div class="home-card-icon">🧩</div><div class="home-card-title">随机特工</div><div class="home-card-desc">随机抽取特工</div></div>
@@ -386,78 +386,6 @@
 
     <!-- 在线 Lobby 房间 -->
     <div id="spyLobbyView" style="display:none;width:100%;max-width:660px;"></div>
-
-    <!-- 独立内鬼游戏面板 -->
-    <div id="spyStandaloneGame" style="display:none;width:100%;max-width:660px;">
-      <button class="spy-setup-back" onclick="backToSpySetup()" style="margin-bottom:12px;display:inline-block;">← 返回组队</button>
-
-      <div id="sSpyInit">
-        <div class="spy-init-card">
-          <div class="spy-init-icon">🕵️</div>
-          <div class="spy-init-title">准备开启内鬼模式</div>
-          <div class="spy-init-sub">点击下方按钮，系统将从每队随机选一人作为内鬼</div>
-          <div class="spy-team-preview" id="sSpyTeamPreview"></div>
-          <button class="btn-spin" onclick="assignStandaloneSpies()">分配内鬼 🕵️</button>
-        </div>
-      </div>
-
-      <div id="sSpyPlaying" style="display:none;">
-        <div class="spy-playing-layout">
-          <div class="spy-card spy-card-normal" id="sSpyNormalPanel">
-            <div class="spy-card-head">🎮 普通玩家</div>
-            <div class="spy-card-body">
-              <p>你是一名普通队员，目标是帮助队伍获胜。</p>
-              <p class="spy-hint">但请注意——你的队伍中可能潜伏着一名内鬼。</p>
-            </div>
-          </div>
-          <div class="spy-card spy-card-traitor" id="sSpyIdentityPanel">
-            <div class="spy-card-head">🕵️ 你是内鬼！</div>
-            <div class="spy-card-body">
-              <div class="spy-identity-row"><span>所属队伍：</span><strong id="sSpyTeamLabel">-</strong></div>
-              <div class="spy-task-card">
-                <div class="spy-task-label">🎯 你的秘密任务</div>
-                <div class="spy-task-main">
-                  <span class="spy-task-icon" id="sSpyTaskIcon">-</span>
-                  <span class="spy-task-title" id="sSpyTaskTitle">-</span>
-                </div>
-                <div class="spy-task-desc" id="sSpyTaskDesc">-</div>
-              </div>
-              <p class="spy-warning">⚠️ 注意隐蔽！完成任务不被发现。</p>
-              <button class="btn-machine teamsplit-secondary-btn" onclick="hideSpyIdentity()" style="margin-top:10px;min-height:36px;padding:6px 16px;font-size:13px;width:100%;">隐藏身份（继续查看）</button>
-            </div>
-          </div>
-        </div>
-        <div class="spy-action-row">
-          <button class="btn-spy-mode" id="sBtnRevealSpies" onclick="revealStandaloneSpies()">揭晓内鬼 🎭</button>
-        </div>
-        <!-- 发布到线上 -->
-        <div id="spyRoomPublishPanel" style="text-align:center;margin-top:16px;">
-          <button class="btn-machine teamsplit-secondary-btn" onclick="publishSpyRoom()" style="min-height:44px;">📤 发布到线上（生成房间码）</button>
-        </div>
-        <!-- 房间码显示 + 复制 -->
-        <div id="spyRoomCodePanel" style="display:none;text-align:center;margin-top:16px;">
-          <div style="font-size:13px;color:var(--text-dim);margin-bottom:6px;">将房间码发给群友，对方登录后在"内鬼模式 → 加入线上房间"输入</div>
-          <div style="display:inline-flex;gap:8px;background:color-mix(in srgb,var(--card) 84%,transparent);border-radius:12px;padding:8px 16px;border:1px solid color-mix(in srgb,var(--border) 84%,transparent);align-items:center;">
-            <span id="spyRoomCodeDisplay" style="font-size:22px;font-weight:900;color:var(--accent);letter-spacing:4px;">------</span>
-            <button class="btn-machine teamsplit-inline-btn" onclick="navigator.clipboard.writeText(document.getElementById('spyRoomCodeDisplay').textContent);window.showToast('已复制',2000)" style="min-height:36px;padding:4px 12px;font-size:12px;">📋</button>
-          </div>
-        </div>
-        <!-- 已加入线上房间信息 -->
-        <div id="sSpyJoinInfo" style="display:none;text-align:center;margin-top:12px;">
-          <div style="font-size:12px;color:var(--text-dim);">已加入线上房间，等待发起人揭晓结果</div>
-        </div>
-      </div>
-
-      <div id="sSpyRevealed" style="display:none;">
-        <div class="spy-reveal-card">
-          <div class="spy-reveal-icon">🎭</div>
-          <div class="spy-reveal-title">内鬼身份揭晓！</div>
-          <div class="spy-reveal-teams" id="sSpyRevealTeams"></div>
-          <p class="spy-reveal-rule">内鬼队伍输掉比赛 → 内鬼获胜<br>内鬼队伍赢得比赛 → 队员获胜</p>
-          <button class="btn-spin" onclick="resetStandaloneSpy()" style="margin-top:16px;">再来一局 🔄</button>
-        </div>
-      </div>
-    </div>
   </div>
 </main>
 <button id="themeToggle" aria-label="切换主题" title="切换主题">🌙</button>
