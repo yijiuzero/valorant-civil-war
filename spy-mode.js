@@ -707,9 +707,7 @@ function handleLobbyUpdate(newState) {
 
 function isHost() {
   if (!lobbyState || !window._currentUser) return false;
-  var match = lobbyState.host_name === window._currentUserDisplayName;
-  console.log('isHost:', lobbyState.host_name, 'vs', window._currentUserDisplayName, '=', match);
-  return match;
+  return lobbyState.host_name === window._currentUserDisplayName;
 }
 
 function showSpyLobbyView() {
@@ -724,12 +722,11 @@ function showSpyLobbyView() {
 }
 
 function renderSpyLobby() {
-  if (!lobbyState) { console.log('renderSpyLobby: no lobbyState'); return; }
+  if (!lobbyState) return;
   var el = document.getElementById('spyLobbyView');
-  if (!el) { console.log('renderSpyLobby: no spyLobbyView element'); return; }
+  if (!el) return;
   var phase = lobbyState.phase;
   var host = isHost();
-  console.log('renderSpyLobby:', phase, 'host:', host, 'players:', lobbyState.players ? lobbyState.players.length : 0);
 
   var codeHtml = '<div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:16px;">' +
     '<span style="font-size:13px;color:var(--text-dim);">房间码</span>' +
