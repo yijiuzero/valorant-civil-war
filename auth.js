@@ -18,7 +18,11 @@ function toEmail(nickname) {
   for (var i = 0; i < nickname.length; i++) h = ((h << 5) - h + nickname.charCodeAt(i)) | 0;
   return 'u' + Math.abs(h).toString(36) + AUTH_DOMAIN;
 }
-function fromEmail(email) { return email ? email.split('@')[0] : '玩家'; }
+function userDisplayName(user) {
+  if (!user) return '玩家';
+  const meta = user.user_metadata || {};
+  return meta.display_name || (user.email ? user.email.split('@')[0] : '玩家');
+}
 
 // 初始化：检测已登录 session，不弹窗
 async function initAuth() {
@@ -31,15 +35,24 @@ async function initAuth() {
 // 注册
 async function doSignUp(nickname, password) {
   const sb = await getSupabase();
-  const { data, error } = await sb.auth.signUp({ email: toEmail(nickname), password: password });
+  const email = toEmail(nickname);
+  const { data, error } = await sb.auth.signUp({
+    email: email, password: password,
+    options: { data: { display_name: nickname } }
+  });
   if (error) throw error;
   if (data.session) {
     currentUser = data.session.user;
     onAuthSuccess();
     return;
   }
-  // 账户已存在但未激活（邮箱确认未关）
-  window.showToast && window.showToast('注册成功！账号 ' + toEmail(nickname) + '。请重试登录或检查密码。', 5000);
+  // 注册成功但无 session → 邮箱确认未关，立即尝试登录
+  const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email: email, password: password });
+  if (loginErr) throw loginErr;
+  currentUser = loginData.session ? loginData.session.user : null;
+  if (currentUser) { onAuthSuccess(); return; }
+  throw new Error('注册成功但登录失败，请刷新后重试');
+}
 }
 
 // 登录
@@ -108,7 +121,14 @@ async function handleAuthSubmit() {
     if (isSignUp) await doSignUp(nickname, password);
     else await doSignIn(nickname, password);
   } catch (e) {
-    errEl.textContent = e.message + '（账号邮箱：' + toEmail(nickname) + '）';
+    const msg = e.message || '';
+    // 注册时如果账户已存在，自动切登录
+    if (isSignUp && (msg.includes('already') || msg.includes('exist'))) {
+      errEl.textContent = '该昵称已注册，正尝试登录...';
+      try { await doSignIn(nickname, password); return; }
+      catch (e2) { errEl.textContent = '登录失败：密码错误？'; }
+    }
+    errEl.textContent = e.message + '（' + toEmail(nickname) + '）';
   }
   btn.disabled = false;
   btn.textContent = isSignUp ? '注册' : '登录';
@@ -121,7 +141,7 @@ function updateSidebar() {
   if (currentUser) {
     entry.style.display = 'none';
     if (display) {
-      display.innerHTML = '<div class="auth-user-name">👤 ' + fromEmail(currentUser.email) + '</div><div class="auth-logout-link" onclick="doSignOut()">退出</div>';
+      display.innerHTML = '<div class="auth-user-name">👤 ' + userDisplayName(currentUser) + '</div><div class="auth-logout-link" onclick="doSignOut()">退出</div>';
       display.style.display = '';
     }
   } else {
