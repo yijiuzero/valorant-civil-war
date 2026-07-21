@@ -85,3 +85,13 @@ const spyTasks = [
 
 const spyPhases = ['assigning', 'playing', 'voting', 'revealed'];
 window.spyTasks = spyTasks;
+
+// ===== Supabase 单例 =====
+let _sb = null;
+async function getSupabase() {
+  if (_sb) return _sb;
+  const { createClient } = (await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm'));
+  _sb = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
+  return _sb;
+}
+window._getSupabase = getSupabase;

@@ -1,11 +1,5 @@
 // ========== 内鬼模式模块 (V3 精简版) ==========
-let supabase = null;
-async function getSupabase() {
-  if (supabase) return supabase;
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm');
-  supabase = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
-  return supabase;
-}
+async function getSupabase() { return await window._getSupabase(); }
 
 // ========== 工具函数 ==========
 function esc(str) {
@@ -202,6 +196,7 @@ async function joinSpyLobby(code) {
   var alreadyJoined = state.players && state.players.some(function(p) { return p.name === name; });
   if (state.phase !== 'lobby' && !alreadyJoined) { window.showToast && window.showToast('游戏已开始', 3000); return; }
   if (alreadyJoined && state.phase === 'lobby') { window.showToast && window.showToast('该名字已在房间中', 3000); return; }
+  if (state.players.length >= 10) { window.showToast && window.showToast('房间已满（最多10人）', 2000); return; }
   var uid = (window._currentUser && window._currentUser.id) || null;
   state.players.push({ name: name, user_id: uid, team: null });
   await sb.from('rooms').update({ spy_state: state }).eq('code', code.toUpperCase());
@@ -211,12 +206,12 @@ async function joinSpyLobby(code) {
 
 function subscribeSpyLobby(code) {
   if (lobbyChannel) lobbyChannel.unsubscribe();
-  var sb = supabase;
-  if (!sb) { console.warn('subscribeSpyLobby: supabase not initialized'); return; }
-  lobbyChannel = sb.channel('lobby_' + code)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code },
-      function(payload) { if (payload.new && payload.new.spy_state) { lobbyState = payload.new.spy_state; renderSpyLobby(); } })
-    .subscribe();
+  getSupabase().then(function(sb) {
+    lobbyChannel = sb.channel('lobby_' + code)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code },
+        function(payload) { if (payload.new && payload.new.spy_state) { lobbyState = payload.new.spy_state; renderSpyLobby(); } })
+      .subscribe();
+  });
 }
 
 function isHost() {

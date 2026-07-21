@@ -146,6 +146,12 @@ async function cleanupOldRooms() {
       await supabase.from('players').delete().in('room_code', waitingCodes);
       await supabase.from('rooms').delete().in('code', waitingCodes);
     }
+    // 清理过期 Lobby 房间（>2h）
+    const oldLobby = await supabase.from('rooms').select('code').eq('status', 'lobby').lt('created_at', twoHoursAgo);
+    if (oldLobby.data && oldLobby.data.length > 0) {
+      const lobbyCodes = oldLobby.data.map(function(r) { return r.code; });
+      await supabase.from('rooms').delete().in('code', lobbyCodes);
+    }
   } catch (e) {}
 }
 
@@ -202,6 +208,7 @@ async function autoJoinLobby() {
   var name = window._currentUserDisplayName;
   if (!name || name === '玩家') { showToast('请先登录', 2000); return; }
   if (!currentRoomCode || currentPlayerId) return;
+  if (currentPlayers && currentPlayers.length >= 10) { showToast('房间已满（最多10人）', 2000); return; }
   var rankSel = document.getElementById('playerRankSelect');
   var rank = rankSel ? rankSel.value : '';
   if (!rank) { showToast('请选择你的段位', 2000); return; }
@@ -240,6 +247,7 @@ async function joinLobby() {
   if (!name || name === '玩家') { showToast('请输入你的名字', 2000); return; }
   if (!currentRoomCode) return;
   if (currentPlayerId) { showToast('你已经在房间中了', 2000); return; }
+  if (currentPlayers && currentPlayers.length >= 10) { showToast('房间已满（最多10人）', 2000); return; }
   try {
     const roomCheck = await supabase.from('rooms').select('status').eq('code', currentRoomCode).single();
     if (roomCheck.data && roomCheck.data.status === 'done') {
@@ -426,11 +434,17 @@ async function kickPlayer(playerId) {
 async function leaveRoom() {
   isLeaving = true;
   if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
-  if (currentRoomCode && currentPlayerId) {
-    try {
-      await supabase.from('players').delete().eq('id', currentPlayerId);
-    } catch (e) {}
-    localStorage.removeItem('ts_player_' + currentRoomCode);
+  if (currentRoomCode) {
+    // 房主离开 → 解散房间
+    if (currentHostUserId && window._currentUser && currentHostUserId === window._currentUser.id) {
+      try { await supabase.from('rooms').update({ status: 'done' }).eq('code', currentRoomCode); } catch (e) {}
+    }
+    if (currentPlayerId) {
+      try {
+        await supabase.from('players').delete().eq('id', currentPlayerId);
+      } catch (e) {}
+      localStorage.removeItem('ts_player_' + currentRoomCode);
+    }
   }
   currentRoomCode = null;
   currentPlayerId = null;

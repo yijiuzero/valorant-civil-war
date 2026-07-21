@@ -5,8 +5,7 @@ let currentUser = null;
 
 async function getSupabase() {
   if (supabase) return supabase;
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm');
-  supabase = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
+  supabase = await window._getSupabase();
   return supabase;
 }
 
