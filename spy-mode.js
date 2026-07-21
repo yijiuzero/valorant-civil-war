@@ -737,7 +737,7 @@ function renderSpyLobby() {
       '<div class="spy-setup-players" style="min-height:52px;">' + playerList + '</div>' +
       '<div style="font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:12px;">群友登录后在"内鬼模式→加入线上房间"输入房间码</div>' +
       (host ? '<div style="text-align:center;"><button class="btn-spy-mode" onclick="doLobbyRandomSplit()" style="min-height:44px;font-size:15px;">随机分队 🎲</button></div>' : '<div style="text-align:center;font-size:14px;color:var(--text-dim);">等待房主分队...</div>') +
-      '<div style="text-align:center;margin-top:12px;"><button class="spy-setup-back" onclick="leaveSpyLobby()" style="display:inline-block;">离开房间</button></div>' +
+      '<div style="text-align:center;margin-top:12px;"><button class="spy-setup-back" onclick="leaveLobbyRoom()" style="display:inline-block;">离开房间</button></div>' +
       '</div>';
   } else if (phase === 'teams') {
     var myName = window._currentUserDisplayName || '';
@@ -749,7 +749,7 @@ function renderSpyLobby() {
       '</div>';
     el.innerHTML = codeHtml + '<div class="spy-setup-card">' + teamsHtml +
       (host ? '<div style="text-align:center;margin-top:16px;"><button class="btn-spin" onclick="startLobbySpy()">开始内鬼模式 🕵️</button></div>' : '<div style="text-align:center;margin-top:12px;font-size:14px;color:var(--text-dim);">等待房主开始内鬼模式...</div>') +
-      '<div style="text-align:center;margin-top:8px;"><button class="spy-setup-back" onclick="leaveSpyLobby()" style="display:inline-block;">离开房间</button></div>' +
+      '<div style="text-align:center;margin-top:8px;"><button class="spy-setup-back" onclick="leaveLobbyRoom()" style="display:inline-block;">离开房间</button></div>' +
       '</div>';
   } else renderLobbyGameView();
 }
