@@ -724,11 +724,12 @@ function showSpyLobbyView() {
 }
 
 function renderSpyLobby() {
-  if (!lobbyState) return;
+  if (!lobbyState) { console.log('renderSpyLobby: no lobbyState'); return; }
   var el = document.getElementById('spyLobbyView');
-  if (!el) return;
+  if (!el) { console.log('renderSpyLobby: no spyLobbyView element'); return; }
   var phase = lobbyState.phase;
   var host = isHost();
+  console.log('renderSpyLobby:', phase, 'host:', host, 'players:', lobbyState.players ? lobbyState.players.length : 0);
 
   var codeHtml = '<div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:16px;">' +
     '<span style="font-size:13px;color:var(--text-dim);">房间码</span>' +
