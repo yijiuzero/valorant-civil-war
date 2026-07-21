@@ -295,6 +295,7 @@ function backToSpyEntry() {
   document.getElementById('spyQuickRoomSetup').style.display = 'none';
   document.getElementById('spyQuickRoomResult').style.display = 'none';
   document.getElementById('spyJoinRoomPanel').style.display = 'none';
+  document.getElementById('spyLobbyView').style.display = 'none';
 }
 
 function backToSpySetup() {
@@ -929,6 +930,11 @@ async function joinSpyRoom(code) {
 }
 
 function showRoomCodeInput() {
+  document.getElementById('spyLobbyView').style.display = 'none';
+  document.getElementById('spyStandaloneGame').style.display = 'none';
+  document.getElementById('spyQuickRoomResult').style.display = 'none';
+  document.getElementById('spyQuickRoomSetup').style.display = 'none';
+  document.getElementById('spyStandaloneSetup').style.display = 'none';
   document.getElementById('spyJoinRoomPanel').style.display = '';
 }
 
