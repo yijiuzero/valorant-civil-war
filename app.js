@@ -70,7 +70,6 @@ function switchModule(mod) {
   else if (mod === 'agent') { if (!agentsRendered) { renderAgents(); agentsRendered = true; } }
   else if (mod === 'teamsplit') initTeamSplitView();
   else if (mod === 'stats') initChallengeMachine();
-  else if (mod === 'spy' && typeof initStandaloneView === 'function') initStandaloneView();
 }
 
 // ---------- 地图模块 ----------

@@ -154,6 +154,8 @@ function updateSidebar() {
 function syncCurrentUser() {
   window._currentUser = currentUser;
   window._currentUserDisplayName = userDisplayName(currentUser);
+  // 登录后隐藏侧边栏锁图标
+  document.querySelectorAll('.nav-lock').forEach(function(el) { el.style.display = currentUser ? 'none' : ''; });
 }
 
 // 暴露

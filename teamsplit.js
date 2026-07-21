@@ -190,7 +190,8 @@ async function joinRoom() {
     showTeamsplitView('lobby');
     subscribeToRoom(code);
     await refreshPlayers();
-    // 自动以登录昵称加入
+    // 尝试恢复之前的身份
+    var autoJoined = await tryAutoJoin(code);
     if (!autoJoined) autoJoinLobby();
   } catch (e) {
     showToast('加入房间失败: ' + e.message, 3000);
@@ -374,7 +375,7 @@ async function doSplit(mode) {
       players.sort(function(a, b) { return (b.rank || 0) - (a.rank || 0); });
     }
     const teamA = [], teamB = [];
-    const sumA = 0, sumB = 0;
+    let sumA = 0, sumB = 0;
     for (let i = 0; i < players.length; i++) {
       const p = players[i];
       const r = p.rank || 0;
