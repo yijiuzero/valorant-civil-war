@@ -2,7 +2,7 @@
 const AUTH_DOMAIN = '@val-game.com';
 let supabase = null;
 let currentUser = null;
-const TURNSTILE_SITE_KEY = '0x4AAAAAAAD6W0R1X8Uk-RxFR';
+const TURNSTILE_SITE_KEY = '0x4AAAAAAD6W9RiX8Uk-RxfR';
 let turnstileWidgetId = null;
 let turnstileToken = null;
 
