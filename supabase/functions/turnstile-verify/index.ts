@@ -25,8 +25,16 @@ serve(async (req) => {
       )
     }
 
+    // 服务端配置检查：Secret Key 未设置时直接返回配置错误
+    if (!TURNSTILE_SECRET) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'server misconfigured: TURNSTILE_SECRET not set' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
     const formData = new URLSearchParams()
-    formData.append('secret', TURNSTILE_SECRET || '')
+    formData.append('secret', TURNSTILE_SECRET)
     formData.append('response', token)
 
     const resp = await fetch(TURNSTILE_VERIFY_URL, {

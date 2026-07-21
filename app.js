@@ -75,6 +75,7 @@ function switchModule(mod) {
   else if (mod === 'agent') { if (!agentsRendered) { renderAgents(); agentsRendered = true; } }
   else if (mod === 'teamsplit') initTeamSplitView();
   else if (mod === 'stats') initChallengeMachine();
+  else if (mod === 'spy' && typeof backToSpyEntry === 'function') backToSpyEntry();
 }
 
 // ---------- 地图模块 ----------
@@ -302,6 +303,7 @@ function spinChallenge() {
   if (t) t.className = 'machine-text spinning';
   const ti = Math.floor(Math.random() * challengeRules.length);
   const td = 1000 + Math.random() * 300;
+  const maxDuration = 5000; // 超时保护：防止动画无限循环
   const st = performance.now();
   let li = -1;
   function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
@@ -313,7 +315,7 @@ function spinChallenge() {
     const ci = (li + 1 + Math.floor(Math.random() * 3)) % challengeRules.length;
     if (t) t.textContent = challengeRules[ci];
     li = ci;
-    if (pg < 1) setTimeout(() => requestAnimationFrame(tick), iv);
+    if (el < maxDuration && pg < 1) setTimeout(() => requestAnimationFrame(tick), iv);
     else {
       if (t) { t.textContent = challengeRules[ti]; t.className = 'machine-text result'; }
       challengeHistory.unshift(challengeRules[ti]);

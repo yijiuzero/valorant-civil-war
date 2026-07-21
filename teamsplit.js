@@ -87,7 +87,7 @@ function updatePlayerList(players) {
     const hostBadge = p.user_id === currentHostUserId ? '<span class="teamsplit-host-badge">房主</span>' : '';
     const pRank = p.rank || 0;
     const rankIcon = pRank ? '<img class="teamsplit-rank-icon" src="' + getRankIcon(pRank) + '" alt="' + getRankName(pRank) + '" title="' + getRankName(pRank) + '" loading="lazy">' : '';
-    const kickBtn = '';
+    let kickBtn = '';
     if (isHost && p.id !== currentPlayerId) {
       kickBtn = '<button class="teamsplit-kick-btn" data-pid="' + p.id + '" title="踢出玩家">&times;</button>';
     }
@@ -256,14 +256,14 @@ async function joinLobby() {
     }
   } catch (e) {}
   const rankSel = document.getElementById('playerRankSelect');
-  const rank = rankSel ? rankSel.value : '';
+  let rank = rankSel ? rankSel.value : '';
   if (!rank) { showToast('请选择你的段位', 2000); return; }
   rank = parseInt(rank);
   if (rank < 1 || rank > 9) { showToast('段位无效', 2000); return; }
   try {
     const userId = await getUserId();
     const savedId = localStorage.getItem('ts_player_' + currentRoomCode);
-    const dupQuery = supabase.from('players').select('id,name').eq('room_code', currentRoomCode).ilike('name', name);
+    let dupQuery = supabase.from('players').select('id,name').eq('room_code', currentRoomCode).ilike('name', name);
     if (savedId) dupQuery = dupQuery.neq('id', savedId);
     const dupResult = await dupQuery;
     if (dupResult.data && dupResult.data.length > 0) {

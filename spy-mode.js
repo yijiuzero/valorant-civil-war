@@ -166,7 +166,20 @@ async function initSpyMode(ctx) {
 // ========== 在线 Lobby 房间 ==========
 let lobbyChannel = null, lobbyRoomCode = null, lobbyState = null;
 
+async function cleanupSpyLobbyRooms() {
+  try {
+    var sb = await getSupabase();
+    var twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    var oldLobby = await sb.from('rooms').select('code').eq('status', 'lobby').lt('created_at', twoHoursAgo);
+    if (oldLobby.data && oldLobby.data.length > 0) {
+      var lobbyCodes = oldLobby.data.map(function(r) { return r.code; });
+      await sb.from('rooms').delete().in('code', lobbyCodes);
+    }
+  } catch (e) { /* 忽略清理错误 */ }
+}
+
 async function createSpyLobby() {
+  await cleanupSpyLobbyRooms();
   var sb = await getSupabase();
   var code = Math.random().toString(36).slice(2, 8).toUpperCase();
   var hostName = window._currentUserDisplayName || '房主';
