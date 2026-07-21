@@ -707,7 +707,9 @@ function handleLobbyUpdate(newState) {
 
 function isHost() {
   if (!lobbyState || !window._currentUser) return false;
-  return lobbyState.host_name === window._currentUserDisplayName;
+  var match = lobbyState.host_name === window._currentUserDisplayName;
+  console.log('isHost:', lobbyState.host_name, 'vs', window._currentUserDisplayName, '=', match);
+  return match;
 }
 
 function showSpyLobbyView() {
