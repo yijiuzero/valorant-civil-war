@@ -38,7 +38,8 @@ async function doSignUp(nickname, password) {
     onAuthSuccess();
     return;
   }
-  window.showToast && window.showToast('注册成功！请检查邮箱验证链接。', 4000);
+  // 账户已存在但未激活（邮箱确认未关）
+  window.showToast && window.showToast('注册成功！账号 ' + toEmail(nickname) + '。请重试登录或检查密码。', 5000);
 }
 
 // 登录
@@ -107,7 +108,7 @@ async function handleAuthSubmit() {
     if (isSignUp) await doSignUp(nickname, password);
     else await doSignIn(nickname, password);
   } catch (e) {
-    errEl.textContent = e.message || '操作失败，请重试';
+    errEl.textContent = e.message + '（账号邮箱：' + toEmail(nickname) + '）';
   }
   btn.disabled = false;
   btn.textContent = isSignUp ? '注册' : '登录';
