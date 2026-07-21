@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <title>无畏契约 · 战术转盘·仅限云南瓦搭群使用</title>
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
 
@@ -16,17 +16,17 @@
     <span>战术工具集</span>
   </div>
   <ul class="nav-list">
-    <li class="nav-item active" data-module="home"><span class="nav-icon">🏠</span><span>首页</span></li>
-    <li class="nav-item" data-module="wheel"><span class="nav-icon">🎯</span><span>随机选图</span></li>
-    <li class="nav-item" data-module="agent"><span class="nav-icon">🧩</span><span>随机特工</span></li>
-    <li class="nav-item" data-module="stats"><span class="nav-icon">📊</span><span>内战专用</span></li>
-    <li class="nav-item" data-module="teamsplit"><span class="nav-icon">⚔️</span><span>内战分队</span><span class="nav-lock">🔒</span></li>
-    <li class="nav-item" data-module="spy"><span class="nav-icon">🕵️</span><span>内鬼模式</span><span class="nav-lock">🔒</span></li>
+    <li class="nav-item active" data-module="home" role="button" tabindex="0" aria-label="首页"><span class="nav-icon">🏠</span><span>首页</span></li>
+    <li class="nav-item" data-module="wheel" role="button" tabindex="0" aria-label="随机选图"><span class="nav-icon">🎯</span><span>随机选图</span></li>
+    <li class="nav-item" data-module="agent" role="button" tabindex="0" aria-label="随机特工"><span class="nav-icon">🧩</span><span>随机特工</span></li>
+    <li class="nav-item" data-module="stats" role="button" tabindex="0" aria-label="内战专用"><span class="nav-icon">📊</span><span>内战专用</span></li>
+    <li class="nav-item" data-module="teamsplit" role="button" tabindex="0" aria-label="内战分队"><span class="nav-icon">⚔️</span><span>内战分队</span><span class="nav-lock">🔒</span></li>
+    <li class="nav-item" data-module="spy" role="button" tabindex="0" aria-label="内鬼模式"><span class="nav-icon">🕵️</span><span>内鬼模式</span><span class="nav-lock">🔒</span></li>
   </ul>
   <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">🔑 登录 / 注册</div>
   <div class="auth-user-display" id="authUserDisplay" style="display:none;"></div>
   <div class="sidebar-footer">
-    <div style="opacity:0.6;">from zer0 · V3.13.0</div>
+    <div style="opacity:0.6;">from zer0 · V3.14.0</div>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">问题/需求反馈</a>
   </div>
 </nav>
@@ -35,13 +35,13 @@
   <!-- 首页内容 -->
   <div class="content-layer" id="module-home">
     <div class="module-title">🏠 无畏契约 · 战术工具集</div>
-    <div class="module-sub">专为云南瓦搭群打造 | from zer0 · V3.13.0</div>
+    <div class="module-sub">专为云南瓦搭群打造 | from zer0 · V3.14.0</div>
     <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:20px;">
-      <div class="home-card" onclick="switchModule('wheel')"><div class="home-card-icon">🎯</div><div class="home-card-title">随机选图</div><div class="home-card-desc">随机抽取地图</div></div>
-      <div class="home-card" onclick="switchModule('agent')"><div class="home-card-icon">🧩</div><div class="home-card-title">随机特工</div><div class="home-card-desc">随机抽取特工</div></div>
-      <div class="home-card" onclick="switchModule('stats')"><div class="home-card-icon">📊</div><div class="home-card-title">内战专用</div><div class="home-card-desc">内战转盘</div></div>
-      <div class="home-card" onclick="switchModule('teamsplit')"><div class="home-card-icon">⚔️</div><div class="home-card-title">内战分队</div><div class="home-card-desc">10人随机分队</div></div>
-      <div class="home-card" onclick="switchModule('spy')"><div class="home-card-icon">🕵️</div><div class="home-card-title">内鬼模式</div><div class="home-card-desc">安插内鬼 · 秘密任务</div></div>
+      <div class="home-card" role="button" tabindex="0" onclick="switchModule('wheel')"><div class="home-card-icon">🎯</div><div class="home-card-title">随机选图</div><div class="home-card-desc">随机抽取地图</div></div>
+      <div class="home-card" role="button" tabindex="0" onclick="switchModule('agent')"><div class="home-card-icon">🧩</div><div class="home-card-title">随机特工</div><div class="home-card-desc">随机抽取特工</div></div>
+      <div class="home-card" role="button" tabindex="0" onclick="switchModule('stats')"><div class="home-card-icon">📊</div><div class="home-card-title">内战专用</div><div class="home-card-desc">内战转盘</div></div>
+      <div class="home-card" role="button" tabindex="0" onclick="switchModule('teamsplit')"><div class="home-card-icon">⚔️</div><div class="home-card-title">内战分队</div><div class="home-card-desc">10人随机分队</div></div>
+      <div class="home-card" role="button" tabindex="0" onclick="switchModule('spy')"><div class="home-card-icon">🕵️</div><div class="home-card-title">内鬼模式</div><div class="home-card-desc">安插内鬼 · 秘密任务</div></div>
     </div>
   </div>
 
@@ -123,7 +123,7 @@
           </div>
           <div class="teamsplit-count-badge">已加入 <span id="playerCount">0</span>/10</div>
         </div>
-        <div class="teamsplit-room-code">房间码 <span id="roomCodeDisplay" onclick="copyRoomCode()">-</span></div>
+        <div class="teamsplit-room-code">房间码 <span id="roomCodeDisplay" role="button" tabindex="0" aria-label="复制房间码" onclick="copyRoomCode()">-</span></div>
         <div class="teamsplit-player-list" id="playerList"></div>
         <div class="teamsplit-lobby-controls">
           <div class="teamsplit-join-row">
@@ -298,17 +298,17 @@
     <!-- 入口选择 -->
     <div id="spyStandaloneEntry" style="width:100%;max-width:520px;">
       <div class="spy-entry-cards">
-        <div class="spy-entry-card spy-entry-primary" onclick="createSpyLobby()">
+        <div class="spy-entry-card spy-entry-primary" role="button" tabindex="0" onclick="createSpyLobby()">
           <div class="spy-entry-icon">🚀</div>
           <div class="spy-entry-title">创建线上房间</div>
           <div class="spy-entry-desc">创建房间 → 群友加入 → 分队 → 自动内鬼</div>
         </div>
-        <div class="spy-entry-card" onclick="showRoomCodeInput()">
+        <div class="spy-entry-card" role="button" tabindex="0" onclick="showRoomCodeInput()">
           <div class="spy-entry-icon">🔗</div>
           <div class="spy-entry-title">加入线上房间</div>
           <div class="spy-entry-desc">输入房间码加入，登录后查看内鬼身份</div>
         </div>
-        <div class="spy-entry-card" onclick="switchModule('teamsplit')">
+        <div class="spy-entry-card" role="button" tabindex="0" onclick="switchModule('teamsplit')">
           <div class="spy-entry-icon">📋</div>
           <div class="spy-entry-title">从分队房间进入</div>
           <div class="spy-entry-desc">在内战分队中完成分房后再开启内鬼模式</div>
@@ -332,16 +332,16 @@
   </div>
 </main>
 <button id="themeToggle" aria-label="切换主题" title="切换主题">🌙</button>
-<div id="globalToast"></div>
+<div id="globalToast" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <script src="app-data.js?v=8"></script>
   <script type="module" src="auth.js?v=8"></script>
   <script type="module" src="teamsplit.js?v=8"></script>
   <script type="module" src="spy-mode.js?v=8"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 
 <!-- 登录弹窗 -->
-<div class="auth-overlay" id="authOverlay" style="display:none;" onclick="if(event.target===this)toggleAuthOverlay()">
+<div class="auth-overlay" id="authOverlay" role="dialog" aria-modal="true" aria-labelledby="authTitle" style="display:none;" onclick="if(event.target===this)toggleAuthOverlay()">
   <div class="auth-card">
     <div class="auth-close" onclick="toggleAuthOverlay()">✕</div>
     <div class="auth-logo">🕹️</div>

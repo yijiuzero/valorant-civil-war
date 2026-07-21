@@ -250,7 +250,7 @@ function renderSpyLobby() {
   var codeHtml = '<div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:16px;">' +
     '<span style="font-size:13px;color:var(--text-dim);">房间码</span>' +
     '<span style="font-size:24px;font-weight:900;color:var(--accent);letter-spacing:3px;">' + lobbyRoomCode + '</span>' +
-    '<button class="btn-machine teamsplit-inline-btn" onclick="navigator.clipboard.writeText(\'' + lobbyRoomCode + '\');window.showToast(\'已复制\',2000)" style="min-height:32px;padding:2px 10px;font-size:12px;">📋</button>' +
+    '<button class="btn-machine teamsplit-inline-btn" aria-label="复制房间码" onclick="navigator.clipboard.writeText(\'' + lobbyRoomCode + '\');window.showToast(\'已复制\',2000)" style="min-height:32px;padding:2px 10px;font-size:12px;">📋</button>' +
     '</div>';
 
   if (phase === 'lobby') {

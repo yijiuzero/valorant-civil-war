@@ -88,8 +88,12 @@ function toggleAuthOverlay() {
     document.getElementById('authNickname').value = '';
     document.getElementById('authPassword').value = '';
     setAuthMode('signin');
+    const nick = document.getElementById('authNickname');
+    if (nick) setTimeout(function() { nick.focus(); }, 50);
   } else {
     el.style.display = 'none';
+    const entry = document.getElementById('authSidebarEntry');
+    if (entry) entry.focus();
   }
 }
 

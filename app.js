@@ -61,7 +61,12 @@ function switchModule(mod) {
     window.showToast && window.showToast('请先登录', 2000);
     return;
   }
-  navItems.forEach(i => i.classList.toggle('active', i.dataset.module === mod));
+  navItems.forEach(i => {
+    const active = i.dataset.module === mod;
+    i.classList.toggle('active', active);
+    if (active) i.setAttribute('aria-current', 'page');
+    else i.removeAttribute('aria-current');
+  });
   contentLayers.forEach(l => l.style.display = 'none');
   const tl = document.getElementById('module-' + mod);
   if (tl) tl.style.display = '';
@@ -380,6 +385,20 @@ async function init() {
   initMapUI();
   initAgentUI();
   navItems.forEach(i => i.addEventListener('click', () => switchModule(i.dataset.module)));
+  // 键盘可达性：为 role=button + tabindex 的非原生元素（导航项/首页卡片/内鬼入口）提供 Enter/Space 激活
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      const el = e.target.closest && e.target.closest('[role="button"][tabindex]');
+      if (el) { e.preventDefault(); el.click(); }
+    } else if (e.key === 'Escape') {
+      const ov = document.getElementById('authOverlay');
+      if (ov && ov.style.display !== 'none') {
+        ov.style.display = 'none';
+        const entry = document.getElementById('authSidebarEntry');
+        if (entry) entry.focus();
+      }
+    }
+  });
   switchModule('home');
   // 静默检测已有登录 session（不弹窗）
   if (typeof initAuth === 'function') {
