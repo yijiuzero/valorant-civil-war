@@ -116,7 +116,7 @@ async function handleAuthSubmit() {
 
   if (!nickname || !password) { errEl.textContent = '请填写昵称和密码'; return; }
   if (nickname.length < 2) { errEl.textContent = '昵称至少 2 个字符'; return; }
-  if (password.length < 4) { errEl.textContent = '密码至少 4 位'; return; }
+  if (password.length < 6) { errEl.textContent = '密码至少 6 位'; return; }
 
   btn.disabled = true; btn.textContent = '处理中...'; errEl.textContent = '';
   const isSignUp = document.getElementById('authTitle').textContent === '注册账号';
