@@ -292,6 +292,9 @@ function backToSpyEntry() {
   document.getElementById('spyStandaloneSetup').style.display = 'none';
   document.getElementById('spyStandaloneGame').style.display = 'none';
   document.getElementById('spyStandaloneEntry').style.display = '';
+  document.getElementById('spyQuickRoomSetup').style.display = 'none';
+  document.getElementById('spyQuickRoomResult').style.display = 'none';
+  document.getElementById('spyJoinRoomPanel').style.display = 'none';
 }
 
 function backToSpySetup() {
@@ -535,7 +538,101 @@ function resetStandaloneSpy() {
   renderStandaloneSetup();
 }
 
-// ========== 线上发布与加入 ==========
+// ========== 快速创建线上房间 ==========
+let quickPlayers = [];
+
+function startQuickRoom() {
+  quickPlayers = [];
+  document.getElementById('spyStandaloneEntry').style.display = 'none';
+  document.getElementById('spyStandaloneSetup').style.display = 'none';
+  document.getElementById('spyStandaloneGame').style.display = 'none';
+  document.getElementById('spyQuickRoomResult').style.display = 'none';
+  document.getElementById('spyQuickRoomSetup').style.display = '';
+  renderQuickPlayers();
+}
+
+function addQuickPlayer() {
+  const input = document.getElementById('quickPlayerInput');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name || quickPlayers.some(function(p) { return p.name === name; })) { input.value = ''; input.focus(); return; }
+  quickPlayers.push({ name: name, id: Date.now() });
+  input.value = '';
+  renderQuickPlayers();
+  input.focus();
+}
+
+function removeQuickPlayer(idx) {
+  quickPlayers.splice(idx, 1);
+  renderQuickPlayers();
+}
+
+function renderQuickPlayers() {
+  const list = document.getElementById('quickPlayerList');
+  const btn = document.getElementById('btnQuickCreate');
+  if (!list) return;
+  if (!quickPlayers.length) {
+    list.innerHTML = '<div class="spy-setup-empty">输入所有玩家昵称后点创建房间（至少4人，昵称需与群友登录昵称一致）</div>';
+  } else {
+    list.innerHTML = quickPlayers.map(function(p, i) {
+      return '<div class="spy-setup-chip">' + esc(p.name) + '<button class="spy-setup-chip-remove" onclick="removeQuickPlayer(' + i + ')">&times;</button></div>';
+    }).join('');
+  }
+  if (btn) btn.disabled = quickPlayers.length < 4;
+}
+
+async function doQuickCreate() {
+  if (quickPlayers.length < 4) return;
+  // 分队
+  const shuffled = shuffleArray(quickPlayers);
+  const mid = Math.ceil(shuffled.length / 2);
+  const teamA = shuffled.slice(0, mid);
+  const teamB = shuffled.slice(mid);
+  // 分配内鬼
+  const spyA = teamA[Math.floor(Math.random() * teamA.length)];
+  const spyB = teamB[Math.floor(Math.random() * teamB.length)];
+  const taskA = Math.floor(Math.random() * window.spyTasks.length);
+  let taskB = Math.floor(Math.random() * window.spyTasks.length);
+  if (taskB === taskA) taskB = (taskA + 1) % window.spyTasks.length;
+  const tasks = {};
+  tasks[String(spyA.id)] = taskA;
+  tasks[String(spyB.id)] = taskB;
+  // 发布到 Supabase
+  const sb = await getSupabase();
+  const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+  try {
+    await sb.from('rooms').insert({
+      code: code, type: 'spy', status: 'playing',
+      host_user_id: (window._currentUser && window._currentUser.id) || null,
+      spy_state: {
+        phase: 'published',
+        team_a: teamA.map(function(p) { return p.name; }),
+        team_b: teamB.map(function(p) { return p.name; }),
+        team_a_spy_name: spyA.name,
+        team_b_spy_name: spyB.name,
+        tasks: tasks
+      }
+    });
+    // 显示结果
+    document.getElementById('spyQuickRoomSetup').style.display = 'none';
+    document.getElementById('spyQuickRoomResult').style.display = '';
+    document.getElementById('quickRoomCodeDisplay').textContent = code;
+    // 预览
+    const prev = document.getElementById('quickRoomTeamPreview');
+    if (prev) {
+      prev.innerHTML =
+        '<div class="spy-team-preview">' +
+        '<div class="spy-team-col"><div class="spy-team-label team-a">🔴 A队 (' + teamA.length + '人)</div><div class="spy-team-players">' + teamA.map(function(p) { return '<div class="spy-team-member">' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
+        '<div class="spy-team-col"><div class="spy-team-label team-b">🔵 B队 (' + teamB.length + '人)</div><div class="spy-team-players">' + teamB.map(function(p) { return '<div class="spy-team-member">' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
+        '</div>';
+    }
+    window.showToast && window.showToast('房间创建成功！', 2000);
+  } catch (e) {
+    window.showToast && window.showToast('创建失败: ' + e.message, 3000);
+  }
+}
+
+// 暴露到 window
 async function publishSpyRoom() {
   if (!saState || !saState.teamA.length || !saState.teamB.length || !saState.team_a_spy) return;
   const sb = await getSupabase();
@@ -656,3 +753,7 @@ window.publishSpyRoom = publishSpyRoom;
 window.joinSpyRoom = joinSpyRoom;
 window.showRoomCodeInput = showRoomCodeInput;
 window.hideRoomCodeInput = hideRoomCodeInput;
+window.startQuickRoom = startQuickRoom;
+window.addQuickPlayer = addQuickPlayer;
+window.removeQuickPlayer = removeQuickPlayer;
+window.doQuickCreate = doQuickCreate;

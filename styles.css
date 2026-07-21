@@ -863,6 +863,8 @@ main::after{
 .spy-entry-icon{font-size:42px;margin-bottom:12px;}
 .spy-entry-title{font-size:17px;font-weight:800;color:var(--text);margin-bottom:8px;}
 .spy-entry-desc{font-size:13px;color:var(--text-dim);line-height:1.5;}
+.spy-entry-primary{border-color:var(--accent2);border-width:2px;position:relative;}
+.spy-entry-primary::before{content:'推荐';position:absolute;top:-10px;right:16px;background:var(--accent2);color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;}
 
 .spy-setup-card{
   background:color-mix(in srgb,var(--sidebar-bg) 78%,rgba(10,16,24,.78));

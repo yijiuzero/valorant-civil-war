@@ -26,7 +26,7 @@
   <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">🔑 登录 / 注册</div>
   <div class="auth-user-display" id="authUserDisplay" style="display:none;"></div>
   <div class="sidebar-footer">
-    <div style="opacity:0.6;">from zer0 · V3.8.0</div>
+    <div style="opacity:0.6;">from zer0 · V3.8.1</div>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">问题/需求反馈</a>
   </div>
 </nav>
@@ -35,12 +35,13 @@
   <!-- 首页内容 -->
   <div class="content-layer" id="module-home">
     <div class="module-title">🏠 无畏契约 · 战术工具集</div>
-    <div class="module-sub">专为云南瓦搭群打造 | from zer0 · V3.8.0</div>
+    <div class="module-sub">专为云南瓦搭群打造 | from zer0 · V3.8.1</div>
     <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:20px;">
       <div class="home-card" onclick="switchModule('wheel')"><div class="home-card-icon">🎯</div><div class="home-card-title">随机选图</div><div class="home-card-desc">随机抽取地图</div></div>
       <div class="home-card" onclick="switchModule('agent')"><div class="home-card-icon">🧩</div><div class="home-card-title">随机特工</div><div class="home-card-desc">随机抽取特工</div></div>
       <div class="home-card" onclick="switchModule('stats')"><div class="home-card-icon">📊</div><div class="home-card-title">内战专用</div><div class="home-card-desc">内战转盘</div></div>
       <div class="home-card" onclick="switchModule('teamsplit')"><div class="home-card-icon">⚔️</div><div class="home-card-title">内战分队</div><div class="home-card-desc">10人随机分队</div></div>
+      <div class="home-card" onclick="switchModule('spy')"><div class="home-card-icon">🕵️</div><div class="home-card-title">内鬼模式</div><div class="home-card-desc">安插内鬼 · 秘密任务</div></div>
     </div>
   </div>
 
@@ -297,6 +298,11 @@
     <!-- 入口选择 -->
     <div id="spyStandaloneEntry" style="width:100%;max-width:520px;">
       <div class="spy-entry-cards">
+        <div class="spy-entry-card spy-entry-primary" onclick="startQuickRoom()">
+          <div class="spy-entry-icon">🚀</div>
+          <div class="spy-entry-title">快速创建线上房间</div>
+          <div class="spy-entry-desc">输入玩家昵称 → 一键分队 + 分配内鬼 → 生成房间码</div>
+        </div>
         <div class="spy-entry-card" onclick="startSpySetup()">
           <div class="spy-entry-icon">✍️</div>
           <div class="spy-entry-title">手动组队</div>
@@ -344,6 +350,42 @@
         <div class="spy-setup-actions">
           <button class="btn-spy-mode" id="btnStandaloneSplit" onclick="doStandaloneSplit()" disabled style="min-height:48px;font-size:15px;">随机分队 🎲</button>
         </div>
+      </div>
+    </div>
+
+    <!-- 快速创建线上房间面板 -->
+    <div id="spyQuickRoomSetup" style="display:none;width:100%;max-width:600px;">
+      <div class="spy-setup-card">
+        <div class="spy-setup-head">
+          <span>🚀 快速创建线上房间</span>
+          <button class="spy-setup-back" onclick="backToSpyEntry()">← 返回</button>
+        </div>
+        <div class="spy-setup-input-row">
+          <input class="teamsplit-input" id="quickPlayerInput" type="text" placeholder="输入玩家昵称（需与登录昵称一致）" maxlength="12" onkeydown="if(event.key==='Enter')addQuickPlayer()">
+          <button class="btn-machine teamsplit-inline-btn" onclick="addQuickPlayer()" style="min-height:48px;">添加</button>
+        </div>
+        <div class="spy-setup-players" id="quickPlayerList">
+          <div class="spy-setup-empty">输入所有玩家昵称后点创建房间（至少4人）</div>
+        </div>
+        <div class="spy-setup-actions">
+          <button class="btn-spy-mode" id="btnQuickCreate" onclick="doQuickCreate()" disabled style="min-height:48px;font-size:15px;">一键创建房间 🚀</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快速房间结果面板 -->
+    <div id="spyQuickRoomResult" style="display:none;width:100%;max-width:600px;">
+      <div class="spy-setup-card" style="text-align:center;">
+        <div class="spy-setup-head" style="justify-content:center;">
+          <span>✅ 房间已创建</span>
+        </div>
+        <div style="font-size:14px;color:var(--text-dim);margin-bottom:16px;">将房间码发给群友，对方登录后进入内鬼模式→加入线上房间</div>
+        <div style="display:inline-flex;gap:8px;background:color-mix(in srgb,var(--card) 84%,transparent);border-radius:12px;padding:10px 20px;border:1px solid color-mix(in srgb,var(--border) 84%,transparent);align-items:center;margin-bottom:12px;">
+          <span id="quickRoomCodeDisplay" style="font-size:28px;font-weight:900;color:var(--accent);letter-spacing:4px;">------</span>
+          <button class="btn-machine teamsplit-inline-btn" onclick="var c=document.getElementById('quickRoomCodeDisplay').textContent;navigator.clipboard.writeText(c);window.showToast('已复制',2000)" style="min-height:36px;padding:4px 12px;font-size:12px;">📋</button>
+        </div>
+        <div id="quickRoomTeamPreview" style="text-align:left;margin-top:16px;"></div>
+        <button class="btn-machine teamsplit-secondary-btn" onclick="backToSpyEntry()" style="margin-top:16px;">返回入口</button>
       </div>
     </div>
 
