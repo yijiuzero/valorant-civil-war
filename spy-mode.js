@@ -199,8 +199,9 @@ async function joinSpyLobby(code) {
   if (res.error) { window.showToast && window.showToast('加入失败: ' + (res.error.message || res.error.code), 4000); return; }
   if (!res.data || !res.data.spy_state) { window.showToast && window.showToast('房间不存在', 3000); return; }
   var state = res.data.spy_state;
-  if (state.phase !== 'lobby') { window.showToast && window.showToast('游戏已开始', 3000); return; }
-  if (state.players.some(function(p) { return p.name === name; })) { window.showToast && window.showToast('该名字已在房间中', 3000); return; }
+  var alreadyJoined = state.players && state.players.some(function(p) { return p.name === name; });
+  if (state.phase !== 'lobby' && !alreadyJoined) { window.showToast && window.showToast('游戏已开始', 3000); return; }
+  if (alreadyJoined && state.phase === 'lobby') { window.showToast && window.showToast('该名字已在房间中', 3000); return; }
   var uid = (window._currentUser && window._currentUser.id) || null;
   state.players.push({ name: name, user_id: uid, team: null });
   await sb.from('rooms').update({ spy_state: state }).eq('code', code.toUpperCase());
