@@ -53,7 +53,6 @@ async function doSignUp(nickname, password) {
   if (currentUser) { onAuthSuccess(); return; }
   throw new Error('注册成功但登录失败，请刷新后重试');
 }
-}
 
 // 登录
 async function doSignIn(nickname, password) {
