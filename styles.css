@@ -889,6 +889,14 @@ main::after{
 .spy-team-btn-b:not(.active):hover{background:rgba(40,140,255,.08);}
 .spy-setup-chip-remove:hover{background:var(--accent);color:#fff;}
 .spy-setup-actions{display:flex;justify-content:center;}
+
+/* 揭晓页全员任务 */
+.spy-reveal-all-tasks{display:flex;flex-direction:column;gap:4px;}
+.spy-reveal-row{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:8px;background:color-mix(in srgb,var(--card) 84%,transparent);font-size:13px;}
+.spy-reveal-row.spy-revealed-spy{background:rgba(255,70,85,.15);border:1px solid rgba(255,70,85,.3);}
+.spy-reveal-row-team{width:20px;text-align:center;flex-shrink:0;}
+.spy-reveal-row-name{font-weight:700;flex-shrink:0;min-width:60px;}
+.spy-reveal-row-task{color:var(--text-dim);}
 .spy-setup-actions .btn-spy-mode{width:100%;max-width:320px;}
 .spy-viewed{opacity:.45;filter:grayscale(60%);pointer-events:none;}
 

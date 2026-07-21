@@ -287,16 +287,28 @@ function renderLobbyGameView() {
   var codeHtml = '<div style="font-size:14px;font-weight:700;color:var(--accent);text-align:center;margin-bottom:8px;">房间码: ' + lobbyRoomCode + '</div>';
 
   if (lobbyState.phase === 'revealed') {
+    // 内鬼身份
     var taskA = lobbyState.tasks && lobbyState.tasks[lobbyState.team_a_spy_name];
-    var taskAD = (taskA != null && window.spyTasks[taskA]) ? '任务：' + window.spyTasks[taskA].icon + ' ' + window.spyTasks[taskA].title : '';
+    var taskAD = (taskA != null && window.spyTasks[taskA]) ? window.spyTasks[taskA].icon + ' ' + window.spyTasks[taskA].title : '';
     var taskB = lobbyState.tasks && lobbyState.tasks[lobbyState.team_b_spy_name];
-    var taskBD = (taskB != null && window.spyTasks[taskB]) ? '任务：' + window.spyTasks[taskB].icon + ' ' + window.spyTasks[taskB].title : '';
+    var taskBD = (taskB != null && window.spyTasks[taskB]) ? window.spyTasks[taskB].icon + ' ' + window.spyTasks[taskB].title : '';
+    // 所有玩家任务列表
+    var allTaskRows = (lobbyState.players || []).map(function(p) {
+      var isSpyP = (p.name === lobbyState.team_a_spy_name || p.name === lobbyState.team_b_spy_name);
+      var tIdx = lobbyState.tasks && lobbyState.tasks[p.name];
+      var tInfo = (tIdx != null && window.spyTasks[tIdx]) ? window.spyTasks[tIdx].icon + ' ' + window.spyTasks[tIdx].title : '-';
+      var teamEmoji = p.team === 'A' ? '🔴' : '🔵';
+      return '<div class="spy-reveal-row' + (isSpyP ? ' spy-revealed-spy' : '') + '"><span class="spy-reveal-row-team">' + teamEmoji + '</span><span class="spy-reveal-row-name">' + esc(p.name) + (isSpyP ? ' 🕵️' : '') + '</span><span class="spy-reveal-row-task">' + tInfo + '</span></div>';
+    }).join('');
+
     el.innerHTML = codeHtml +
-      '<div class="spy-reveal-card"><div class="spy-reveal-icon">🎭</div><div class="spy-reveal-title">内鬼身份揭晓！</div>' +
+      '<div class="spy-reveal-card"><div class="spy-reveal-icon">🎭</div><div class="spy-reveal-title">内鬼揭晓！</div>' +
       '<div class="spy-reveal-teams">' +
       '<div class="spy-reveal-col"><div class="spy-reveal-team team-a">🔴 A队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_a_spy_name || '-') + '</div><div style="font-size:12px;color:var(--text-dim);">' + taskAD + '</div></div>' +
       '<div class="spy-reveal-col"><div class="spy-reveal-team team-b">🔵 B队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_b_spy_name || '-') + '</div><div style="font-size:12px;color:var(--text-dim);">' + taskBD + '</div></div>' +
       '</div>' +
+      '<div style="margin-top:16px;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--border) 60%,transparent);"><div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;">📋 所有人任务</div>' +
+      '<div class="spy-reveal-all-tasks">' + allTaskRows + '</div></div>' +
       (isHost() ? '<button class="btn-spin" onclick="resetLobbySpy()" style="margin-top:16px;">再来一局 🔄</button>' : '') +
       '<div style="text-align:center;margin-top:12px;"><button class="spy-setup-back" onclick="leaveLobbyRoom()">离开房间</button></div>' +
       '</div>';
