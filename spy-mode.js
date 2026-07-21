@@ -728,15 +728,40 @@ function renderSpyLobby() {
     '</div>';
 
   if (phase === 'lobby') {
-    var playerList = lobbyState.players.map(function(p) {
-      return '<div class="spy-setup-chip">👤 ' + esc(p.name) + '</div>';
+    // 房主视图：手动分配队伍
+    var playerCards = lobbyState.players.map(function(p) {
+      var t = p.team || '';
+      var clsA = t === 'A' ? 'spy-team-btn spy-team-btn-a active' : 'spy-team-btn spy-team-btn-a';
+      var clsB = t === 'B' ? 'spy-team-btn spy-team-btn-b active' : 'spy-team-btn spy-team-btn-b';
+      var btns = host
+        ? '<div class="spy-team-btn-row"><button class="' + clsA + '" onclick="updatePlayerTeam(\'' + esc(p.name) + '\',\'A\')">A</button><button class="' + clsB + '" onclick="updatePlayerTeam(\'' + esc(p.name) + '\',\'B\')">B</button></div>'
+        : '';
+      var label = t === 'A' ? ' 🔴A' : (t === 'B' ? ' 🔵B' : '');
+      return '<div class="spy-player-row"><span>👤 ' + esc(p.name) + label + '</span>' + btns + '</div>';
     }).join('');
+
+    var teamA = lobbyState.players.filter(function(p) { return p.team === 'A'; });
+    var teamB = lobbyState.players.filter(function(p) { return p.team === 'B'; });
+    var canStart = teamA.length >= 1 && teamB.length >= 1;
+
+    var teamPreview = '';
+    if (teamA.length || teamB.length) {
+      teamPreview = '<div class="spy-team-preview" style="margin-top:12px;">' +
+        '<div class="spy-team-col"><div class="spy-team-label team-a">🔴 A队 (' + teamA.length + '人)</div><div class="spy-team-players">' + teamA.map(function(p) { return '<div class="spy-team-member">' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
+        '<div class="spy-team-col"><div class="spy-team-label team-b">🔵 B队 (' + teamB.length + '人)</div><div class="spy-team-players">' + teamB.map(function(p) { return '<div class="spy-team-member">' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
+        '</div>';
+    }
+
     el.innerHTML = codeHtml +
       '<div class="spy-setup-card">' +
       '<div class="spy-setup-head"><span>🎮 等待玩家加入（' + lobbyState.players.length + '人）</span></div>' +
-      '<div class="spy-setup-players" style="min-height:52px;">' + playerList + '</div>' +
+      '<div class="spy-player-list">' + playerCards + '</div>' +
+      teamPreview +
       '<div style="font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:12px;">群友登录后在"内鬼模式→加入线上房间"输入房间码</div>' +
-      (host ? '<div style="text-align:center;"><button class="btn-spy-mode" onclick="doLobbyRandomSplit()" style="min-height:44px;font-size:15px;">随机分队 🎲</button></div>' : '<div style="text-align:center;font-size:14px;color:var(--text-dim);">等待房主分队...</div>') +
+      (host
+        ? '<div style="text-align:center;"><button class="btn-spy-mode" onclick="startLobbySpy()" style="min-height:44px;font-size:15px;"' + (canStart ? '' : ' disabled') + '>开始内鬼模式 🕵️</button><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">两队各至少1人</div></div>'
+        : '<div style="text-align:center;font-size:14px;color:var(--text-dim);">等待房主分配队伍...</div>'
+      ) +
       '<div style="text-align:center;margin-top:12px;"><button class="spy-setup-back" onclick="leaveLobbyRoom()" style="display:inline-block;">离开房间</button></div>' +
       '</div>';
   } else if (phase === 'teams') {
@@ -794,6 +819,14 @@ function renderLobbyGameView() {
   }
 }
 
+async function updatePlayerTeam(name, team) {
+  if (!lobbyState || !lobbyState._host || !lobbyRoomCode) return;
+  var p = lobbyState.players.find(function(x) { return x.name === name; });
+  if (!p) return;
+  p.team = p.team === team ? null : team; // 点击已选队伍取消
+  await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
+}
+
 async function doLobbyRandomSplit() {
   if (!lobbyState || !lobbyState._host || !lobbyRoomCode) return;
   var players = lobbyState.players.map(function(p) { return p.name; });
@@ -808,7 +841,12 @@ async function doLobbyRandomSplit() {
 
 async function startLobbySpy() {
   if (!lobbyState || !lobbyState._host || !lobbyRoomCode) return;
-  if (!lobbyState.team_a.length || !lobbyState.team_b.length) { window.showToast && window.showToast('两队都需要有人', 2000); return; }
+  // 从 players 的 team 字段构建队伍
+  var teamA = lobbyState.players.filter(function(p) { return p.team === 'A'; });
+  var teamB = lobbyState.players.filter(function(p) { return p.team === 'B'; });
+  if (!teamA.length || !teamB.length) { window.showToast && window.showToast('两队都需要有人', 2000); return; }
+  lobbyState.team_a = teamA.map(function(p) { return p.name; });
+  lobbyState.team_b = teamB.map(function(p) { return p.name; });
   lobbyState.team_a_spy_name = lobbyState.team_a[Math.floor(Math.random() * lobbyState.team_a.length)];
   lobbyState.team_b_spy_name = lobbyState.team_b[Math.floor(Math.random() * lobbyState.team_b.length)];
   lobbyState.phase = 'playing';
@@ -968,6 +1006,7 @@ window.addQuickPlayer = addQuickPlayer;
 window.removeQuickPlayer = removeQuickPlayer;
 window.doQuickCreate = doQuickCreate;
 window.createSpyLobby = createSpyLobby;
+window.updatePlayerTeam = updatePlayerTeam;
 window.joinSpyLobby = joinSpyLobby;
 window.doLobbyRandomSplit = doLobbyRandomSplit;
 window.startLobbySpy = startLobbySpy;

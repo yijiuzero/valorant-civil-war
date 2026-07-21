@@ -880,6 +880,13 @@ main::after{
 .spy-setup-empty{font-size:13px;color:var(--text-dim);width:100%;text-align:center;padding:8px;}
 .spy-setup-chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 22%,var(--border));font-size:14px;font-weight:700;color:var(--text);}
 .spy-setup-chip-remove{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:none;background:rgba(255,70,85,.15);color:var(--accent);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;padding:0;line-height:1;}
+.spy-player-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;margin-bottom:6px;background:color-mix(in srgb,var(--card) 84%,transparent);font-size:14px;}
+.spy-team-btn-row{display:flex;gap:4px;}
+.spy-team-btn{width:36px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
+.spy-team-btn-a.active{background:rgba(255,70,85,.2);border-color:rgba(255,70,85,.5);color:#ff4655;}
+.spy-team-btn-b.active{background:rgba(40,140,255,.2);border-color:rgba(40,140,255,.5);color:#288cff;}
+.spy-team-btn-a:not(.active):hover{background:rgba(255,70,85,.08);}
+.spy-team-btn-b:not(.active):hover{background:rgba(40,140,255,.08);}
 .spy-setup-chip-remove:hover{background:var(--accent);color:#fff;}
 .spy-setup-actions{display:flex;justify-content:center;}
 .spy-setup-actions .btn-spy-mode{width:100%;max-width:320px;}
