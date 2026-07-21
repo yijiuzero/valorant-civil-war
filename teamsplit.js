@@ -167,7 +167,8 @@ async function createRoom() {
     showTeamsplitView('lobby');
     updatePlayerList([]);
     subscribeToRoom(code);
-    showToast('房间已创建，请输入你的名字', 3000);
+    // 房主自动加入
+    autoJoinLobby();
   } catch (e) {
     showToast('创建房间失败: ' + e.message, 3000);
   }
@@ -189,20 +190,53 @@ async function joinRoom() {
     showTeamsplitView('lobby');
     subscribeToRoom(code);
     await refreshPlayers();
-    const autoJoined = await tryAutoJoin(code);
-    if (autoJoined) {
-      showToast('欢迎回来！已自动恢复身份', 2000);
-    } else {
-      showToast('已加入房间，请输入你的名字', 2000);
-    }
+    // 自动以登录昵称加入
+    if (!autoJoined) autoJoinLobby();
   } catch (e) {
     showToast('加入房间失败: ' + e.message, 3000);
   }
 }
 
+async function autoJoinLobby() {
+  var name = window._currentUserDisplayName;
+  if (!name || name === '玩家') { showToast('请先登录', 2000); return; }
+  if (!currentRoomCode || currentPlayerId) return;
+  var rankSel = document.getElementById('playerRankSelect');
+  var rank = rankSel ? rankSel.value : '';
+  if (!rank) { showToast('请选择你的段位', 2000); return; }
+  rank = parseInt(rank);
+  if (rank < 1 || rank > 9) { showToast('段位无效', 2000); return; }
+  try {
+    var userId = await getUserId();
+    // 检查重名
+    var dupResult = await supabase.from('players').select('id,name').eq('room_code', currentRoomCode).ilike('name', name);
+    if (dupResult.data && dupResult.data.length > 0) {
+      // 可能是自己（之前离开又回来）
+      var existing = dupResult.data[0];
+      currentPlayerId = existing.id;
+      localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
+      localStorage.setItem('ts_player_name', name);
+      localStorage.setItem('ts_player_rank', String(rank));
+      showToast('已恢复身份', 2000);
+      return;
+    }
+    var insertData = { room_code: currentRoomCode, name: name, rank: rank };
+    if (userId) insertData.user_id = userId;
+    var insertResult = await supabase.from('players').insert(insertData).select().single();
+    if (insertResult.error) throw insertResult.error;
+    currentPlayerId = insertResult.data.id;
+    localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
+    localStorage.setItem('ts_player_name', name);
+    localStorage.setItem('ts_player_rank', String(rank));
+    if (rankSel) rankSel.value = '';
+    showToast('已加入分队', 2000);
+  } catch (e) { showToast('加入失败: ' + e.message, 3000); }
+}
+
 async function joinLobby() {
-  const name = document.getElementById('playerNameInput').value.trim();
-  if (!name) { showToast('请输入你的名字', 2000); return; }
+  var name = document.getElementById('playerNameInput').value.trim();
+  if (!name) name = window._currentUserDisplayName || '';
+  if (!name || name === '玩家') { showToast('请输入你的名字', 2000); return; }
   if (!currentRoomCode) return;
   if (currentPlayerId) { showToast('你已经在房间中了', 2000); return; }
   try {
@@ -493,6 +527,7 @@ window.copyRoomCode = copyRoomCode;
 window.initTeamSplitView = initTeamSplitView;
 window.createRoom = createRoom;
 window.joinRoom = joinRoom;
+window.autoJoinLobby = autoJoinLobby;
 window.joinLobby = joinLobby;
 window.doSplit = doSplit;
 window.resetSplit = resetSplit;
