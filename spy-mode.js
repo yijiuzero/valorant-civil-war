@@ -672,7 +672,12 @@ async function joinSpyLobby(code) {
   if (!name || name === '玩家') { window.showToast && window.showToast('请先登录', 3000); return; }
   var sb = await getSupabase();
   var res = await sb.from('rooms').select('spy_state,type').eq('code', code.toUpperCase()).single();
-  if (res.error || !res.data || !res.data.spy_state) { window.showToast && window.showToast('房间不存在', 3000); return; }
+  if (res.error) {
+    window.showToast && window.showToast('加入失败: ' + (res.error.message || res.error.code || '未知'), 4000);
+    console.error('joinSpyLobby error:', res.error);
+    return;
+  }
+  if (!res.data || !res.data.spy_state) { window.showToast && window.showToast('房间不存在或已过期', 3000); return; }
   var state = res.data.spy_state;
   if (state.phase !== 'lobby') { window.showToast && window.showToast('游戏已开始', 3000); return; }
   if (state.players.some(function(p) { return p.name === name; })) { window.showToast && window.showToast('该名字已在房间中', 3000); return; }
