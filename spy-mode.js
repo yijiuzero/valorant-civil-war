@@ -316,7 +316,13 @@ function renderLobbyGameView() {
           })() +
           '<p class="spy-warning">⚠️ 注意隐蔽！完成任务不被发现。</p>' +
           '</div>'
-        : '<div class="spy-card-body"><p>✅ 你不是内鬼！</p><p class="spy-hint">队伍：' + teamLabel + '</p><p class="spy-hint">你的目标是与队伍一起赢得比赛。</p></div>') +
+        : '<div class="spy-card-body"><p>✅ 你不是内鬼！</p><p class="spy-hint">队伍：' + teamLabel + '</p>' +
+          (function() {
+            var idx = lobbyState.tasks && lobbyState.tasks[myName];
+            var t = (idx != null && window.spyTasks[idx]) ? window.spyTasks[idx] : null;
+            return t ? '<div class="spy-task-card" style="margin-top:12px;"><span class="spy-task-icon">' + t.icon + '</span><span class="spy-task-title">' + t.title + '</span><div class="spy-task-desc">' + t.desc + '</div></div>' : '';
+          })() +
+          '<p class="spy-hint">你的目标是与队伍一起赢得比赛。</p></div>') +
       (isHost() ? '<button class="btn-spy-mode" onclick="lobbyRevealSpies()" style="margin-top:12px;">揭晓内鬼 🎭</button>' : '<p style="font-size:13px;color:var(--text-dim);margin-top:8px;">等待房主揭晓结果...</p>') +
       '<div style="margin-top:16px;"><button class="spy-setup-back" onclick="leaveLobbyRoom()" style="display:inline-block;">离开房间</button></div>' +
       '</div></div>';
@@ -340,11 +346,14 @@ async function startLobbySpy() {
   lobbyState.team_b = teamB.map(function(p) { return p.name; });
   lobbyState.team_a_spy_name = lobbyState.team_a[Math.floor(Math.random() * lobbyState.team_a.length)];
   lobbyState.team_b_spy_name = lobbyState.team_b[Math.floor(Math.random() * lobbyState.team_b.length)];
-  var tA = Math.floor(Math.random() * window.spyTasks.length), tB = Math.floor(Math.random() * window.spyTasks.length);
-  if (tB === tA && window.spyTasks.length > 1) tB = (tA + 1) % window.spyTasks.length;
+  // 给所有人分配任务（扰乱视野，存索引）
   lobbyState.tasks = {};
-  lobbyState.tasks[lobbyState.team_a_spy_name] = tA;
-  lobbyState.tasks[lobbyState.team_b_spy_name] = tB;
+  var allNames = lobbyState.players.map(function(p) { return p.name; });
+  var shuffled = window.spyTasks.slice();
+  for (var i = shuffled.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i+1)); var t = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = t; }
+  allNames.forEach(function(name, idx) {
+    lobbyState.tasks[name] = idx % shuffled.length; // 存的是 spyTasks 原始索引
+  });
   lobbyState.phase = 'playing';
   await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
 }
