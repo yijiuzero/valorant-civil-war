@@ -671,7 +671,7 @@ async function joinSpyLobby(code) {
   var name = window._currentUserDisplayName;
   if (!name || name === '玩家') { window.showToast && window.showToast('请先登录', 3000); return; }
   var sb = await getSupabase();
-  var res = await sb.from('rooms').select('spy_state').eq('code', code.toUpperCase()).eq('type', 'spy_lobby').single();
+  var res = await sb.from('rooms').select('spy_state,type').eq('code', code.toUpperCase()).single();
   if (res.error || !res.data || !res.data.spy_state) { window.showToast && window.showToast('房间不存在', 3000); return; }
   var state = res.data.spy_state;
   if (state.phase !== 'lobby') { window.showToast && window.showToast('游戏已开始', 3000); return; }
