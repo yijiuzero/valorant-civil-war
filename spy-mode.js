@@ -771,19 +771,10 @@ function renderSpyLobby() {
       ) +
       '<div style="text-align:center;margin-top:12px;"><button class="spy-setup-back" onclick="leaveLobbyRoom()" style="display:inline-block;">离开房间</button></div>' +
       '</div>';
-  } else if (phase === 'teams') {
-    var myName = window._currentUserDisplayName || '';
-    var teamAHtml = (lobbyState.team_a || []).map(function(n) { return '<div class="spy-team-member' + (n === myName ? ' spy-self' : '') + '">' + esc(n) + '</div>'; }).join('');
-    var teamBHtml = (lobbyState.team_b || []).map(function(n) { return '<div class="spy-team-member' + (n === myName ? ' spy-self' : '') + '">' + esc(n) + '</div>'; }).join('');
-    var teamsHtml = '<div class="spy-team-preview">' +
-      '<div class="spy-team-col"><div class="spy-team-label team-a">🔴 A队</div><div class="spy-team-players">' + teamAHtml + '</div></div>' +
-      '<div class="spy-team-col"><div class="spy-team-label team-b">🔵 B队</div><div class="spy-team-players">' + teamBHtml + '</div></div>' +
-      '</div>';
-    el.innerHTML = codeHtml + '<div class="spy-setup-card">' + teamsHtml +
-      (host ? '<div style="text-align:center;margin-top:16px;"><button class="btn-spin" onclick="startLobbySpy()">开始内鬼模式 🕵️</button></div>' : '<div style="text-align:center;margin-top:12px;font-size:14px;color:var(--text-dim);">等待房主开始内鬼模式...</div>') +
-      '<div style="text-align:center;margin-top:8px;"><button class="spy-setup-back" onclick="leaveLobbyRoom()" style="display:inline-block;">离开房间</button></div>' +
-      '</div>';
-  } else renderLobbyGameView();
+  } else {
+    // playing 或 revealed
+    renderLobbyGameView();
+  }
 }
 
 function renderLobbyGameView() {
@@ -792,12 +783,16 @@ function renderLobbyGameView() {
   var teamLabel = lobbyState.team_a && lobbyState.team_a.indexOf(myName) !== -1 ? '🔴 A队' : '🔵 B队';
   if (lobbyState.phase === 'revealed') {
     var el = document.getElementById('spyLobbyView');
+    var taskA = lobbyState.tasks && lobbyState.tasks[lobbyState.team_a_spy_name];
+    var taskADetail = (taskA != null && window.spyTasks[taskA]) ? '任务：' + window.spyTasks[taskA].icon + ' ' + window.spyTasks[taskA].title : '';
+    var taskB = lobbyState.tasks && lobbyState.tasks[lobbyState.team_b_spy_name];
+    var taskBDetail = (taskB != null && window.spyTasks[taskB]) ? '任务：' + window.spyTasks[taskB].icon + ' ' + window.spyTasks[taskB].title : '';
     el.innerHTML =
       '<div style="font-size:24px;font-weight:900;color:var(--accent);text-align:center;margin-bottom:12px;">房间码: ' + lobbyRoomCode + '</div>' +
       '<div class="spy-reveal-card"><div class="spy-reveal-icon">🎭</div><div class="spy-reveal-title">内鬼身份揭晓！</div>' +
       '<div class="spy-reveal-teams">' +
-      '<div class="spy-reveal-col"><div class="spy-reveal-team team-a">🔴 A队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_a_spy_name || '-') + '</div></div>' +
-      '<div class="spy-reveal-col"><div class="spy-reveal-team team-b">🔵 B队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_b_spy_name || '-') + '</div></div>' +
+      '<div class="spy-reveal-col"><div class="spy-reveal-team team-a">🔴 A队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_a_spy_name || '-') + '</div><div style="font-size:12px;color:var(--text-dim);">' + taskADetail + '</div></div>' +
+      '<div class="spy-reveal-col"><div class="spy-reveal-team team-b">🔵 B队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_b_spy_name || '-') + '</div><div style="font-size:12px;color:var(--text-dim);">' + taskBDetail + '</div></div>' +
       '</div>' +
       (isHost() ? '<button class="btn-spin" onclick="resetLobbySpy()" style="margin-top:16px;">再来一局 🔄</button>' : '') +
       '</div>';
@@ -812,9 +807,11 @@ function renderLobbyGameView() {
       document.getElementById('sSpyNormalPanel').style.display = 'none';
       document.getElementById('sSpyIdentityPanel').style.display = '';
       document.getElementById('sSpyTeamLabel').textContent = teamLabel;
-      document.getElementById('sSpyTaskIcon').textContent = '🎯';
-      document.getElementById('sSpyTaskTitle').textContent = '秘密任务';
-      document.getElementById('sSpyTaskDesc').textContent = '在不暴露身份的前提下帮助对方队伍获胜。';
+      var taskIdx = lobbyState.tasks && lobbyState.tasks[myName];
+      var task = (taskIdx != null && window.spyTasks[taskIdx]) ? window.spyTasks[taskIdx] : null;
+      document.getElementById('sSpyTaskIcon').textContent = task ? task.icon : '🎯';
+      document.getElementById('sSpyTaskTitle').textContent = task ? task.title : '秘密任务';
+      document.getElementById('sSpyTaskDesc').textContent = task ? task.desc : '在不暴露身份的前提下帮助对方队伍获胜。';
     } else {
       document.getElementById('sSpyNormalPanel').style.display = '';
       document.getElementById('sSpyIdentityPanel').style.display = 'none';
@@ -848,7 +845,6 @@ async function doLobbyRandomSplit() {
 
 async function startLobbySpy() {
   if (!lobbyState || !isHost() || !lobbyRoomCode) return;
-  // 从 players 的 team 字段构建队伍
   var teamA = lobbyState.players.filter(function(p) { return p.team === 'A'; });
   var teamB = lobbyState.players.filter(function(p) { return p.team === 'B'; });
   if (!teamA.length || !teamB.length) { window.showToast && window.showToast('两队都需要有人', 2000); return; }
@@ -856,6 +852,13 @@ async function startLobbySpy() {
   lobbyState.team_b = teamB.map(function(p) { return p.name; });
   lobbyState.team_a_spy_name = lobbyState.team_a[Math.floor(Math.random() * lobbyState.team_a.length)];
   lobbyState.team_b_spy_name = lobbyState.team_b[Math.floor(Math.random() * lobbyState.team_b.length)];
+  // 分配任务
+  var taskIdxA = Math.floor(Math.random() * window.spyTasks.length);
+  var taskIdxB = Math.floor(Math.random() * window.spyTasks.length);
+  if (taskIdxB === taskIdxA && window.spyTasks.length > 1) taskIdxB = (taskIdxA + 1) % window.spyTasks.length;
+  lobbyState.tasks = {};
+  lobbyState.tasks[lobbyState.team_a_spy_name] = taskIdxA;
+  lobbyState.tasks[lobbyState.team_b_spy_name] = taskIdxB;
   lobbyState.phase = 'playing';
   await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
 }
