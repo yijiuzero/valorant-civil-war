@@ -76,6 +76,7 @@ function onAuthSuccess() {
   document.getElementById('authNickname').value = '';
   document.getElementById('authPassword').value = '';
   document.getElementById('authError').textContent = '';
+  syncCurrentUser();
   updateSidebar();
 }
 
@@ -147,6 +148,12 @@ function updateSidebar() {
     entry.style.display = '';
     if (display) display.style.display = 'none';
   }
+  syncCurrentUser();
+}
+
+function syncCurrentUser() {
+  window._currentUser = currentUser;
+  window._currentUserDisplayName = userDisplayName(currentUser);
 }
 
 // 暴露

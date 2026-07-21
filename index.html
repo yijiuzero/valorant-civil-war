@@ -26,7 +26,7 @@
   <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">🔑 登录 / 注册</div>
   <div class="auth-user-display" id="authUserDisplay" style="display:none;"></div>
   <div class="sidebar-footer">
-    <div style="opacity:0.6;">from zer0 · V3.7.6</div>
+    <div style="opacity:0.6;">from zer0 · V3.8.0</div>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">问题/需求反馈</a>
   </div>
 </nav>
@@ -35,7 +35,7 @@
   <!-- 首页内容 -->
   <div class="content-layer" id="module-home">
     <div class="module-title">🏠 无畏契约 · 战术工具集</div>
-    <div class="module-sub">专为云南瓦搭群打造 | from zer0 · V3.7.6</div>
+    <div class="module-sub">专为云南瓦搭群打造 | from zer0 · V3.8.0</div>
     <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:20px;">
       <div class="home-card" onclick="switchModule('wheel')"><div class="home-card-icon">🎯</div><div class="home-card-title">随机选图</div><div class="home-card-desc">随机抽取地图</div></div>
       <div class="home-card" onclick="switchModule('agent')"><div class="home-card-icon">🧩</div><div class="home-card-title">随机特工</div><div class="home-card-desc">随机抽取特工</div></div>
@@ -307,6 +307,23 @@
           <div class="spy-entry-title">从分队房间进入</div>
           <div class="spy-entry-desc">在内战分队中完成分房后再开启内鬼模式</div>
         </div>
+        <div class="spy-entry-card" onclick="showRoomCodeInput()">
+          <div class="spy-entry-icon">🔗</div>
+          <div class="spy-entry-title">加入线上房间</div>
+          <div class="spy-entry-desc">输入房间码查看自己的内鬼身份（需要登录）</div>
+        </div>
+      </div>
+      <!-- 加入房间输入 -->
+      <div id="spyJoinRoomPanel" style="display:none;margin-top:20px;">
+        <div class="spy-setup-head">
+          <span>🔗 输入房间码</span>
+          <button class="spy-setup-back" onclick="hideRoomCodeInput()">← 返回</button>
+        </div>
+        <div class="spy-setup-input-row">
+          <input class="teamsplit-input" id="joinRoomCodeInput" type="text" placeholder="输入6位房间码" maxlength="8" style="text-transform:uppercase;" onkeydown="if(event.key==='Enter')joinSpyRoom(this.value)">
+          <button class="btn-machine teamsplit-inline-btn" onclick="joinSpyRoom(document.getElementById('joinRoomCodeInput').value)" style="min-height:48px;">加入</button>
+        </div>
+        <div style="font-size:12px;color:var(--text-dim);text-align:center;">发起人在手动组队中分配内鬼后发布的房间码</div>
       </div>
     </div>
 
@@ -372,6 +389,22 @@
         </div>
         <div class="spy-action-row">
           <button class="btn-spy-mode" id="sBtnRevealSpies" onclick="revealStandaloneSpies()">揭晓内鬼 🎭</button>
+        </div>
+        <!-- 发布到线上 -->
+        <div id="spyRoomPublishPanel" style="text-align:center;margin-top:16px;">
+          <button class="btn-machine teamsplit-secondary-btn" onclick="publishSpyRoom()" style="min-height:44px;">📤 发布到线上（生成房间码）</button>
+        </div>
+        <!-- 房间码显示 + 复制 -->
+        <div id="spyRoomCodePanel" style="display:none;text-align:center;margin-top:16px;">
+          <div style="font-size:13px;color:var(--text-dim);margin-bottom:6px;">将房间码发给群友，对方登录后在"内鬼模式 → 加入线上房间"输入</div>
+          <div style="display:inline-flex;gap:8px;background:color-mix(in srgb,var(--card) 84%,transparent);border-radius:12px;padding:8px 16px;border:1px solid color-mix(in srgb,var(--border) 84%,transparent);align-items:center;">
+            <span id="spyRoomCodeDisplay" style="font-size:22px;font-weight:900;color:var(--accent);letter-spacing:4px;">------</span>
+            <button class="btn-machine teamsplit-inline-btn" onclick="navigator.clipboard.writeText(document.getElementById('spyRoomCodeDisplay').textContent);window.showToast('已复制',2000)" style="min-height:36px;padding:4px 12px;font-size:12px;">📋</button>
+          </div>
+        </div>
+        <!-- 已加入线上房间信息 -->
+        <div id="sSpyJoinInfo" style="display:none;text-align:center;margin-top:12px;">
+          <div style="font-size:12px;color:var(--text-dim);">已加入线上房间，等待发起人揭晓结果</div>
         </div>
       </div>
 

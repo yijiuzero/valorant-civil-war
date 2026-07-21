@@ -535,6 +535,110 @@ function resetStandaloneSpy() {
   renderStandaloneSetup();
 }
 
+// ========== 线上发布与加入 ==========
+async function publishSpyRoom() {
+  if (!saState || !saState.teamA.length || !saState.teamB.length || !saState.team_a_spy) return;
+  const sb = await getSupabase();
+  // 生成6位房间码
+  const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const spyState = {
+    phase: 'published',
+    team_a: (saState.teamA || []).map(function(p) { return p.name; }),
+    team_b: (saState.teamB || []).map(function(p) { return p.name; }),
+    team_a_spy_name: findPlayerName(saState.teamA, saState.team_a_spy),
+    team_b_spy_name: findPlayerName(saState.teamB, saState.team_b_spy),
+    tasks: saState.tasks
+  };
+  try {
+    await sb.from('rooms').insert({
+      code: code, type: 'spy', status: 'playing',
+      host_user_id: (window._currentUser && window._currentUser.id) || null,
+      spy_state: spyState
+    });
+    document.getElementById('spyRoomCodeDisplay').textContent = code;
+    document.getElementById('spyRoomPublishPanel').style.display = 'none';
+    document.getElementById('spyRoomCodePanel').style.display = '';
+    window.showToast && window.showToast('房间已发布！将房间码发给群友', 3000);
+  } catch (e) {
+    window.showToast && window.showToast('发布失败: ' + e.message, 3000);
+  }
+}
+
+function findPlayerName(team, pid) {
+  var p = (team || []).find(function(x) { return x.id === pid; });
+  return p ? p.name : '未知';
+}
+
+async function joinSpyRoom(code) {
+  var name = window._currentUserDisplayName;
+  if (!name || name === '玩家') {
+    window.showToast && window.showToast('请先登录后再加入房间', 3000);
+    return;
+  }
+  var sb = await getSupabase();
+  var res = await sb.from('rooms').select('spy_state').eq('code', code.toUpperCase()).single();
+  if (res.error || !res.data || !res.data.spy_state) {
+    window.showToast && window.showToast('房间不存在或已过期', 3000);
+    return;
+  }
+  var state = res.data.spy_state;
+  // 查找自己属于哪个队伍
+  var inTeamA = (state.team_a || []).indexOf(name) !== -1;
+  var inTeamB = (state.team_b || []).indexOf(name) !== -1;
+  if (!inTeamA && !inTeamB) {
+    window.showToast && window.showToast('你不在该房间的玩家列表中（昵称需完全一致）', 4000);
+    return;
+  }
+  var isSpy = (name === state.team_a_spy_name || name === state.team_b_spy_name);
+  var teamLabel = inTeamA ? '🔴 A队' : '🔵 B队';
+
+  // 显示身份
+  document.getElementById('spyStandaloneEntry').style.display = 'none';
+  document.getElementById('spyStandaloneSetup').style.display = 'none';
+  document.getElementById('spyStandaloneGame').style.display = '';
+  document.getElementById('sSpyInit').style.display = 'none';
+  document.getElementById('sSpyPlaying').style.display = '';
+
+  if (isSpy) {
+    document.getElementById('sSpyNormalPanel').style.display = 'none';
+    document.getElementById('sSpyIdentityPanel').style.display = '';
+    document.getElementById('sSpyTeamLabel').textContent = teamLabel;
+    var spyId = inTeamA ? state.team_a_spy_name : state.team_b_spy_name;
+    // 找到该内鬼的玩家 ID
+    var allPlayers = (saState && (saState.teamA || []).concat(saState.teamB || [])) || [];
+    var sp = allPlayers.find(function(p) { return p.name === spyId; });
+    if (sp && state.tasks && state.tasks[String(sp.id)]) {
+      var task = window.spyTasks[state.tasks[String(sp.id)]];
+      if (task) {
+        document.getElementById('sSpyTaskIcon').textContent = task.icon;
+        document.getElementById('sSpyTaskTitle').textContent = task.title;
+        document.getElementById('sSpyTaskDesc').textContent = task.desc;
+      }
+    }
+    document.getElementById('sBtnRevealSpies').style.display = 'none';
+    document.getElementById('sSpyJoinInfo').style.display = '';
+  } else {
+    document.getElementById('sSpyNormalPanel').style.display = '';
+    document.getElementById('sSpyIdentityPanel').style.display = 'none';
+    document.getElementById('sSpyNormalPanel').querySelector('.spy-card-body').innerHTML =
+      '<p>✅ 你不是内鬼！</p><p class="spy-hint">队伍：' + teamLabel + '</p><p class="spy-hint">你的目标是与队伍一起赢得比赛。</p>';
+    document.getElementById('sSpyJoinInfo').style.display = '';
+  }
+  document.getElementById('sSpyRevealed').style.display = 'none';
+}
+
+function showRoomCodeInput() {
+  document.getElementById('spyJoinRoomPanel').style.display = '';
+}
+
+function hideRoomCodeInput() {
+  document.getElementById('spyJoinRoomPanel').style.display = 'none';
+}
+
+function publishRoomPanel() {
+  document.getElementById('spyRoomPublishPanel').style.display = '';
+}
+
 // 暴露到 window
 window.initStandaloneView = initStandaloneView;
 window.startSpySetup = startSpySetup;
@@ -548,3 +652,7 @@ window.viewStandaloneIdentity = viewStandaloneIdentity;
 window.hideSpyIdentity = hideSpyIdentity;
 window.revealStandaloneSpies = revealStandaloneSpies;
 window.resetStandaloneSpy = resetStandaloneSpy;
+window.publishSpyRoom = publishSpyRoom;
+window.joinSpyRoom = joinSpyRoom;
+window.showRoomCodeInput = showRoomCodeInput;
+window.hideRoomCodeInput = hideRoomCodeInput;
