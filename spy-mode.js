@@ -652,7 +652,7 @@ async function createSpyLobby() {
   };
   try {
     await sb.from('rooms').insert({
-      code: code, type: 'spy_lobby', status: 'lobby',
+      code: code, status: 'lobby',
       host_user_id: hostId,
       spy_state: initState
     });
@@ -671,7 +671,7 @@ async function joinSpyLobby(code) {
   var name = window._currentUserDisplayName;
   if (!name || name === '玩家') { window.showToast && window.showToast('请先登录', 3000); return; }
   var sb = await getSupabase();
-  var res = await sb.from('rooms').select('spy_state,type').eq('code', code.toUpperCase()).single();
+  var res = await sb.from('rooms').select('spy_state').eq('code', code.toUpperCase()).single();
   if (res.error) {
     window.showToast && window.showToast('加入失败: ' + (res.error.message || res.error.code || '未知'), 4000);
     console.error('joinSpyLobby error:', res.error);
