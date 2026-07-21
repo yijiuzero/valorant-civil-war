@@ -2,6 +2,9 @@
 const AUTH_DOMAIN = '@val-game.com';
 let supabase = null;
 let currentUser = null;
+const TURNSTILE_SITE_KEY = '0x4AAAAAAAD6W0R1X8Uk-RxFR';
+let turnstileWidgetId = null;
+let turnstileToken = null;
 
 async function getSupabase() {
   if (supabase) return supabase;
@@ -75,6 +78,7 @@ function onAuthSuccess() {
   document.getElementById('authNickname').value = '';
   document.getElementById('authPassword').value = '';
   document.getElementById('authError').textContent = '';
+  removeTurnstile();
   syncCurrentUser();
   updateSidebar();
 }
@@ -106,6 +110,8 @@ function setAuthMode(mode) {
   document.getElementById('authSwitchText').innerHTML = isSignUp
     ? '已有账号？<span class="auth-switch-link" onclick="setAuthMode(\'signin\')">去登录</span>'
     : '没有账号？<span class="auth-switch-link" onclick="setAuthMode(\'signup\')">去注册</span>';
+  if (isSignUp) { renderTurnstile(); }
+  else { removeTurnstile(); }
 }
 
 async function handleAuthSubmit() {
@@ -120,6 +126,19 @@ async function handleAuthSubmit() {
 
   btn.disabled = true; btn.textContent = '处理中...'; errEl.textContent = '';
   const isSignUp = document.getElementById('authTitle').textContent === '注册账号';
+
+  // 注册时先过 Cloudflare Turnstile 服务端校验
+  if (isSignUp) {
+    const token = turnstileToken || (turnstileWidgetId && window.turnstile ? window.turnstile.getResponse(turnstileWidgetId) : null);
+    if (!token) { errEl.textContent = '请等待人机验证完成'; btn.disabled = false; btn.textContent = '注册'; return; }
+    try {
+      const ok = await verifyTurnstileToken(token);
+      if (!ok) { errEl.textContent = '人机验证未通过，请重试'; resetTurnstile(); btn.disabled = false; btn.textContent = '注册'; return; }
+    } catch (e) {
+      errEl.textContent = '人机验证校验失败：' + (e.message || '未知错误'); resetTurnstile(); btn.disabled = false; btn.textContent = '注册'; return;
+    }
+  }
+
   try {
     if (isSignUp) await doSignUp(nickname, password);
     else await doSignIn(nickname, password);
@@ -160,6 +179,46 @@ function syncCurrentUser() {
   // 登录后隐藏侧边栏锁图标
   document.querySelectorAll('.nav-lock').forEach(function(el) { el.style.display = currentUser ? 'none' : ''; });
 }
+
+// Cloudflare Turnstile 控件
+function renderTurnstile() {
+  const container = document.getElementById('authTurnstile');
+  if (!container || !window.turnstile) return;
+  if (turnstileWidgetId) { container.style.display = ''; return; }
+  container.style.display = '';
+  turnstileWidgetId = window.turnstile.render('#authTurnstile', {
+    sitekey: TURNSTILE_SITE_KEY,
+    size: 'invisible',
+    callback: function(token) { turnstileToken = token; },
+    'expired-callback': function() { turnstileToken = null; },
+    'error-callback': function() { turnstileToken = null; }
+  });
+}
+function removeTurnstile() {
+  if (turnstileWidgetId && window.turnstile) {
+    window.turnstile.remove(turnstileWidgetId);
+    turnstileWidgetId = null;
+    turnstileToken = null;
+  }
+  const container = document.getElementById('authTurnstile');
+  if (container) container.style.display = 'none';
+}
+function resetTurnstile() {
+  if (turnstileWidgetId && window.turnstile) {
+    window.turnstile.reset(turnstileWidgetId);
+    turnstileToken = null;
+  }
+}
+async function verifyTurnstileToken(token) {
+  const sb = await getSupabase();
+  const { data, error } = await sb.functions.invoke('turnstile-verify', { body: { token: token } });
+  if (error) throw error;
+  return data && data.success === true;
+}
+window.onTurnstileLoad = function() {
+  if (document.getElementById('authTitle').textContent === '注册账号') renderTurnstile();
+};
+if (window.turnstile) window.onTurnstileLoad();
 
 // 暴露
 window.initAuth = initAuth;
