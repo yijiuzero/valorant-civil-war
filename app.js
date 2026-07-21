@@ -55,6 +55,12 @@ function switchModule(mod) {
   stopMapSpin(true);
   stopAgentSpin(true);
   stopChallenge();
+  // 内鬼模式 & 内战分队 需登录
+  if ((mod === 'spy' || mod === 'teamsplit') && !window._currentUser) {
+    if (typeof toggleAuthOverlay === 'function') toggleAuthOverlay();
+    window.showToast && window.showToast('请先登录', 2000);
+    return;
+  }
   navItems.forEach(i => i.classList.toggle('active', i.dataset.module === mod));
   contentLayers.forEach(l => l.style.display = 'none');
   const tl = document.getElementById('module-' + mod);
