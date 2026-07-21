@@ -658,7 +658,6 @@ async function createSpyLobby() {
     });
     lobbyRoomCode = code;
     lobbyState = initState;
-    lobbyState._host = true;
     subscribeSpyLobby(code);
     showSpyLobbyView();
     window.showToast && window.showToast('房间创建成功！', 2000);
@@ -686,7 +685,6 @@ async function joinSpyLobby(code) {
   await sb.from('rooms').update({ spy_state: state }).eq('code', code.toUpperCase());
   lobbyRoomCode = code;
   lobbyState = state;
-  lobbyState._host = false;
   subscribeSpyLobby(code);
   showSpyLobbyView();
 }
@@ -704,8 +702,12 @@ function subscribeSpyLobby(code) {
 function handleLobbyUpdate(newState) {
   if (!newState) return;
   lobbyState = newState;
-  lobbyState._host = lobbyState._host || false;
   renderSpyLobby();
+}
+
+function isHost() {
+  if (!lobbyState || !window._currentUser) return false;
+  return lobbyState.host_name === window._currentUserDisplayName;
 }
 
 function showSpyLobbyView() {
@@ -724,7 +726,7 @@ function renderSpyLobby() {
   var el = document.getElementById('spyLobbyView');
   if (!el) return;
   var phase = lobbyState.phase;
-  var host = lobbyState._host;
+  var host = isHost();
 
   var codeHtml = '<div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:16px;">' +
     '<span style="font-size:13px;color:var(--text-dim);">房间码</span>' +
@@ -797,7 +799,7 @@ function renderLobbyGameView() {
       '<div class="spy-reveal-col"><div class="spy-reveal-team team-a">🔴 A队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_a_spy_name || '-') + '</div></div>' +
       '<div class="spy-reveal-col"><div class="spy-reveal-team team-b">🔵 B队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_b_spy_name || '-') + '</div></div>' +
       '</div>' +
-      (lobbyState._host ? '<button class="btn-spin" onclick="resetLobbySpy()" style="margin-top:16px;">再来一局 🔄</button>' : '') +
+      (isHost() ? '<button class="btn-spin" onclick="resetLobbySpy()" style="margin-top:16px;">再来一局 🔄</button>' : '') +
       '</div>';
   } else {
     // playing: 用独立面板
@@ -819,13 +821,13 @@ function renderLobbyGameView() {
       document.getElementById('sSpyNormalPanel').querySelector('.spy-card-body').innerHTML = '<p>✅ 你不是内鬼！</p><p class="spy-hint">队伍：' + teamLabel + '</p>';
     }
     var btn = document.getElementById('sBtnRevealSpies');
-    btn.style.display = lobbyState._host ? '' : 'none';
+    btn.style.display = isHost() ? '' : 'none';
     btn.setAttribute('onclick', 'lobbyRevealSpies()');
   }
 }
 
 async function updatePlayerTeam(name, team) {
-  if (!lobbyState || !lobbyState._host || !lobbyRoomCode) return;
+  if (!lobbyState || !isHost() || !lobbyRoomCode) return;
   var p = lobbyState.players.find(function(x) { return x.name === name; });
   if (!p) return;
   p.team = p.team === team ? null : team; // 点击已选队伍取消
@@ -833,7 +835,7 @@ async function updatePlayerTeam(name, team) {
 }
 
 async function doLobbyRandomSplit() {
-  if (!lobbyState || !lobbyState._host || !lobbyRoomCode) return;
+  if (!lobbyState || !isHost() || !lobbyRoomCode) return;
   var players = lobbyState.players.map(function(p) { return p.name; });
   if (players.length < 2) { window.showToast && window.showToast('至少需要2名玩家', 2000); return; }
   for (var i = players.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i+1)); var t = players[i]; players[i] = players[j]; players[j] = t; }
@@ -845,7 +847,7 @@ async function doLobbyRandomSplit() {
 }
 
 async function startLobbySpy() {
-  if (!lobbyState || !lobbyState._host || !lobbyRoomCode) return;
+  if (!lobbyState || !isHost() || !lobbyRoomCode) return;
   // 从 players 的 team 字段构建队伍
   var teamA = lobbyState.players.filter(function(p) { return p.team === 'A'; });
   var teamB = lobbyState.players.filter(function(p) { return p.team === 'B'; });
@@ -859,13 +861,13 @@ async function startLobbySpy() {
 }
 
 async function lobbyRevealSpies() {
-  if (!lobbyState || !lobbyState._host || !lobbyRoomCode) return;
+  if (!lobbyState || !isHost() || !lobbyRoomCode) return;
   lobbyState.phase = 'revealed';
   await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
 }
 
 async function resetLobbySpy() {
-  if (!lobbyState._host || !lobbyRoomCode) return;
+  if (!isHost() || !lobbyRoomCode) return;
   lobbyState.phase = 'lobby';
   lobbyState.team_a = []; lobbyState.team_b = [];
   lobbyState.team_a_spy_name = null; lobbyState.team_b_spy_name = null;
@@ -874,7 +876,16 @@ async function resetLobbySpy() {
   await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
 }
 
-function leaveLobbyRoom() {
+async function leaveLobbyRoom() {
+  var code = lobbyRoomCode;
+  var name = window._currentUserDisplayName;
+  // 从服务器移除自己
+  if (code && name && lobbyState) {
+    try {
+      lobbyState.players = lobbyState.players.filter(function(p) { return p.name !== name; });
+      await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', code);
+    } catch (e) { /* 忽略 */ }
+  }
   if (lobbyChannel) { lobbyChannel.unsubscribe(); lobbyChannel = null; }
   lobbyRoomCode = null; lobbyState = null;
   backToSpyEntry();
