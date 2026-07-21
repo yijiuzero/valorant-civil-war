@@ -909,6 +909,9 @@ main::after{
 .spy-drag-card:hover{background:color-mix(in srgb,var(--accent) 12%,transparent);}
 .spy-drag-card:active{cursor:grabbing;opacity:.6;}
 .spy-drag-card[draggable="false"]{cursor:default;opacity:.8;}
+.spy-drag-card-assign{justify-content:space-between;gap:8px;padding-right:8px;}
+.spy-drag-card-assign .spy-drag-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.spy-drag-card-assign .spy-team-btn-row{flex-shrink:0;}
 .spy-setup-chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 22%,var(--border));font-size:14px;font-weight:700;color:var(--text);}
 .spy-setup-chip-remove{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:none;background:rgba(255,70,85,.15);color:var(--accent);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;padding:0;line-height:1;}
 .spy-player-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;margin-bottom:6px;background:color-mix(in srgb,var(--card) 84%,transparent);font-size:14px;}

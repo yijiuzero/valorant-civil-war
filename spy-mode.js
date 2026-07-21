@@ -242,6 +242,15 @@ async function handleDropTeam(e, team) {
   await updatePlayerTeam(name, team);
 }
 
+// 触屏/鼠标/键盘通用的「点击分配」入口：从卡片 data-name 取玩家名（避免把名字拼进 JS 字符串）
+function assignTeamFromCard(btn, team) {
+  var card = btn.closest('.spy-drag-card');
+  if (!card) return;
+  var name = card.getAttribute('data-name');
+  if (!name || !isHost()) return;
+  updatePlayerTeam(name, team === 'null' ? null : team);
+}
+
 function renderSpyLobby() {
   if (!lobbyState) return;
   var el = document.getElementById('spyLobbyView'); if (!el) return;
@@ -260,7 +269,16 @@ function renderSpyLobby() {
     var canStart = teamA.length >= 1 && teamB.length >= 1;
 
     function dragCard(p) {
-      return '<div class="spy-drag-card" draggable="' + (host ? 'true' : 'false') + '" data-name="' + esc(p.name) + '" ondragstart="dragStart(event)">👤 ' + esc(p.name) + '</div>';
+      var isA = p.team === 'A', isB = p.team === 'B';
+      var btnA = host
+        ? '<button type="button" class="spy-team-btn spy-team-btn-a' + (isA ? ' active' : '') + '" aria-label="' + (isA ? '取消分配到A队' : '分配到A队') + '" onclick="assignTeamFromCard(this,\'' + (isA ? 'null' : 'A') + '\')">' + (isA ? '✓A' : 'A') + '</button>'
+        : '';
+      var btnB = host
+        ? '<button type="button" class="spy-team-btn spy-team-btn-b' + (isB ? ' active' : '') + '" aria-label="' + (isB ? '取消分配到B队' : '分配到B队') + '" onclick="assignTeamFromCard(this,\'' + (isB ? 'null' : 'B') + '\')">' + (isB ? '✓B' : 'B') + '</button>'
+        : '';
+      var actions = host ? '<span class="spy-team-btn-row">' + btnA + btnB + '</span>' : '';
+      return '<div class="spy-drag-card spy-drag-card-assign" draggable="' + (host ? 'true' : 'false') + '" data-name="' + esc(p.name) + '" ondragstart="dragStart(event)">' +
+        '<span class="spy-drag-name">👤 ' + esc(p.name) + '</span>' + actions + '</div>';
     }
 
     el.innerHTML = codeHtml +
