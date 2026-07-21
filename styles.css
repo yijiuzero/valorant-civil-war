@@ -897,6 +897,18 @@ main::after{
 .spy-setup-input-row{display:flex;gap:10px;margin-bottom:16px;}
 .spy-setup-players{display:flex;flex-wrap:wrap;gap:10px;min-height:52px;padding:14px;border-radius:14px;background:color-mix(in srgb,var(--card) 84%,transparent);border:1px solid color-mix(in srgb,var(--border) 82%,transparent);margin-bottom:18px;}
 .spy-setup-empty{font-size:13px;color:var(--text-dim);width:100%;text-align:center;padding:8px;}
+
+/* 拖拽分队 */
+.spy-drag-area{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
+.spy-drag-col{border-radius:12px;padding:10px;border:2px dashed color-mix(in srgb,var(--border) 60%,transparent);min-height:100px;transition:border-color .2s;}
+.spy-drag-col.team-a{border-color:rgba(255,70,85,.3);background:rgba(255,70,85,.04);}
+.spy-drag-col.team-b{border-color:rgba(40,140,255,.3);background:rgba(40,140,255,.04);}
+.spy-drag-label{font-size:13px;font-weight:700;color:var(--text);text-align:center;margin-bottom:8px;padding:4px 0;}
+.spy-drag-list{display:flex;flex-direction:column;gap:4px;min-height:40px;}
+.spy-drag-card{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--card) 90%,transparent);border:1px solid var(--border);font-size:13px;font-weight:600;cursor:grab;transition:all .15s;}
+.spy-drag-card:hover{background:color-mix(in srgb,var(--accent) 12%,transparent);}
+.spy-drag-card:active{cursor:grabbing;opacity:.6;}
+.spy-drag-card[draggable="false"]{cursor:default;opacity:.8;}
 .spy-setup-chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 22%,var(--border));font-size:14px;font-weight:700;color:var(--text);}
 .spy-setup-chip-remove{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:none;background:rgba(255,70,85,.15);color:var(--accent);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;padding:0;line-height:1;}
 .spy-player-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;margin-bottom:6px;background:color-mix(in srgb,var(--card) 84%,transparent);font-size:14px;}
@@ -922,6 +934,7 @@ main::after{
 @media(max-width:640px){
   .spy-playing-layout{grid-template-columns:1fr;}
   .spy-team-preview{grid-template-columns:1fr;}
+  .spy-drag-area{grid-template-columns:1fr;}
   .spy-reveal-teams{grid-template-columns:1fr;}
   .spy-init-icon{font-size:42px;}
   .spy-reveal-icon{font-size:42px;}

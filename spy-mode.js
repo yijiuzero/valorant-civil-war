@@ -227,6 +227,21 @@ function showSpyLobbyView() {
   renderSpyLobby();
 }
 
+// ===== 拖拽分队 =====
+function allowDrop(e) { e.preventDefault(); }
+
+function dragStart(e) {
+  e.dataTransfer.setData('text/plain', e.target.dataset.name);
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+async function handleDropTeam(e, team) {
+  e.preventDefault();
+  var name = e.dataTransfer.getData('text/plain');
+  if (!name || !isHost()) return;
+  await updatePlayerTeam(name, team);
+}
+
 function renderSpyLobby() {
   if (!lobbyState) return;
   var el = document.getElementById('spyLobbyView'); if (!el) return;
@@ -239,33 +254,36 @@ function renderSpyLobby() {
     '</div>';
 
   if (phase === 'lobby') {
-    var playerCards = lobbyState.players.map(function(p) {
-      var t = p.team || '',
-          clsA = 'spy-team-btn spy-team-btn-a' + (t === 'A' ? ' active' : ''),
-          clsB = 'spy-team-btn spy-team-btn-b' + (t === 'B' ? ' active' : ''),
-          btns = host ? '<div class="spy-team-btn-row"><button class="' + clsA + '" onclick="updatePlayerTeam(\'' + esc(p.name) + '\',\'A\')">A</button><button class="' + clsB + '" onclick="updatePlayerTeam(\'' + esc(p.name) + '\',\'B\')">B</button></div>' : '',
-          label = t === 'A' ? ' 🔴A' : (t === 'B' ? ' 🔵B' : '');
-      return '<div class="spy-player-row"><span>👤 ' + esc(p.name) + label + '</span>' + btns + '</div>';
-    }).join('');
-
+    var unassigned = lobbyState.players.filter(function(p) { return !p.team || (p.team !== 'A' && p.team !== 'B'); });
     var teamA = lobbyState.players.filter(function(p) { return p.team === 'A'; });
     var teamB = lobbyState.players.filter(function(p) { return p.team === 'B'; });
     var canStart = teamA.length >= 1 && teamB.length >= 1;
-    var teamPreview = '';
-    if (teamA.length || teamB.length) {
-      teamPreview = '<div class="spy-team-preview" style="margin-top:12px;">' +
-        '<div class="spy-team-col"><div class="spy-team-label team-a">🔴 A队 (' + teamA.length + '人)</div><div class="spy-team-players">' + teamA.map(function(p) { return '<div class="spy-team-member">' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
-        '<div class="spy-team-col"><div class="spy-team-label team-b">🔵 B队 (' + teamB.length + '人)</div><div class="spy-team-players">' + teamB.map(function(p) { return '<div class="spy-team-member">' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
-        '</div>';
+
+    function dragCard(p) {
+      return '<div class="spy-drag-card" draggable="' + (host ? 'true' : 'false') + '" data-name="' + esc(p.name) + '" ondragstart="dragStart(event)">👤 ' + esc(p.name) + '</div>';
     }
+
     el.innerHTML = codeHtml +
       '<div class="spy-setup-card">' +
-      '<div class="spy-setup-head"><span>🎮 等待玩家加入（' + lobbyState.players.length + '人）</span></div>' +
-      '<div class="spy-player-list">' + playerCards + '</div>' + teamPreview +
+      '<div class="spy-setup-head"><span>🎮 等待玩家加入（' + lobbyState.players.length + '/10人）</span></div>' +
       '<div style="font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:12px;">群友登录后在"内鬼模式→加入线上房间"输入房间码</div>' +
       (host
-        ? '<div style="text-align:center;"><button class="btn-spy-mode" onclick="startLobbySpy()" style="min-height:44px;font-size:15px;"' + (canStart ? '' : ' disabled') + '>开始内鬼模式 🕵️</button><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">两队各至少1人</div></div>'
-        : '<div style="text-align:center;font-size:14px;color:var(--text-dim);">等待房主分配队伍...</div>') +
+        ? '<div class="spy-drag-area">' +
+          '<div class="spy-drag-col spy-drag-unassigned" ondragover="allowDrop(event)" ondrop="handleDropTeam(event,null)">' +
+            '<div class="spy-drag-label">待分配</div><div class="spy-drag-list">' + unassigned.map(dragCard).join('') + '</div></div>' +
+          '<div class="spy-drag-col team-a" ondragover="allowDrop(event)" ondrop="handleDropTeam(event,\'A\')">' +
+            '<div class="spy-drag-label">🔴 A队 (' + teamA.length + '人)</div><div class="spy-drag-list">' + teamA.map(dragCard).join('') + '</div></div>' +
+          '<div class="spy-drag-col team-b" ondragover="allowDrop(event)" ondrop="handleDropTeam(event,\'B\')">' +
+            '<div class="spy-drag-label">🔵 B队 (' + teamB.length + '人)</div><div class="spy-drag-list">' + teamB.map(dragCard).join('') + '</div></div>' +
+          '</div>'
+        : '<div class="spy-drag-area">' +
+          '<div class="spy-drag-col spy-drag-unassigned"><div class="spy-drag-label">待分配</div><div class="spy-drag-list">' + unassigned.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
+          '<div class="spy-drag-col team-a"><div class="spy-drag-label">🔴 A队 (' + teamA.length + '人)</div><div class="spy-drag-list">' + teamA.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
+          '<div class="spy-drag-col team-b"><div class="spy-drag-label">🔵 B队 (' + teamB.length + '人)</div><div class="spy-drag-list">' + teamB.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
+          '</div>') +
+      (host
+        ? '<div style="text-align:center;margin-top:16px;"><button class="btn-spy-mode" onclick="startLobbySpy()" style="min-height:44px;font-size:15px;"' + (canStart ? '' : ' disabled') + '>开始内鬼模式 🕵️</button><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">两队各至少1人</div></div>'
+        : '<div style="text-align:center;margin-top:12px;font-size:14px;color:var(--text-dim);">等待房主分配队伍...</div>') +
       '<div style="text-align:center;margin-top:12px;"><button class="spy-setup-back" onclick="leaveLobbyRoom()" style="display:inline-block;">离开房间</button></div>' +
       '</div>';
   } else {
@@ -340,7 +358,8 @@ async function updatePlayerTeam(name, team) {
   if (!lobbyState || !isHost() || !lobbyRoomCode) return;
   var p = lobbyState.players.find(function(x) { return x.name === name; });
   if (!p) return;
-  p.team = p.team === team ? null : team;
+  // team=null → 取消分配, team='A'/'B' → 分配到对应队
+  p.team = team;
   await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
 }
 
@@ -428,6 +447,9 @@ window.hideRoomCodeInput = hideRoomCodeInput;
 window.createSpyLobby = createSpyLobby;
 window.joinSpyLobby = joinSpyLobby;
 window.updatePlayerTeam = updatePlayerTeam;
+window.allowDrop = allowDrop;
+window.dragStart = dragStart;
+window.handleDropTeam = handleDropTeam;
 window.startLobbySpy = startLobbySpy;
 window.lobbyRevealSpies = lobbyRevealSpies;
 window.resetLobbySpy = resetLobbySpy;
