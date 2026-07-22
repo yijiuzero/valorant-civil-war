@@ -6,45 +6,46 @@
 -- 1. rooms 表新增 spy_state 字段
 ALTER TABLE rooms ADD COLUMN IF NOT EXISTS spy_state JSONB DEFAULT NULL;
 
--- 2. 允许所有已认证用户读取和更新 rooms（内鬼模式信任制）
--- ⚠️ 安全说明：
---   以下 RLS 策略适用于小群熟人场景（云南瓦搭群），不适用于公开部署。
---   当前策略：任何已登录用户可读取、更新、插入任意 rooms 记录。
---
---   如需加强安全性（推荐），可按以下方向改造：
---   a) SELECT: 允许已认证用户读取所有房间（维持现状）
---   b) UPDATE: 仅允许 host_user_id 匹配的用户更新，或 players 数组中的用户更新
---   c) INSERT: 仅允许 host_user_id = auth.uid() 的用户插入
---   d) DELETE: 添加明确的删除策略（仅允许 host 或 RLS 策略不允许删除）
---
---   当前 trust model 由应用层（前端逻辑）控制权限（isHost() / isSpyHost() 判定），
---   恶意用户仍可通过 Supabase API 直接绕过前端校验。请评估风险后决定是否升级。
+-- 2. rooms 表行级安全（RLS）
+-- 信任模型：host 控制 + 成员自助加入
+--   - 任何已登录用户可读所有房间（房间列表 / 加入需要）
+--   - 仅 host_user_id = auth.uid() 可插入自己创建的房间
+--   - 仅 host_user_id = auth.uid() 可全量更新自己创建的房间
+--   - 普通成员可"往 spy_state.players 追加自己"，但不能改动 host / status / 内鬼分配等其它字段
+-- 这样修复了"任意登录用户可改任意房间"的漏洞，同时不破坏内鬼 lobby 的加入流程
+-- （joinSpyLobby 正是往 players 追加自己，被 "Allow member self join" 策略精确放行）。
 -- ============================================================
+ALTER TABLE rooms ENABLE ROW LEVEL SECURITY;
+
 DROP POLICY IF EXISTS "Allow read for authenticated" ON rooms;
 CREATE POLICY "Allow read for authenticated"
   ON rooms FOR SELECT
   USING (auth.role() = 'authenticated');
 
-DROP POLICY IF EXISTS "Allow update spy_state for authenticated" ON rooms;
-CREATE POLICY "Allow update spy_state for authenticated"
-  ON rooms FOR UPDATE
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
--- 3. (可选) 如有需要，允许插入
+-- 插入：只能创建自己是 host 的房间
 DROP POLICY IF EXISTS "Allow insert for authenticated" ON rooms;
 CREATE POLICY "Allow insert for authenticated"
   ON rooms FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+  WITH CHECK (auth.uid() = host_user_id);
 
--- 4. 可选：升级版 RLS（注释掉，需要时取消注释并执行）
--- DROP POLICY IF EXISTS "Restrict insert to own user" ON rooms;
--- CREATE POLICY "Restrict insert to own user"
---   ON rooms FOR INSERT
---   WITH CHECK (auth.uid() = host_user_id);
---
--- DROP POLICY IF EXISTS "Restrict update to host" ON rooms;
--- CREATE POLICY "Restrict update to host"
---   ON rooms FOR UPDATE
---   USING (auth.uid() = host_user_id)
---   WITH CHECK (auth.uid() = host_user_id);
+-- 更新（房主）：可全量修改自己创建的房间
+DROP POLICY IF EXISTS "Allow update spy_state for authenticated" ON rooms;
+CREATE POLICY "Allow update spy_state for authenticated"
+  ON rooms FOR UPDATE
+  USING (auth.uid() = host_user_id)
+  WITH CHECK (auth.uid() = host_user_id);
+
+-- 更新（成员自助加入）：仅允许往 spy_state.players 追加自己，其它字段不变
+-- 防篡改 host_user_id / status / 内鬼分配结果，仅放行"新增一个自己的 players 项"
+DROP POLICY IF EXISTS "Allow member self join" ON rooms;
+CREATE POLICY "Allow member self join"
+  ON rooms FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (
+    NEW.host_user_id IS NOT DISTINCT FROM OLD.host_user_id
+    AND NEW.status IS NOT DISTINCT FROM OLD.status
+    AND NEW.code = OLD.code
+    AND COALESCE(NEW.spy_state - 'players', '{}'::jsonb) = COALESCE(OLD.spy_state - 'players', '{}'::jsonb)
+    AND (SELECT count(*) FROM jsonb_array_elements(NEW.spy_state->'players') p WHERE p->>'user_id' = auth.uid()::text) = 1
+    AND (SELECT count(*) FROM jsonb_array_elements(OLD.spy_state->'players') p WHERE p->>'user_id' = auth.uid()::text) = 0
+  );
