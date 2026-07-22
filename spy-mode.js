@@ -198,11 +198,13 @@ async function createSpyLobby() {
   } catch (e) { window.showToast && window.showToast('创建失败: ' + e.message, 3000); }
 }
 
-async function joinSpyLobby(code) {
+async function joinSpyLobby(inputCode) {
   var name = window._currentUserDisplayName;
   if (!name || name === '玩家') { window.showToast && window.showToast('请先登录', 3000); return; }
+  var code = (inputCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+  if (!code) { window.showToast && window.showToast('房间码无效', 3000); return; }
   var sb = await getSupabase();
-  var res = await sb.from('rooms').select('spy_state').eq('code', code.toUpperCase()).single();
+  var res = await sb.from('rooms').select('spy_state').eq('code', code).single();
   if (res.error) { window.showToast && window.showToast('加入失败: ' + (res.error.message || res.error.code), 4000); return; }
   if (!res.data || !res.data.spy_state) { window.showToast && window.showToast('房间不存在', 3000); return; }
   var state = res.data.spy_state;
@@ -212,7 +214,7 @@ async function joinSpyLobby(code) {
   if (state.players.length >= 10) { window.showToast && window.showToast('房间已满（最多10人）', 2000); return; }
   var uid = (window._currentUser && window._currentUser.id) || null;
   state.players.push({ name: name, user_id: uid, team: null });
-  await sb.from('rooms').update({ spy_state: state }).eq('code', code.toUpperCase());
+  await sb.from('rooms').update({ spy_state: state }).eq('code', code);
   lobbyRoomCode = code; lobbyState = state;
   subscribeSpyLobby(code); showSpyLobbyView();
 }

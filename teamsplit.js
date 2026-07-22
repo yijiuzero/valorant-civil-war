@@ -181,8 +181,9 @@ async function createRoom() {
 }
 
 async function joinRoom() {
-  const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-  if (!code) { showToast('请输入房间码', 2000); return; }
+  const raw = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+  const code = raw.replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  if (!code) { showToast('请输入有效的房间码', 2000); return; }
   try {
     await getUserId();
     const result = await supabase.from('rooms').select('*').eq('code', code).eq('status', 'waiting').single();
@@ -307,6 +308,9 @@ function subscribeToRoom(code, onReady) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: 'room_code=eq.' + code }, function(payload) {
       handlePlayersChanged(payload);
     })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: 'code=eq.' + code }, function(payload) {
+      handleRoomChanged(payload);
+    })
     .subscribe(function(status) {
       if (status === 'SUBSCRIBED' && onReady) onReady();
     });
@@ -363,6 +367,28 @@ function handlePlayersChanged(payload) {
   }
 }
 
+function handleRoomChanged(payload) {
+  if (!currentRoomCode) return;
+  const newRow = (payload && payload.new) ? payload.new : {};
+  if (newRow.status === 'done') {
+    if (!isCurrentUserHost()) {
+      const split = newRow.spy_state && newRow.spy_state.split;
+      if (split && split.teamA && split.teamB) {
+        const ta = document.getElementById('teamAPlayers');
+        const tb = document.getElementById('teamBPlayers');
+        if (ta) ta.innerHTML = split.teamA.map(teamRow).join('');
+        if (tb) tb.innerHTML = split.teamB.map(teamRow).join('');
+        showTeamsplitView('result');
+      }
+    }
+  } else if (newRow.status === 'waiting') {
+    if (!isCurrentUserHost()) {
+      showTeamsplitView('lobby');
+      refreshPlayers();
+    }
+  }
+}
+
 async function doSplit(mode) {
   if (!currentRoomCode) return;
   try {
@@ -400,7 +426,7 @@ async function doSplit(mode) {
     showTeamsplitView('result');
     localStorage.setItem('ts_last_result', JSON.stringify({ roomCode: currentRoomCode, teamA: teamA, teamB: teamB }));
     localStorage.setItem('ts_spy_teams', JSON.stringify({ roomCode: currentRoomCode, teamA: teamA, teamB: teamB }));
-    await supabase.from('rooms').update({ status: 'done' }).eq('code', currentRoomCode);
+    await supabase.from('rooms').update({ status: 'done', spy_state: { split: { teamA: teamA, teamB: teamB } } }).eq('code', currentRoomCode);
   } catch (e) {
     showToast('分队失败: ' + e.message, 3000);
   }
@@ -493,6 +519,11 @@ async function initTeamSplitView() {
       const parsed = JSON.parse(lastResult);
       if (parsed.roomCode && parsed.teamA && parsed.teamB) {
         currentRoomCode = parsed.roomCode;
+        // 恢复房主身份，使刷新后「重新分队」仍可用
+        try {
+          const rr = await supabase.from('rooms').select('host_user_id').eq('code', currentRoomCode).single();
+          if (rr.data) currentHostUserId = rr.data.host_user_id || null;
+        } catch (e) {}
         document.getElementById('teamAPlayers').innerHTML = parsed.teamA.map(teamRow).join('');
         document.getElementById('teamBPlayers').innerHTML = parsed.teamB.map(teamRow).join('');
         showTeamsplitView('result');

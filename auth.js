@@ -146,11 +146,11 @@ async function handleAuthSubmit() {
     const msg = e.message || '';
     // 注册时如果账户已存在，自动切登录
     if (isSignUp && (msg.includes('already') || msg.includes('exist'))) {
-      errEl.textContent = '该昵称已注册，正尝试登录...';
+      errEl.textContent = '正在尝试登录...';
       try { await doSignIn(nickname, password); return; }
       catch (e2) { errEl.textContent = '登录失败：密码错误？'; }
     }
-    errEl.textContent = e.message + '（' + toEmail(nickname) + '）';
+    errEl.textContent = e.message;
   }
   btn.disabled = false;
   btn.textContent = isSignUp ? '注册' : '登录';
