@@ -208,11 +208,21 @@ async function joinSpyLobby(inputCode) {
   if (res.error) { window.showToast && window.showToast('加入失败: ' + (res.error.message || res.error.code), 4000); return; }
   if (!res.data || !res.data.spy_state) { window.showToast && window.showToast('房间不存在', 3000); return; }
   var state = res.data.spy_state;
-  var alreadyJoined = state.players && state.players.some(function(p) { return p.name === name; });
-  if (state.phase !== 'lobby' && !alreadyJoined) { window.showToast && window.showToast('游戏已开始', 3000); return; }
-  if (alreadyJoined && state.phase === 'lobby') { window.showToast && window.showToast('该名字已在房间中', 3000); return; }
-  if (state.players.length >= 10) { window.showToast && window.showToast('房间已满（最多10人）', 2000); return; }
   var uid = (window._currentUser && window._currentUser.id) || null;
+  var me = (state.players || []).find(function(p) { return p.name === name; });
+  if (me) {
+    // 同名玩家已存在：区分「同一用户重连」与「真正重名」
+    var sameUser = me.user_id && uid && me.user_id === uid;
+    if (!sameUser) {
+      window.showToast && window.showToast('名字「' + name + '」已被使用，换一个吧', 3000); return;
+    }
+    // 同一用户（刷新 / 误退出后重新进入）：直接重连，不重复插入
+    lobbyRoomCode = code; lobbyState = state;
+    subscribeSpyLobby(code); showSpyLobbyView();
+    return;
+  }
+  if (state.phase !== 'lobby') { window.showToast && window.showToast('游戏已开始', 3000); return; }
+  if (state.players.length >= 10) { window.showToast && window.showToast('房间已满（最多10人）', 2000); return; }
   state.players.push({ name: name, user_id: uid, team: null, rank: window._currentUserRank || 0 });
   await sb.from('rooms').update({ spy_state: state }).eq('code', code);
   lobbyRoomCode = code; lobbyState = state;
@@ -327,6 +337,11 @@ function renderSpyLobby() {
 }
 
 function renderLobbyGameView() {
+  if (lobbyState.phase === 'closed' || lobbyState.phase === 'done') {
+    var el = document.getElementById('spyLobbyView');
+    if (el) el.innerHTML = '<div class="spy-reveal-card"><div class="spy-reveal-icon">🔒</div><div class="spy-reveal-title">房间已关闭</div><div style="font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:8px;">房主已离开，本次内鬼房间结束。</div><button class="spy-setup-back" onclick="leaveLobbyRoom()">返回</button></div>';
+    return;
+  }
   var myName = window._currentUserDisplayName || '';
   var isSpy = (myName === lobbyState.team_a_spy_name || myName === lobbyState.team_b_spy_name);
   var teamLabel = (lobbyState.team_a && lobbyState.team_a.indexOf(myName) !== -1) ? '🔴 A队' : '🔵 B队';
@@ -440,15 +455,21 @@ async function resetLobbySpy() {
 
 async function leaveLobbyRoom() {
   var code = lobbyRoomCode, name = window._currentUserDisplayName;
-  // 房主离开 → 通知其他人房间已关闭
-  if (isHost() && lobbyState && code) {
+  if (lobbyState && code && name) {
     try {
-      lobbyState.phase = 'closed';
-      await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', code);
-    } catch (e) { /* 忽略 */ }
-  } else if (name && lobbyState && code) {
-    try {
-      lobbyState.players = lobbyState.players.filter(function(p) { return p.name !== name; });
+      var remaining = (lobbyState.players || []).filter(function(p) { return p.name !== name; });
+      if (isHost() && lobbyState.phase !== 'lobby') {
+        // 游戏进行中房主离开 → 关闭房间
+        lobbyState.phase = 'closed';
+        lobbyState.players = remaining;
+      } else if (isHost() && remaining.length === 0) {
+        // 房主离开且大厅已无人 → 关闭房间
+        lobbyState.phase = 'closed';
+        lobbyState.players = [];
+      } else {
+        // 普通成员离开 / 房主在大厅离开（还有人）→ 仅移除自己，房间保持大厅以便重连
+        lobbyState.players = remaining;
+      }
       await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', code);
     } catch (e) { /* 忽略 */ }
   }

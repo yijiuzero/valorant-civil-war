@@ -175,8 +175,10 @@ async function createRoom() {
     showTeamsplitView('lobby');
     updatePlayerList([]);
     subscribeToRoom(code);
-    // 房主自动加入
-    autoJoinLobby();
+    // 房主自动加入，并主动拉取最新列表
+    // （避免房主自己的 INSERT 实时事件与订阅建立竞态，导致房主不在列表中、无法分队）
+    await autoJoinLobby();
+    await refreshPlayers();
   } catch (e) {
     showToast('创建房间失败: ' + e.message, 3000);
   }
