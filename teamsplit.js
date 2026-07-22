@@ -1,6 +1,7 @@
 // ========== 内战分队模块 ==========
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm';
-const supabase = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
+// 复用全局 Supabase 实例（与 auth.js / spy-mode.js 统一），
+// 避免双实例导致的 session / 房主身份判定不一致
+const supabase = await window._getSupabase();
 
 let currentRoomCode = null;
 let currentPlayerId = null;
@@ -10,7 +11,7 @@ let roomSubscription = null;
 let isLeaving = false;
 let currentPlayers = [];
 
-// ========== 匿名认证 ==========
+// ========== 身份获取 ==========
 async function getUserId() {
   if (currentUserId) return currentUserId;
   try {
@@ -20,14 +21,8 @@ async function getUserId() {
       return currentUserId;
     }
   } catch (e) {}
-  try {
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error) throw error;
-    currentUserId = data.user.id;
-    return currentUserId;
-  } catch (e) {
-    return null;
-  }
+  // 未登录：不再匿名登录（与"内战分队强制登录"一致），交由守卫/UI 提示去登录
+  return null;
 }
 
 // ========== 工具函数 ==========

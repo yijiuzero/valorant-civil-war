@@ -84,6 +84,11 @@ BEGIN
   IF NEW.code IS DISTINCT FROM OLD.code THEN
     RAISE EXCEPTION '无权限修改房间码';
   END IF;
+  -- 禁止改动 created_at：否则非房主可把 lobby 房间的 created_at 改到 2h 前，
+  -- 再利用 "Allow cleanup old lobbies" 删除策略炸掉任意在线内鬼 Lobby 房间
+  IF NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION '无权限修改创建时间';
+  END IF;
   IF COALESCE(NEW.spy_state - 'players', '{}'::jsonb) IS DISTINCT FROM COALESCE(OLD.spy_state - 'players', '{}'::jsonb) THEN
     RAISE EXCEPTION '无权限修改内鬼数据';
   END IF;
