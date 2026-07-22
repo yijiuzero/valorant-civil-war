@@ -186,7 +186,7 @@ async function createSpyLobby() {
   var hostId = (window._currentUser && window._currentUser.id) || null;
   var initState = {
     phase: 'lobby', host_name: hostName,
-    players: [{ name: hostName, user_id: hostId, team: null }],
+    players: [{ name: hostName, user_id: hostId, team: null, rank: window._currentUserRank || 0 }],
     team_a: [], team_b: [],
     team_a_spy_name: null, team_b_spy_name: null, tasks: {}
   };
@@ -213,7 +213,7 @@ async function joinSpyLobby(inputCode) {
   if (alreadyJoined && state.phase === 'lobby') { window.showToast && window.showToast('该名字已在房间中', 3000); return; }
   if (state.players.length >= 10) { window.showToast && window.showToast('房间已满（最多10人）', 2000); return; }
   var uid = (window._currentUser && window._currentUser.id) || null;
-  state.players.push({ name: name, user_id: uid, team: null });
+  state.players.push({ name: name, user_id: uid, team: null, rank: window._currentUserRank || 0 });
   await sb.from('rooms').update({ spy_state: state }).eq('code', code);
   lobbyRoomCode = code; lobbyState = state;
   subscribeSpyLobby(code); showSpyLobbyView();
@@ -292,8 +292,10 @@ function renderSpyLobby() {
         ? '<button type="button" class="spy-team-btn spy-team-btn-b' + (isB ? ' active' : '') + '" aria-label="' + (isB ? '取消分配到B队' : '分配到B队') + '" onclick="assignTeamFromCard(this,\'' + (isB ? 'null' : 'B') + '\')">' + (isB ? '✓B' : 'B') + '</button>'
         : '';
       var actions = host ? '<span class="spy-team-btn-row">' + btnA + btnB + '</span>' : '';
+      var rk = p.rank || 0;
+      var rankTag = (rk && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(rk) + '</span>' : '';
       return '<div class="spy-drag-card spy-drag-card-assign" draggable="' + (host ? 'true' : 'false') + '" data-name="' + esc(p.name) + '" ondragstart="dragStart(event)">' +
-        '<span class="spy-drag-name">👤 ' + esc(p.name) + '</span>' + actions + '</div>';
+        '<span class="spy-drag-name">👤 ' + esc(p.name) + rankTag + '</span>' + actions + '</div>';
     }
 
     el.innerHTML = codeHtml +
@@ -310,9 +312,9 @@ function renderSpyLobby() {
             '<div class="spy-drag-label">🔵 B队 (' + teamB.length + '人)</div><div class="spy-drag-list">' + teamB.map(dragCard).join('') + '</div></div>' +
           '</div>'
         : '<div class="spy-drag-area">' +
-          '<div class="spy-drag-col spy-drag-unassigned"><div class="spy-drag-label">待分配</div><div class="spy-drag-list">' + unassigned.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
-          '<div class="spy-drag-col team-a"><div class="spy-drag-label">🔴 A队 (' + teamA.length + '人)</div><div class="spy-drag-list">' + teamA.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
-          '<div class="spy-drag-col team-b"><div class="spy-drag-label">🔵 B队 (' + teamB.length + '人)</div><div class="spy-drag-list">' + teamB.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + '</div>'; }).join('') + '</div></div>' +
+          '<div class="spy-drag-col spy-drag-unassigned"><div class="spy-drag-label">待分配</div><div class="spy-drag-list">' + unassigned.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + ((p.rank && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('') + '</div></div>' +
+          '<div class="spy-drag-col team-a"><div class="spy-drag-label">🔴 A队 (' + teamA.length + '人)</div><div class="spy-drag-list">' + teamA.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + ((p.rank && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('') + '</div></div>' +
+          '<div class="spy-drag-col team-b"><div class="spy-drag-label">🔵 B队 (' + teamB.length + '人)</div><div class="spy-drag-list">' + teamB.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + ((p.rank && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('') + '</div></div>' +
           '</div>') +
       (host
         ? '<div style="text-align:center;margin-top:16px;"><button class="btn-spy-mode" onclick="startLobbySpy()" style="min-height:44px;font-size:15px;"' + (canStart ? '' : ' disabled') + '>开始内鬼模式 🕵️</button><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">两队各至少1人</div></div>'

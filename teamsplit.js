@@ -68,6 +68,8 @@ function getRankIcon(rank) {
   const t = rank * 3;
   return VALORANT_API + '/competitivetiers/' + seasonUuid + '/' + t + '/smallicon.png';
 }
+window.getRankName = getRankName;
+window.getRankIcon = getRankIcon;
 
 function teamRow(p) {
   const pr = p.rank || 0;
@@ -210,10 +212,13 @@ async function autoJoinLobby() {
   if (!name || name === '玩家') { showToast('请先登录', 2000); return; }
   if (!currentRoomCode || currentPlayerId) return;
   if (currentPlayers && currentPlayers.length >= 10) { showToast('房间已满（最多10人）', 2000); return; }
+  var rank = window._currentUserRank || 0;
   var rankSel = document.getElementById('playerRankSelect');
-  var rank = rankSel ? rankSel.value : '';
-  if (!rank) { showToast('请选择你的段位', 2000); return; }
-  rank = parseInt(rank);
+  if (!rank && rankSel && rankSel.value) {
+    rank = parseInt(rankSel.value, 10);
+    try { await supabase.auth.updateUser({ data: { rank: rank } }); window._currentUserRank = rank; } catch (e) {}
+  }
+  if (!rank) { if (rankSel) rankSel.style.display = ''; showToast('请选择你的段位', 2000); return; }
   if (rank < 1 || rank > 9) { showToast('段位无效', 2000); return; }
   try {
     var userId = await getUserId();
@@ -257,9 +262,12 @@ async function joinLobby() {
     }
   } catch (e) {}
   const rankSel = document.getElementById('playerRankSelect');
-  let rank = rankSel ? rankSel.value : '';
-  if (!rank) { showToast('请选择你的段位', 2000); return; }
-  rank = parseInt(rank);
+  let rank = window._currentUserRank || 0;
+  if (!rank && rankSel && rankSel.value) {
+    rank = parseInt(rankSel.value, 10);
+    try { await supabase.auth.updateUser({ data: { rank: rank } }); window._currentUserRank = rank; } catch (e) {}
+  }
+  if (!rank) { if (rankSel) rankSel.style.display = ''; showToast('请选择你的段位', 2000); return; }
   if (rank < 1 || rank > 9) { showToast('段位无效', 2000); return; }
   try {
     const userId = await getUserId();
@@ -597,10 +605,14 @@ function openSpyMode() {
   const listA = document.getElementById('spyTeamAList');
   const listB = document.getElementById('spyTeamBList');
   if (listA) listA.innerHTML = spyTeamA.map(function(p) {
-    return '<div class="spy-team-member" data-pid="' + p.id + '">' + escapeHtml(p.name) + '</div>';
+    var r = p.rank || 0;
+    var tag = r ? '<span class="teamsplit-rank-tag">' + getRankName(r) + '</span>' : '';
+    return '<div class="spy-team-member" data-pid="' + p.id + '">' + escapeHtml(p.name) + tag + '</div>';
   }).join('');
   if (listB) listB.innerHTML = spyTeamB.map(function(p) {
-    return '<div class="spy-team-member" data-pid="' + p.id + '">' + escapeHtml(p.name) + '</div>';
+    var r = p.rank || 0;
+    var tag = r ? '<span class="teamsplit-rank-tag">' + getRankName(r) + '</span>' : '';
+    return '<div class="spy-team-member" data-pid="' + p.id + '">' + escapeHtml(p.name) + tag + '</div>';
   }).join('');
 
   // 显示内鬼面板

@@ -25,6 +25,12 @@ function userDisplayName(user) {
   const meta = user.user_metadata || {};
   return meta.display_name || (user.email ? user.email.split('@')[0] : '玩家');
 }
+function userRank(user) {
+  if (!user) return 0;
+  const meta = user.user_metadata || {};
+  const r = parseInt(meta.rank, 10);
+  return (r >= 1 && r <= 9) ? r : 0;
+}
 
 // 初始化：检测已登录 session，不弹窗
 async function initAuth() {
@@ -35,12 +41,12 @@ async function initAuth() {
 }
 
 // 注册
-async function doSignUp(nickname, password) {
+async function doSignUp(nickname, password, rank) {
   const sb = await getSupabase();
   const email = toEmail(nickname);
   const { data, error } = await sb.auth.signUp({
     email: email, password: password,
-    options: { data: { display_name: nickname } }
+    options: { data: { display_name: nickname, rank: rank } }
   });
   if (error) throw error;
   if (data.session) {
@@ -112,6 +118,8 @@ function setAuthMode(mode) {
     : '没有账号？<span class="auth-switch-link" onclick="setAuthMode(\'signup\')">去注册</span>';
   if (isSignUp) { renderTurnstile(); }
   else { removeTurnstile(); }
+  const rankEl = document.getElementById('authRank');
+  if (rankEl) rankEl.style.display = isSignUp ? '' : 'none';
 }
 
 async function handleAuthSubmit() {
@@ -119,13 +127,17 @@ async function handleAuthSubmit() {
   const password = document.getElementById('authPassword').value;
   const errEl = document.getElementById('authError');
   const btn = document.getElementById('authSubmitBtn');
+  const isSignUp = document.getElementById('authTitle').textContent === '注册账号';
 
   if (!nickname || !password) { errEl.textContent = '请填写昵称和密码'; return; }
   if (nickname.length < 2) { errEl.textContent = '昵称至少 2 个字符'; return; }
   if (password.length < 6) { errEl.textContent = '密码至少 6 位'; return; }
+  if (isSignUp) {
+    const rankVal = document.getElementById('authRank').value;
+    if (!rankVal) { errEl.textContent = '请选择你的段位'; return; }
+  }
 
   btn.disabled = true; btn.textContent = '处理中...'; errEl.textContent = '';
-  const isSignUp = document.getElementById('authTitle').textContent === '注册账号';
 
   // 注册时先过 Cloudflare Turnstile 服务端校验
   if (isSignUp) {
@@ -140,7 +152,7 @@ async function handleAuthSubmit() {
   }
 
   try {
-    if (isSignUp) await doSignUp(nickname, password);
+    if (isSignUp) await doSignUp(nickname, password, parseInt(document.getElementById('authRank').value, 10));
     else await doSignIn(nickname, password);
   } catch (e) {
     const msg = e.message || '';
@@ -176,6 +188,7 @@ function updateSidebar() {
 function syncCurrentUser() {
   window._currentUser = currentUser;
   window._currentUserDisplayName = userDisplayName(currentUser);
+  window._currentUserRank = userRank(currentUser);
   // 登录后隐藏侧边栏锁图标
   document.querySelectorAll('.nav-lock').forEach(function(el) { el.style.display = currentUser ? 'none' : ''; });
 }
