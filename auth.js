@@ -155,14 +155,8 @@ async function handleAuthSubmit() {
     if (isSignUp) await doSignUp(nickname, password, parseInt(document.getElementById('authRank').value, 10));
     else await doSignIn(nickname, password);
   } catch (e) {
-    const msg = e.message || '';
-    // 注册时如果账户已存在，自动切登录
-    if (isSignUp && (msg.includes('already') || msg.includes('exist'))) {
-      errEl.textContent = '正在尝试登录...';
-      try { await doSignIn(nickname, password); return; }
-      catch (e2) { errEl.textContent = '登录失败：密码错误？'; }
-    }
-    errEl.textContent = e.message;
+    // 统一错误提示，不暴露昵称是否存在（防用户枚举）
+    errEl.textContent = '昵称或密码错误';
   }
   btn.disabled = false;
   btn.textContent = isSignUp ? '注册' : '登录';

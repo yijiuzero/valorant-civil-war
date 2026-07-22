@@ -181,7 +181,7 @@ async function cleanupSpyLobbyRooms() {
 async function createSpyLobby() {
   await cleanupSpyLobbyRooms();
   var sb = await getSupabase();
-  var code = Math.random().toString(36).slice(2, 8).toUpperCase();
+  var code = Array.from(crypto.getRandomValues(new Uint32Array(6)), x => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[x % 32]).join('').toUpperCase();
   var hostName = window._currentUserDisplayName || '房主';
   var hostId = (window._currentUser && window._currentUser.id) || null;
   var initState = {
