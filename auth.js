@@ -177,11 +177,16 @@ function updateSidebar() {
       if (display) {
         var rankTxt = window._currentUserRank ? (window.getRankName ? window.getRankName(window._currentUserRank) : '') : '未设置';
         display.innerHTML =
-          '<div class="auth-user-name">' + userDisplayName(currentUser) + ' <span class="auth-user-rank">' + rankTxt + '</span></div>' +
+          '<div class="auth-user-name"></div>' +
           '<div class="auth-user-actions">' +
             '<button type="button" class="auth-rankedit-btn" id="btnOpenRankEdit">修改段位</button>' +
             '<span class="auth-logout-link" id="btnLogout">退出</span>' +
           '</div>';
+        display.querySelector('.auth-user-name').textContent = userDisplayName(currentUser) + ' ';
+        var rankSpan = document.createElement('span');
+        rankSpan.className = 'auth-user-rank';
+        rankSpan.textContent = rankTxt;
+        display.querySelector('.auth-user-name').appendChild(rankSpan);
         display.style.display = '';
         var reb = document.getElementById('btnOpenRankEdit');
         if (reb) reb.addEventListener('click', openRankEdit);

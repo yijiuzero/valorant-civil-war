@@ -185,7 +185,7 @@ async function createSpyLobby() {
   var hostName = window._currentUserDisplayName || '房主';
   var hostId = (window._currentUser && window._currentUser.id) || null;
   var initState = {
-    phase: 'lobby', host_name: hostName,
+    phase: 'lobby', host_name: hostName, host_user_id: hostId,
     players: [{ name: hostName, user_id: hostId, team: null, rank: window._currentUserRank || 0 }],
     team_a: [], team_b: [],
     team_a_spy_name: null, team_b_spy_name: null, tasks: {}
@@ -241,7 +241,7 @@ function subscribeSpyLobby(code) {
 
 function isHost() {
   if (!lobbyState || !window._currentUser) return false;
-  return lobbyState.host_name === window._currentUserDisplayName;
+  return lobbyState.host_user_id === window._currentUser.id;
 }
 
 function showSpyLobbyView() {
