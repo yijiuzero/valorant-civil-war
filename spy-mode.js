@@ -274,7 +274,7 @@ function renderSpyLobby() {
   var codeHtml = '<div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:16px;">' +
     '<span style="font-size:13px;color:var(--text-dim);">房间码</span>' +
     '<span style="font-size:24px;font-weight:900;color:var(--accent);letter-spacing:3px;">' + lobbyRoomCode + '</span>' +
-    '<button class="btn-machine teamsplit-inline-btn" aria-label="复制房间码" onclick="navigator.clipboard.writeText(\'' + lobbyRoomCode + '\');window.showToast(\'已复制\',2000)" style="min-height:32px;padding:2px 10px;font-size:12px;">📋</button>' +
+    '<button class="btn-machine teamsplit-inline-btn" aria-label="复制房间码" onclick="navigator.clipboard.writeText(\'' + esc(lobbyRoomCode) + '\');window.showToast(\'已复制\',2000)" style="min-height:32px;padding:2px 10px;font-size:12px;">📋</button>' +
     '</div>';
 
   if (phase === 'lobby') {
@@ -330,6 +330,11 @@ function renderLobbyGameView() {
   var myName = window._currentUserDisplayName || '';
   var isSpy = (myName === lobbyState.team_a_spy_name || myName === lobbyState.team_b_spy_name);
   var teamLabel = (lobbyState.team_a && lobbyState.team_a.indexOf(myName) !== -1) ? '🔴 A队' : '🔵 B队';
+  function rankTagOf(name) {
+    var rk = 0; var ps = lobbyState.players || [];
+    for (var i = 0; i < ps.length; i++) { if (ps[i].name === name) { rk = ps[i].rank || 0; break; } }
+    return (rk && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(rk) + '</span>' : '';
+  }
   var el = document.getElementById('spyLobbyView');
   if (!el) return;
   var codeHtml = '<div style="font-size:14px;font-weight:700;color:var(--accent);text-align:center;margin-bottom:8px;">房间码: ' + lobbyRoomCode + '</div>';
@@ -346,14 +351,14 @@ function renderLobbyGameView() {
       var tIdx = lobbyState.tasks && lobbyState.tasks[p.name];
       var tInfo = (tIdx != null && window.spyTasks[tIdx]) ? window.spyTasks[tIdx].icon + ' ' + window.spyTasks[tIdx].title : '-';
       var teamEmoji = p.team === 'A' ? '🔴' : '🔵';
-      return '<div class="spy-reveal-row' + (isSpyP ? ' spy-revealed-spy' : '') + '"><span class="spy-reveal-row-team">' + teamEmoji + '</span><span class="spy-reveal-row-name">' + esc(p.name) + (isSpyP ? ' 🕵️' : '') + '</span><span class="spy-reveal-row-task">' + tInfo + '</span></div>';
+      return '<div class="spy-reveal-row' + (isSpyP ? ' spy-revealed-spy' : '') + '"><span class="spy-reveal-row-team">' + teamEmoji + '</span><span class="spy-reveal-row-name">' + esc(p.name) + rankTagOf(p.name) + (isSpyP ? ' 🕵️' : '') + '</span><span class="spy-reveal-row-task">' + tInfo + '</span></div>';
     }).join('');
 
     el.innerHTML = codeHtml +
       '<div class="spy-reveal-card"><div class="spy-reveal-icon">🎭</div><div class="spy-reveal-title">内鬼揭晓！</div>' +
       '<div class="spy-reveal-teams">' +
-      '<div class="spy-reveal-col"><div class="spy-reveal-team team-a">🔴 A队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_a_spy_name || '-') + '</div><div style="font-size:12px;color:var(--text-dim);">' + taskAD + '</div></div>' +
-      '<div class="spy-reveal-col"><div class="spy-reveal-team team-b">🔵 B队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_b_spy_name || '-') + '</div><div style="font-size:12px;color:var(--text-dim);">' + taskBD + '</div></div>' +
+      '<div class="spy-reveal-col"><div class="spy-reveal-team team-a">🔴 A队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_a_spy_name || '-') + rankTagOf(lobbyState.team_a_spy_name) + '</div><div style="font-size:12px;color:var(--text-dim);">' + taskAD + '</div></div>' +
+      '<div class="spy-reveal-col"><div class="spy-reveal-team team-b">🔵 B队内鬼</div><div class="spy-reveal-name">' + esc(lobbyState.team_b_spy_name || '-') + rankTagOf(lobbyState.team_b_spy_name) + '</div><div style="font-size:12px;color:var(--text-dim);">' + taskBD + '</div></div>' +
       '</div>' +
       '<div style="margin-top:16px;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--border) 60%,transparent);"><div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;">📋 所有人任务</div>' +
       '<div class="spy-reveal-all-tasks">' + allTaskRows + '</div></div>' +

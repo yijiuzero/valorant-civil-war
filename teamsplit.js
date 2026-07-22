@@ -242,7 +242,7 @@ async function autoJoinLobby() {
     localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
     localStorage.setItem('ts_player_name', name);
     localStorage.setItem('ts_player_rank', String(rank));
-    if (rankSel) rankSel.value = '';
+    if (rankSel) { rankSel.value = ''; rankSel.style.display = 'none'; }
     showToast('已加入分队', 2000);
   } catch (e) { showToast('加入失败: ' + e.message, 3000); }
 }
@@ -288,7 +288,7 @@ async function joinLobby() {
     localStorage.setItem('ts_player_name', name);
     localStorage.setItem('ts_player_rank', rank);
     document.getElementById('playerNameInput').value = '';
-    if (rankSel) rankSel.value = '';
+    if (rankSel) { rankSel.value = ''; rankSel.style.display = 'none'; }
     showToast('已加入分队', 2000);
   } catch (e) {
     showToast('加入失败: ' + e.message, 3000);
