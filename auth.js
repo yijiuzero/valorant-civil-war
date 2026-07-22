@@ -172,15 +172,23 @@ function updateSidebar() {
   const entry = document.getElementById('authSidebarEntry');
   const display = document.getElementById('authUserDisplay');
   if (!entry) return;
-  if (currentUser) {
-    entry.style.display = 'none';
-    if (display) {
-      var rankTxt = window._currentUserRank ? (window.getRankName ? window.getRankName(window._currentUserRank) : '') : '未设置';
-      display.innerHTML = '<div class="auth-user-name">👤 ' + userDisplayName(currentUser) + ' · <span class="auth-user-rank">' + rankTxt + '</span></div>' +
-        '<div class="auth-user-actions"><span class="auth-logout-link" onclick="doSignOut()">退出</span><span class="auth-rankedit-link" onclick="openRankEdit()">修改段位</span></div>';
-      display.style.display = '';
-    }
-  } else {
+    if (currentUser) {
+      entry.style.display = 'none';
+      if (display) {
+        var rankTxt = window._currentUserRank ? (window.getRankName ? window.getRankName(window._currentUserRank) : '') : '未设置';
+        display.innerHTML =
+          '<div class="auth-user-name">' + userDisplayName(currentUser) + ' <span class="auth-user-rank">' + rankTxt + '</span></div>' +
+          '<div class="auth-user-actions">' +
+            '<button type="button" class="auth-rankedit-btn" id="btnOpenRankEdit">修改段位</button>' +
+            '<span class="auth-logout-link" id="btnLogout">退出</span>' +
+          '</div>';
+        display.style.display = '';
+        var reb = document.getElementById('btnOpenRankEdit');
+        if (reb) reb.addEventListener('click', openRankEdit);
+        var lo = document.getElementById('btnLogout');
+        if (lo) lo.addEventListener('click', doSignOut);
+      }
+    } else {
     entry.style.display = '';
     if (display) display.style.display = 'none';
   }

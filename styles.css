@@ -1021,17 +1021,22 @@ main::after{
 .auth-switch-link{color:var(--accent);cursor:pointer;font-weight:600;}
 .auth-switch-link:hover{text-decoration:underline;}
 .auth-user-display{
-  display:flex;align-items:center;justify-content:space-between;
-  width:100%;min-height:40px;padding:0 16px;margin-bottom:12px;
+  display:flex;flex-direction:column;align-items:stretch;gap:8px;
+  width:100%;padding:12px 16px;margin-bottom:12px;
   border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,transparent);
 }
-.auth-user-name{font-size:13px;font-weight:700;color:var(--accent);}
-.auth-logout-link{font-size:12px;color:var(--text-dim);cursor:pointer;}
+.auth-user-name{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.auth-user-rank{font-size:12px;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);padding:1px 8px;border-radius:999px;white-space:nowrap;}
+.auth-user-actions{display:flex;align-items:center;gap:10px;}
+.auth-rankedit-btn{
+  flex:1;min-width:0;height:32px;border:none;border-radius:8px;
+  background:var(--accent);color:#fff;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;
+}
+.auth-rankedit-btn:hover{filter:brightness(1.08);}
+.auth-rankedit-btn:active{transform:scale(.97);}
+.auth-logout-link{font-size:12px;color:var(--text-dim);cursor:pointer;white-space:nowrap;}
 .auth-logout-link:hover{color:var(--accent);}
-.auth-user-rank{font-size:12px;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);padding:1px 8px;border-radius:999px;margin-left:4px;}
-.auth-user-actions{display:flex;align-items:center;gap:12px;}
-.auth-rankedit-link{font-size:12px;color:var(--text-dim);cursor:pointer;}
-.auth-rankedit-link:hover{color:var(--accent);}
 .auth-sidebar-entry{
   margin:0 16px 12px;padding:10px 16px;border-radius:10px;
   border:1px dashed color-mix(in srgb,var(--accent) 30%,var(--border));
@@ -1043,6 +1048,12 @@ main::after{
 /* ===== 移动端: 锁图标 ===== */
 @media(max-width:640px){
   .nav-lock{display:none !important;}
+  /* 侧边栏登录/用户信息在底部导航栏内紧凑显示 */
+  .auth-sidebar-entry{margin:0;padding:6px 10px;font-size:11px;border-style:solid;flex:0 0 auto;}
+  .auth-user-display{flex-direction:row;align-items:center;gap:6px;width:auto;padding:0 8px;margin-bottom:0;}
+  .auth-user-name{font-size:11px;}
+  .auth-rankedit-btn{height:28px;font-size:11px;padding:0 8px;flex:0 0 auto;}
+  .auth-user-actions{gap:8px;}
   /* 登录弹窗 */
   .auth-modal{max-width:95vw;padding:24px 18px;}
   .auth-title-text{font-size:18px;}

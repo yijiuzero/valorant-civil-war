@@ -305,7 +305,7 @@ function renderSpyLobby() {
       var rk = p.rank || 0;
       var rankTag = (rk && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(rk) + '</span>' : '';
       return '<div class="spy-drag-card spy-drag-card-assign" draggable="' + (host ? 'true' : 'false') + '" data-name="' + esc(p.name) + '" ondragstart="dragStart(event)">' +
-        '<span class="spy-drag-name">👤 ' + esc(p.name) + rankTag + '</span>' + actions + '</div>';
+        '<span class="spy-drag-name">' + esc(p.name) + rankTag + '</span>' + actions + '</div>';
     }
 
     el.innerHTML = codeHtml +
@@ -322,9 +322,9 @@ function renderSpyLobby() {
             '<div class="spy-drag-label">🔵 B队 (' + teamB.length + '人)</div><div class="spy-drag-list">' + teamB.map(dragCard).join('') + '</div></div>' +
           '</div>'
         : '<div class="spy-drag-area">' +
-          '<div class="spy-drag-col spy-drag-unassigned"><div class="spy-drag-label">待分配</div><div class="spy-drag-list">' + unassigned.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + ((p.rank && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('') + '</div></div>' +
-          '<div class="spy-drag-col team-a"><div class="spy-drag-label">🔴 A队 (' + teamA.length + '人)</div><div class="spy-drag-list">' + teamA.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + ((p.rank && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('') + '</div></div>' +
-          '<div class="spy-drag-col team-b"><div class="spy-drag-label">🔵 B队 (' + teamB.length + '人)</div><div class="spy-drag-list">' + teamB.map(function(p) { return '<div class="spy-drag-card">👤 ' + esc(p.name) + ((p.rank && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('') + '</div></div>' +
+          '<div class="spy-drag-col spy-drag-unassigned"><div class="spy-drag-label">待分配</div><div class="spy-drag-list">' + unassigned.map(function(p) { return '<div class="spy-drag-card">' + esc(p.name) + ((p.rank && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('') + '</div></div>' +
+          '<div class="spy-drag-col team-a"><div class="spy-drag-label">🔴 A队 (' + teamA.length + '人)</div><div class="spy-drag-list">' + teamA.map(function(p) { return '<div class="spy-drag-card">' + esc(p.name) + ((p.rank && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('') + '</div></div>' +
+          '<div class="spy-drag-col team-b"><div class="spy-drag-label">🔵 B队 (' + teamB.length + '人)</div><div class="spy-drag-list">' + teamB.map(function(p) { return '<div class="spy-drag-card">' + esc(p.name) + ((p.rank && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(p.rank) + '</span>' : '') + '</div>'; }).join('') + '</div></div>' +
           '</div>') +
       (host
         ? '<div style="text-align:center;margin-top:16px;"><button class="btn-spy-mode" onclick="startLobbySpy()" style="min-height:44px;font-size:15px;"' + (canStart ? '' : ' disabled') + '>开始内鬼模式 🕵️</button><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">两队各至少1人</div></div>'
