@@ -1028,6 +1028,10 @@ main::after{
 .auth-user-name{font-size:13px;font-weight:700;color:var(--accent);}
 .auth-logout-link{font-size:12px;color:var(--text-dim);cursor:pointer;}
 .auth-logout-link:hover{color:var(--accent);}
+.auth-user-rank{font-size:12px;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);padding:1px 8px;border-radius:999px;margin-left:4px;}
+.auth-user-actions{display:flex;align-items:center;gap:12px;}
+.auth-rankedit-link{font-size:12px;color:var(--text-dim);cursor:pointer;}
+.auth-rankedit-link:hover{color:var(--accent);}
 .auth-sidebar-entry{
   margin:0 16px 12px;padding:10px 16px;border-radius:10px;
   border:1px dashed color-mix(in srgb,var(--accent) 30%,var(--border));

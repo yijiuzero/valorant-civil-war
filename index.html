@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <title>无畏契约 · 战术转盘·仅限云南瓦搭群使用</title>
 
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=12">
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer onload="if(window.onTurnstileLoad)window.onTurnstileLoad()"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">🔑 登录 / 注册</div>
   <div class="auth-user-display" id="authUserDisplay" style="display:none;"></div>
   <div class="sidebar-footer">
-    <div style="opacity:0.6;">from zer0 · V4.1.3</div>
+    <div style="opacity:0.6;">from zer0 · V4.2.0</div>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">问题/需求反馈</a>
   </div>
 </nav>
@@ -36,7 +36,7 @@
   <!-- 首页内容 -->
   <div class="content-layer" id="module-home">
     <div class="module-title">🏠 无畏契约 · 战术工具集</div>
-    <div class="module-sub">专为云南瓦搭群打造 | from zer0 · V4.1.3</div>
+    <div class="module-sub">专为云南瓦搭群打造 | from zer0 · V4.2.0</div>
     <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:20px;">
       <div class="home-card" role="button" tabindex="0" onclick="switchModule('wheel')"><div class="home-card-icon">🎯</div><div class="home-card-title">随机选图</div><div class="home-card-desc">随机抽取地图</div></div>
       <div class="home-card" role="button" tabindex="0" onclick="switchModule('agent')"><div class="home-card-icon">🧩</div><div class="home-card-title">随机特工</div><div class="home-card-desc">随机抽取特工</div></div>
@@ -336,7 +336,7 @@
 <div id="globalToast" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <script src="app-data.js?v=8"></script>
-  <script type="module" src="auth.js?v=14"></script>
+  <script type="module" src="auth.js?v=15"></script>
   <script type="module" src="teamsplit.js?v=11"></script>
   <script type="module" src="spy-mode.js?v=12"></script>
   <script defer src="app.js?v=10"></script>
@@ -367,6 +367,30 @@
       <div class="auth-error" id="authError"></div>
       <button class="auth-btn" id="authSubmitBtn" onclick="handleAuthSubmit()">登录</button>
       <div class="auth-switch" id="authSwitchText">没有账号？<span class="auth-switch-link" onclick="setAuthMode('signup')">去注册</span></div>
+    </div>
+  </div>
+
+<!-- 修改段位弹窗 -->
+<div class="auth-overlay" id="rankEditOverlay" role="dialog" aria-modal="true" aria-labelledby="rankEditTitle" style="display:none;" onclick="if(event.target===this)closeRankEdit()">
+  <div class="auth-card">
+    <div class="auth-close" onclick="closeRankEdit()">✕</div>
+    <div class="auth-logo">🎖️</div>
+    <div class="auth-title" id="rankEditTitle">修改段位</div>
+    <div class="auth-subtitle" id="rankEditSubtitle">更新你的当前段位</div>
+    <div class="auth-form">
+      <select class="auth-input" id="rankEditSelect">
+        <option value="1">黑铁</option>
+        <option value="2">青铜</option>
+        <option value="3">白银</option>
+        <option value="4">黄金</option>
+        <option value="5">铂金</option>
+        <option value="6">钻石</option>
+        <option value="7">超凡</option>
+        <option value="8">神话</option>
+        <option value="9">赋能</option>
+      </select>
+      <div class="auth-error" id="rankEditError"></div>
+      <button class="auth-btn" id="rankEditSaveBtn" onclick="saveRankEdit()">保存</button>
     </div>
   </div>
 </div>

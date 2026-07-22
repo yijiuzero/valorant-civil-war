@@ -175,7 +175,9 @@ function updateSidebar() {
   if (currentUser) {
     entry.style.display = 'none';
     if (display) {
-      display.innerHTML = '<div class="auth-user-name">👤 ' + userDisplayName(currentUser) + '</div><div class="auth-logout-link" onclick="doSignOut()">退出</div>';
+      var rankTxt = window._currentUserRank ? (window.getRankName ? window.getRankName(window._currentUserRank) : '') : '未设置';
+      display.innerHTML = '<div class="auth-user-name">👤 ' + userDisplayName(currentUser) + ' · <span class="auth-user-rank">' + rankTxt + '</span></div>' +
+        '<div class="auth-user-actions"><span class="auth-logout-link" onclick="doSignOut()">退出</span><span class="auth-rankedit-link" onclick="openRankEdit()">修改段位</span></div>';
       display.style.display = '';
     }
   } else {
@@ -239,3 +241,43 @@ window.toggleAuthOverlay = toggleAuthOverlay;
 window.doSignOut = doSignOut;
 window.handleAuthSubmit = handleAuthSubmit;
 window.setAuthMode = setAuthMode;
+window.openRankEdit = openRankEdit;
+window.closeRankEdit = closeRankEdit;
+window.saveRankEdit = saveRankEdit;
+
+// 修改段位：打开弹窗（预填当前段位）
+function openRankEdit() {
+  const sel = document.getElementById('rankEditSelect');
+  if (sel && window._currentUserRank) sel.value = String(window._currentUserRank);
+  const err = document.getElementById('rankEditError');
+  if (err) err.textContent = '';
+  const ov = document.getElementById('rankEditOverlay');
+  if (ov) ov.style.display = '';
+}
+function closeRankEdit() {
+  const ov = document.getElementById('rankEditOverlay');
+  if (ov) ov.style.display = 'none';
+}
+async function saveRankEdit() {
+  const sel = document.getElementById('rankEditSelect');
+  const err = document.getElementById('rankEditError');
+  const btn = document.getElementById('rankEditSaveBtn');
+  const rank = sel ? parseInt(sel.value, 10) : 0;
+  if (!rank || rank < 1 || rank > 9) { if (err) err.textContent = '请选择段位'; return; }
+  if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
+  try {
+    const sb = await getSupabase();
+    const { data, error } = await sb.auth.updateUser({ data: { rank: rank } });
+    if (error) throw error;
+    if (data && data.user) currentUser = data.user;
+    window._currentUserRank = rank;
+    syncCurrentUser();
+    updateSidebar();
+    closeRankEdit();
+    window.showToast && window.showToast('段位已更新', 2000);
+  } catch (e) {
+    if (err) err.textContent = '更新失败：' + (e.message || '未知错误');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '保存'; }
+  }
+}
