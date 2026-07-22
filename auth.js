@@ -139,8 +139,13 @@ async function handleAuthSubmit() {
 
   btn.disabled = true; btn.textContent = '处理中...'; errEl.textContent = '';
 
-  // 注册时先过 Cloudflare Turnstile 服务端校验
+// 注册时先过 Cloudflare Turnstile 服务端校验
   if (isSignUp) {
+    // 检测 Turnstile 是否加载（可能被墙/网络问题）
+    if (!window.turnstile) {
+      errEl.textContent = '人机验证未加载，请检查网络后刷新页面重试';
+      btn.disabled = false; btn.textContent = '注册'; return;
+    }
     const token = turnstileToken || (turnstileWidgetId && window.turnstile ? window.turnstile.getResponse(turnstileWidgetId) : null);
     if (!token) { errEl.textContent = '请等待人机验证完成'; btn.disabled = false; btn.textContent = '注册'; return; }
     try {
@@ -210,7 +215,7 @@ function renderTurnstile() {
   container.style.display = '';
   turnstileWidgetId = window.turnstile.render('#authTurnstile', {
     sitekey: TURNSTILE_SITE_KEY,
-    size: 'invisible',
+    size: 'compact',
     callback: function(token) { turnstileToken = token; },
     'expired-callback': function() { turnstileToken = null; },
     'error-callback': function() { turnstileToken = null; }
