@@ -1,6 +1,6 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.2.17
+> **版本**: V4.2.18
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
@@ -38,7 +38,7 @@ valorant-civil-war/
 
 ### 1. 首页（Home）
 - 展示 5 个功能卡片，点击跳转对应模块
-- 副标题含版本号（`from zer0 · V4.2.17`），侧边栏底部也有
+- 副标题含版本号（`from zer0 · V4.2.18`），侧边栏底部也有
 
 ### 2. 随机选图（Wheel）
 - 13 张地图（Ascent ~ Summit，含 Corrode），支持 Ban 机制
@@ -228,7 +228,7 @@ valorant-civil-war/
 - [x] 分队模块：玩家加入/离开 toast 通知
 - [x] 分队模块：刷新页面恢复分队结果
 - [x] 分队模块：防止同一房间重名
-- [x] 分队模块：缓存破坏参数 `?v=` 随文件改动递增（当前 app-data.js?v=9 / auth.js?v=25 / teamsplit.js?v=16 / spy-mode.js?v=17 / app.js?v=11 / styles.css?v=14）
+- [x] 分队模块：缓存破坏参数 `?v=` 随文件改动递增（当前 app-data.js?v=9 / auth.js?v=25 / teamsplit.js?v=16 / spy-mode.js?v=18 / app.js?v=11 / styles.css?v=14）
 - [x] 暗色/亮色主题切换（localStorage 持久化）
 
 ### 身份系统改造（V3.4.0）
@@ -328,6 +328,7 @@ start index.html
 | 版本 | 日期 | 变更 |
 |------|------|------|
 | V4.2.16 | 2026-07-23 | 需求（+0.1.0）：内战分队「玩家被房主踢出时广播提示」。subscribeToRoom 新增 Realtime 广播监听 player_kicked/player_left；kickPlayer 踢人时先广播「X 已被房主踢出房间」再删行，其余客户端据此显示明确踢人提示（与普通离开的「X 已离开房间」区分）；被踢者本人由 postgres_changes DELETE 兜底「你已被房主移出房间」（靠 currentPlayerName 自比避免收到自己的广播）；普通成员 leaveRoom 改为退订前先广播 player_left。缓存参数 teamsplit15→16 |
+| V4.2.18 | 2026-07-23 | Bug修复（+0.0.1）：内鬼模式分队/开始/揭晓/重开全部失效的**真凶定位与修复**。根因在 init-spy-db.sql 的 rooms 表触发器 `trg_spy_room_update`（`check_spy_room_update` 函数）：第69行 `uid text := auth.uid()`，随后 `OLD.host_user_id = uid` 拿 UUID 列 `host_user_id` 与 text 变量做 `=` 比较，Postgres 抛 `operator does not exist: uuid = text`。该触发器是 BEFORE UPDATE 且仅 UPDATE 触发→建房间(INSERT)正常、但任何 UPDATE（分队 updatePlayerTeam、开始 startLobbySpy、桥接分配 assignSpies、揭晓、重开）全被杀→行未变→无 Realtime 事件→UI 假死（这也解释了 V4.2.17 只补 window 暴露无效）。修复：① 触发器第69行改为 `OLD.host_user_id::text = uid`（UUID 列转 text 比较）；② 前端 spy-mode.js 给 updatePlayerTeam/startLobbySpy/lobbyRevealSpies/resetLobbySpy 加乐观重渲染（update 成功后本地 renderSpyLobby，不再唯 Realtime 回推），updatePlayerTeam 补 try/catch 提示。需到 Supabase 重新执行 init-spy-db.sql 让触发器生效。缓存参数 spy-mode17→18 |
 | V4.2.17 | 2026-07-23 | Bug修复（+0.0.1）：内鬼独立房间分队失效——`renderSpyLobby` 的 A/B 卡片按钮用内联 `onclick="assignTeamFromCard(this,...)"`，但 spy-mode.js 是 ES module、该函数未挂到 window，点 A/B 直接 ReferenceError「点不动」；同时 `dragStart` 用 `e.target.dataset.name` 取值，抓取点为卡片内层 span/按钮时取不到名字、拖拽空值被 drop 守卫静默丢弃。修复：① window 暴露列表补 `assignTeamFromCard`；② dragStart 改为从抓取点向上 `closest('.spy-drag-card')` 读 `data-name`，拖拽稳定可用。缓存参数 spy-mode16→17 |
 | V4.2.15 | 2026-07-23 | 安全加固&修复（+0.0.1）：①P0 补 players 表 RLS（init-spy-db.sql 新增 ENABLE RLS + 读/插/改/删策略，房主可删本房间玩家、玩家仅管自己行，堵住"任意登录用户可增删改查全库 players"的高危缺口，需到 Supabase 重新执行脚本生效）。②P1 内战分队房主离开语义修正（原"标 done+删自己行"导致房间半死、其余9人卡死；改为方案Y：房主离开仅本地退出、保留服务器房间与自身占位，可重新进入恢复房主身份，localStorage 存 ts_current_room 凭证，initTeamSplitView 恢复时补订阅）。③P2 Edge Function 去明文 fallback（缺失 SERVICE_ROLE_KEY 时 fail-closed 拒绝服务，不再用已知密钥伪造 HMAC）。④P2 切模块退订 Realtime 频道（switchModule 调 cleanupTeamSplitChannel/cleanupSpyChannel，修遗留 #7 连接泄漏）。缓存参数 app10→11、teamsplit14→15 |
 | V4.2.14 | 2026-07-23 | Bug修复（+0.0.1）：修改段位弹窗**嵌套**修复。Console 诊断确认——rankEditOverlay.parentElement.id='authOverlay'，即 rankEditOverlay 被误包在 authOverlay 内（authOverlay 的 `</div>` 在 line 370 后缺失）。openRankEdit 设 authOverlay.display='none' → 子元素 rankEditOverlay 被父级隐藏。修复：补缺失的 `</div>` 令二者为平级兄弟，position:fixed 独立生效。缓存参数 auth24→25 |根因①（真 bug）：updateSidebar 先用 window._currentUserRank 旧值拼段位文本、最后才 syncCurrentUser 更新——顺序竞态致 UI 显示过期；initAuth 改用 sb.auth.getUser() 从服务端取最新 user_metadata（getSession 返回的是本地缓存、可能缺 rank），重登能显示而刷新不能的根因。jsdom 复现 stale session（缺 rank）场景：修复前段位文本=「未设置」、修复后=R5。②修改段位弹窗点击：jsdom 严格派发 click 验证 popup 由 none→'' 正常打开，代码逻辑无问题，用户侧点不开归因浏览器顽固缓存（需硬刷新拿 auth24）。缓存参数 auth23→24 |jsdom 仿真定位——rankEditOverlay 与 authOverlay 共用 z-index:9999 且前者 DOM 靠后，doSignOut 未关 rankEditOverlay 致状态泄漏；退出再登录时两弹窗同开、rankEditOverlay 盖在登录框上，表现为「登录后弹出修改段位框」。修复：openRankEdit 开时关 authOverlay、toggleAuthOverlay 开时关 rankEditOverlay、doSignOut/onAuthSuccess 均关 rankEditOverlay（互斥）；缓存参数 auth22→23 |——app-data.js 的 Supabase 单例由「缓存结果」改为「同步缓存 Promise 并存到 window」，修复 auth.js/teamsplit.js 并行 top-level await 时二次 createClient 的竞态；缓存参数 app-data8→9 |

@@ -417,7 +417,10 @@ async function updatePlayerTeam(name, team) {
   if (!p) return;
   // team=null → 取消分配, team='A'/'B' → 分配到对应队
   p.team = team;
-  await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
+  try {
+    await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
+    renderSpyLobby(); // 乐观重渲染：不依赖 Realtime 回推，避免触发器/网络异常时 UI 假死
+  } catch (e) { window.showToast && window.showToast('分配失败: ' + e.message, 3000); }
 }
 
 async function startLobbySpy() {
@@ -439,12 +442,14 @@ async function startLobbySpy() {
   });
   lobbyState.phase = 'playing';
   await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
+  renderSpyLobby();
 }
 
 async function lobbyRevealSpies() {
   if (!lobbyState || !isHost() || !lobbyRoomCode) return;
   lobbyState.phase = 'revealed';
   await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
+  renderSpyLobby();
 }
 
 async function resetLobbySpy() {
@@ -453,6 +458,7 @@ async function resetLobbySpy() {
   lobbyState.team_a_spy_name = null; lobbyState.team_b_spy_name = null; lobbyState.tasks = {};
   lobbyState.players.forEach(function(p) { p.team = null; });
   await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
+  renderSpyLobby();
 }
 
 async function leaveLobbyRoom() {

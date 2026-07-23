@@ -66,7 +66,7 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   uid text := auth.uid()::text;
-  old_is_host boolean := (OLD.host_user_id = uid);
+  old_is_host boolean := (OLD.host_user_id::text = uid);
   old_in_players boolean;
   new_in_players boolean;
 BEGIN
