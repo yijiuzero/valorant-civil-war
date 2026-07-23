@@ -87,11 +87,16 @@ const spyPhases = ['assigning', 'playing', 'voting', 'revealed'];
 window.spyTasks = spyTasks;
 
 // ===== Supabase 单例 =====
-let _sb = null;
-async function getSupabase() {
-  if (_sb) return _sb;
-  const { createClient } = (await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm'));
-  _sb = createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
-  return _sb;
+// 同步缓存 Promise（而非结果），彻底消除多 module 并行 top-level await 时的竞态：
+// auth.js / teamsplit.js 同时调用 _getSupabase 也会共享同一 Promise，绝不二次 createClient，
+// 从而避免 "Multiple GoTrueClient instances" 警告与 session 行为不确定。
+// 同时缓存到 window 上，即使脚本被重复执行也只会创建一个 client。
+function getSupabase() {
+  if (window.__sbPromise) return window.__sbPromise;
+  window.__sbPromise = (async () => {
+    const { createClient } = (await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/+esm'));
+    return createClient('https://scoatqhpwkfhhinjviqr.supabase.co', 'sb_publishable_HRVWyVg47KyE2WJV7zLkSQ_Ap-y7AK-');
+  })();
+  return window.__sbPromise;
 }
 window._getSupabase = getSupabase;
