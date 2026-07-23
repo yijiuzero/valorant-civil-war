@@ -74,6 +74,7 @@ async function doSignOut() {
   const sb = await getSupabase();
   await sb.auth.signOut();
   currentUser = null;
+  closeRankEdit();
   updateSidebar();
 }
 
@@ -83,12 +84,14 @@ function onAuthSuccess() {
   document.getElementById('authPassword').value = '';
   document.getElementById('authError').textContent = '';
   clearCaptcha();
+  closeRankEdit();
   syncCurrentUser();
   updateSidebar();
 }
 
 // 点击侧边栏登录按钮
 function toggleAuthOverlay() {
+  closeRankEdit();
   const el = document.getElementById('authOverlay');
   if (el.style.display === 'none') {
     el.style.display = '';
@@ -281,6 +284,8 @@ function openRankEdit() {
   if (sel && window._currentUserRank) sel.value = String(window._currentUserRank);
   const err = document.getElementById('rankEditError');
   if (err) err.textContent = '';
+  const ao = document.getElementById('authOverlay');
+  if (ao) ao.style.display = 'none';
   const ov = document.getElementById('rankEditOverlay');
   if (ov) ov.style.display = '';
 }
