@@ -5,6 +5,7 @@ const supabase = await window._getSupabase();
 
 let currentRoomCode = null;
 let currentPlayerId = null;
+let currentPlayerName = '';
 let currentUserId = null;
 let currentHostUserId = null;
 let roomSubscription = null;
@@ -228,6 +229,7 @@ async function autoJoinLobby() {
       localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
       localStorage.setItem('ts_player_name', name);
       localStorage.setItem('ts_player_rank', String(rank));
+      currentPlayerName = name;
       showToast('已恢复身份', 2000);
       return;
     }
@@ -239,6 +241,7 @@ async function autoJoinLobby() {
     localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
     localStorage.setItem('ts_player_name', name);
     localStorage.setItem('ts_player_rank', String(rank));
+    currentPlayerName = name;
     if (rankSel) { rankSel.value = ''; rankSel.style.display = 'none'; }
     showToast('已加入分队', 2000);
   } catch (e) { showToast('加入失败: ' + e.message, 3000); }
@@ -284,6 +287,7 @@ async function joinLobby() {
     localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
     localStorage.setItem('ts_player_name', name);
     localStorage.setItem('ts_player_rank', rank);
+    currentPlayerName = name;
     document.getElementById('playerNameInput').value = '';
     if (rankSel) { rankSel.value = ''; rankSel.style.display = 'none'; }
     showToast('已加入分队', 2000);
@@ -301,6 +305,7 @@ async function tryAutoJoin(code) {
       return false;
     }
     currentPlayerId = result.data.id;
+    currentPlayerName = result.data.name;
     return true;
   } catch (e) {
     return false;
@@ -315,6 +320,20 @@ function subscribeToRoom(code, onReady) {
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: 'code=eq.' + code }, function(payload) {
       handleRoomChanged(payload);
+    })
+    // 广播：被房主踢出（房主踢人时主动发送，文案明确区分"被踢"与"自己离开"）
+    .on('broadcast', { event: 'player_kicked' }, function(payload) {
+      const name = (payload && payload.payload && payload.payload.name) || (payload && payload.name) || '';
+      if (name && name !== currentPlayerName) {
+        showToast('「' + name + '」已被房主踢出房间', 2500);
+      }
+    })
+    // 广播：主动离开房间
+    .on('broadcast', { event: 'player_left' }, function(payload) {
+      const name = (payload && payload.payload && payload.payload.name) || (payload && payload.name) || '';
+      if (name && name !== currentPlayerName) {
+        showToast('「' + name + '」已离开房间', 2000);
+      }
     })
     .subscribe(function(status) {
       if (status === 'SUBSCRIBED' && onReady) onReady();
@@ -352,18 +371,18 @@ function handlePlayersChanged(payload) {
         refreshPlayers();
       }
     } else if (event === 'DELETE') {
-      const removed = currentPlayers.find(function(p) { return p.id === oldRow.id; });
       currentPlayers = currentPlayers.filter(function(p) { return p.id !== oldRow.id; });
       updatePlayerList(currentPlayers);
-      if (removed && removed.id !== currentPlayerId) {
-        showToast('\u300c' + removed.name + '\u300d\u5df2\u88ab\u79fb\u51fa\u623f\u95f4', 2000);
-      }
+      // 踢出/离开的文字提示统一由 player_kicked / player_left 广播处理；
+      // 此处仅处理"被踢者本人"的专属提示（广播不会回显给发起方，被踢者靠这里兜底）
       if (currentPlayerId && oldRow.id === currentPlayerId) {
         showToast('\u4f60\u5df2\u88ab\u623f\u4e3b\u79fb\u51fa\u623f\u95f4', 3000);
         if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
         if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
         currentRoomCode = null;
         currentPlayerId = null;
+        // 注意：此处不清 currentPlayerName。被踢者已退订频道，不会再收到任何广播；
+        // 保留它可让 player_kicked 广播守卫稳定跳过被踢者本人，避免事件乱序时重复弹窗。
         showTeamsplitView('create');
       }
     }
@@ -453,6 +472,18 @@ async function resetSplit() {
 async function kickPlayer(playerId) {
   if (!currentRoomCode) return;
   try {
+    const target = currentPlayers.find(function(p) { return String(p.id) === String(playerId); });
+    const targetName = target ? target.name : '';
+    // 先广播「被房主踢出」，再删除行；其余客户端据此显示明确的踢人提示
+    if (roomSubscription && targetName) {
+      try {
+        await roomSubscription.send({
+          type: 'broadcast',
+          event: 'player_kicked',
+          payload: { name: targetName }
+        });
+      } catch (e) {}
+    }
     const result = await supabase.from('players').delete().eq('id', parseInt(playerId)).eq('room_code', currentRoomCode);
     if (result.error) throw result.error;
     showToast('已将该玩家移出房间', 2000);
@@ -464,8 +495,18 @@ async function kickPlayer(playerId) {
 
 async function leaveRoom() {
   isLeaving = true;
-  if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
   const isHost = !!(currentHostUserId && window._currentUser && currentHostUserId === window._currentUser.id);
+  // 普通成员离开：先广播「X 已离开」（必须在退订前发送，否则其余客户端收不到），再退订并删除自己行
+  if (currentRoomCode && !isHost && currentPlayerId && roomSubscription && currentPlayerName) {
+    try {
+      await roomSubscription.send({
+        type: 'broadcast',
+        event: 'player_left',
+        payload: { name: currentPlayerName }
+      });
+    } catch (e) {}
+  }
+  if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
   if (currentRoomCode && !isHost && currentPlayerId) {
     // 普通成员离开：从服务器移除自己（释放名额）
     try { await supabase.from('players').delete().eq('id', currentPlayerId); } catch (e) {}
@@ -476,6 +517,7 @@ async function leaveRoom() {
   }
   currentRoomCode = null;
   currentPlayerId = null;
+  currentPlayerName = '';
   currentPlayers = [];
   localStorage.removeItem('ts_spy_teams');
   localStorage.removeItem('ts_last_result');
