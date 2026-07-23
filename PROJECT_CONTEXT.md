@@ -5,7 +5,7 @@
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
 > **最后更新**: 2026-07-23
-> **⚠️ 本地文件，不推送到 GitHub**
+> **说明**：本文件现已随代码推送到 GitHub（2026-07-23 起，用户要求纳入版本管理）
 
 ---
 
@@ -28,8 +28,8 @@ valorant-civil-war/
 ├── styles.css           # 全部样式（暗色/亮色 + 响应式 768/640/420px）
 ├── init-spy-db.sql      # 内鬼模式 Supabase RLS 策略初始化脚本
 ├── check-db.js          # 数据库清理/检查脚本
-├── .gitignore           # 排除 PROJECT_CONTEXT.md
-└── PROJECT_CONTEXT.md    # ⚠️ 本文件，不推送
+├── .gitignore           # 忽略规则（PROJECT_CONTEXT.md 现已纳入跟踪，随代码推送）
+└── PROJECT_CONTEXT.md    # 本文件，现已随代码推送
 ```
 
 ---
@@ -38,7 +38,7 @@ valorant-civil-war/
 
 ### 1. 首页（Home）
 - 展示 5 个功能卡片，点击跳转对应模块
-- 副标题含版本号（`from zer0 · V4.2.14`），侧边栏底部也有
+- 副标题含版本号（`from zer0 · V4.2.17`），侧边栏底部也有
 
 ### 2. 随机选图（Wheel）
 - 13 张地图（Ascent ~ Summit，含 Corrode），支持 Ban 机制
@@ -177,7 +177,7 @@ valorant-civil-war/
 ### 数据流
 - `rooms.spy_state(JSONB)` 存储全部游戏状态
 - Realtime 频道: `lobby_{code}` 监听 UPDATE 事件
-- `isHost()` 通过 `host_name === _currentUserDisplayName` 动态判定
+- `isHost()` 通过 `lobbyState.host_user_id === window._currentUser.id` 动态判定（V4.2.3 起由 display_name 比较改为 user_id 比较，防昵称伪造）
 
 ### 任务系统
 - 12 条任务，无技能依赖（已删友军火力/战术性失误）
@@ -198,7 +198,7 @@ valorant-civil-war/
 | 模块切换 | display:none/'' | 保留状态，切换不清空 |
 | 身份系统 | Supabase Auth 昵称注册 | 昵称即账号，session 持久化 |
 | 内鬼虚拟邮箱 | `{昵称}@val-game.com` | 复用 Auth，保证唯一 |
-| 房主判定 | `host_name === _currentUserDisplayName` | 实时同步不丢失 |
+| 房主判定 | `host_user_id === window._currentUser.id` | 防昵称伪造（V4.2.3 起废弃 display_name 比较） |
 
 ---
 
@@ -281,7 +281,7 @@ valorant-civil-war/
 - [x] 无第三方 CDN 依赖，纯前端 + Supabase Edge Function（`turnstile-verify`，函数名历史遗留但逻辑已换），国内 100% 可达
 - [x] 校验逻辑（无状态 HMAC 方案）：①challenge 时服务端生成算术题，对「答案|时间戳|随机值」做 HMAC-SHA256 签名（**答案不下发前端**）；②verify 时前端提交答案，服务端用该答案重算 HMAC 与带来的签名比对，一致即通过；③题目 5 分钟有效期防重放。攻击者无密钥无法伪造签名绕过 → 防裸奔
 - [x] HMAC 密钥复用 Supabase 自动注入的 `SUPABASE_SERVICE_ROLE_KEY`，**无需额外 set secret**
-- [ ] Edge Function 需手动部署：`supabase functions deploy turnstile-verify`（deploy 后生效）
+- [x] Edge Function 部署：`supabase functions deploy turnstile-verify`（已于 2026-07-23 部署，线上冒烟测试 200 通过；**后续修改 index.ts 后需重新 deploy 才生效**）
 
 ---
 
@@ -291,7 +291,7 @@ valorant-civil-war/
 - 结论：代码逻辑与 CSS 均正常。`updateSidebar()` 用 innerHTML 重建后用 `getElementById('btnOpenRankEdit').addEventListener('click', openRankEdit)` 绑定；`openRankEdit` 取 `rankEditOverlay` 显示弹窗；`.auth-rankedit-btn`/`.auth-user-actions` 无 pointer-events 遮挡、布局为纵向 flex + 按钮独占一行（V4.2.5 已修挤压问题）。
 - 文档「未修复」标注为过时描述，无需改动代码。
 
-**被踢玩家提示不可靠**：Supabase Realtime DELETE 事件可能因网络抖动丢失，纯 Realtime 方案无轮询兜底。
+**被踢玩家提示**：V4.2.16 起采用「Realtime 广播 player_kicked + postgres_changes DELETE 双通道」兜底——被踢者本人走 DELETE 通道、其余客户端走广播通道，二者独立互不影响，可靠性较纯 DELETE 显著提升；极端网络抖动下仍可能漏提示，但双通道设计已大幅降低概率。
 
 **房间人数上限**：Supabase free tier 50 channel clients。房间频道 `room_{code}`，单个房间 ≤50 并发。当前无需提升。
 
@@ -304,7 +304,7 @@ valorant-civil-war/
 - 分支: main（默认直接提交，不另开 feature 分支）
 - 提交风格: 前缀: 简短描述（如 fix:、feat:、chore:）
 - Remote: origin → https://github.com/yijiuzero/valorant-civil-war.git
-- **⚠️ PROJECT_CONTEXT.md 不推送到 GitHub**（已在 .gitignore 中排除）
+- **PROJECT_CONTEXT.md 现已随代码推送到 GitHub**（2026-07-23 起；.gitignore 已调整，将 `!PROJECT_CONTEXT.md` 例外移到 `*_*.md` 之后使其生效）
 - **Git 代理**: `http://127.0.0.1:7897`（Clash 等本地代理）
 
 ---
