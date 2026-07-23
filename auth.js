@@ -34,7 +34,16 @@ function userRank(user) {
 async function initAuth() {
   const sb = await getSupabase();
   const { data } = await sb.auth.getSession();
-  currentUser = data.session ? data.session.user : null;
+  if (!data.session) { currentUser = null; updateSidebar(); return; }
+  // getSession 返回的是本地缓存的 session，其 user_metadata 可能过期
+  //（如段位缺失、昵称未更新）。用 getUser() 从服务端取最新用户，
+  // 避免刷新后段位/资料回退为「未设置」（重登却能显示的根因）。
+  let user = data.session.user;
+  try {
+    const { data: ud } = await sb.auth.getUser();
+    if (ud && ud.user) user = ud.user;
+  } catch (e) { /* 取失败则降级用 session 里的 user */ }
+  currentUser = user;
   updateSidebar();
 }
 
@@ -183,6 +192,9 @@ function updateSidebar() {
   const entry = document.getElementById('authSidebarEntry');
   const display = document.getElementById('authUserDisplay');
   if (!entry) return;
+  // 先同步最新用户态（_currentUser/_currentUserRank 等），再用其渲染，
+  // 避免「用旧 rank 拼文本、最后才更新 rank」的竞态（刷新后段位回退为未设置的根因）
+  syncCurrentUser();
     if (currentUser) {
       entry.style.display = 'none';
       if (display) {
