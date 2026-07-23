@@ -116,7 +116,7 @@ function setAuthMode(mode) {
   document.getElementById('authSwitchText').innerHTML = isSignUp
     ? '已有账号？<span class="auth-switch-link" onclick="setAuthMode(\'signin\')">去登录</span>'
     : '没有账号？<span class="auth-switch-link" onclick="setAuthMode(\'signup\')">去注册</span>';
-  if (isSignUp) { renderTurnstile(); }
+  if (isSignUp) { renderTurnstile(); startTurnstileWatchdog(); }
   else { removeTurnstile(); }
   const rankEl = document.getElementById('authRank');
   if (rankEl) rankEl.style.display = isSignUp ? '' : 'none';
@@ -147,7 +147,12 @@ async function handleAuthSubmit() {
       btn.disabled = false; btn.textContent = '注册'; return;
     }
     const token = turnstileToken || (turnstileWidgetId && window.turnstile ? window.turnstile.getResponse(turnstileWidgetId) : null);
-    if (!token) { errEl.textContent = '请等待人机验证完成'; btn.disabled = false; btn.textContent = '注册'; return; }
+    if (!token) {
+      if (!window.turnstile) errEl.textContent = '人机验证未加载（网络/地区限制）。请刷新页面重试或联系管理员。';
+      else if (!turnstileWidgetId) errEl.textContent = '人机验证组件未就绪，请刷新页面重试。';
+      else errEl.textContent = '请先完成人机验证（勾选验证框）后再点注册。';
+      btn.disabled = false; btn.textContent = '注册'; return;
+    }
     try {
       const ok = await verifyTurnstileToken(token);
       if (!ok) { errEl.textContent = '人机验证未通过，请重试'; resetTurnstile(); btn.disabled = false; btn.textContent = '注册'; return; }
@@ -178,8 +183,8 @@ function updateSidebar() {
         display.innerHTML =
           '<div class="auth-user-name"></div>' +
           '<div class="auth-user-actions">' +
-            '<button type="button" class="auth-rankedit-btn" id="btnOpenRankEdit">修改段位</button>' +
-            '<span class="auth-logout-link" id="btnLogout">退出</span>' +
+            '<button type="button" class="auth-rankedit-btn" id="btnOpenRankEdit" onclick="openRankEdit()">修改段位</button>' +
+            '<span class="auth-logout-link" id="btnLogout" onclick="doSignOut()">退出</span>' +
           '</div>';
         display.querySelector('.auth-user-name').textContent = userDisplayName(currentUser) + ' ';
         var rankSpan = document.createElement('span');
@@ -208,27 +213,64 @@ function syncCurrentUser() {
 }
 
 // Cloudflare Turnstile 控件
+let turnstileWatchdog = null;
+function clearTurnstileWatchdog() {
+  if (turnstileWatchdog) { clearTimeout(turnstileWatchdog); turnstileWatchdog = null; }
+}
+function startTurnstileWatchdog() {
+  clearTurnstileWatchdog();
+  // 6 秒内若脚本仍未加载且无 token，给出明确可操作的提示（不再静默死循环）
+  turnstileWatchdog = setTimeout(function() {
+    if (!turnstileToken && !window.turnstile) {
+      showTurnstileError('人机验证服务长时间未加载（可能是网络或地区限制，Cloudflare 在国内可能不稳定）。请刷新页面重试，或将你的访问域名加入 Cloudflare Turnstile 允许列表后重试。');
+    }
+  }, 6000);
+}
+function showTurnstileError(msg) {
+  const container = document.getElementById('authTurnstile');
+  if (container) {
+    container.style.display = '';
+    container.innerHTML = '<div style="font-size:12px;color:#ffb4b4;line-height:1.5;padding:4px 0;">' + (msg || '人机验证组件加载失败') + '</div>';
+  }
+  const err = document.getElementById('authError');
+  if (err) err.textContent = msg || '人机验证组件加载失败';
+}
 function renderTurnstile() {
   const container = document.getElementById('authTurnstile');
-  if (!container || !window.turnstile) return;
+  if (!container) return;
+  if (!window.turnstile) {
+    showTurnstileError('人机验证服务未加载（可能是网络或地区限制，Cloudflare 在国内可能不稳定）。请刷新页面重试，或联系管理员。');
+    return;
+  }
   if (turnstileWidgetId) { container.style.display = ''; return; }
   container.style.display = '';
-  turnstileWidgetId = window.turnstile.render('#authTurnstile', {
-    sitekey: TURNSTILE_SITE_KEY,
-    size: 'compact',
-    callback: function(token) { turnstileToken = token; },
-    'expired-callback': function() { turnstileToken = null; },
-    'error-callback': function() { turnstileToken = null; }
-  });
+  container.innerHTML = '';
+  try {
+    turnstileWidgetId = window.turnstile.render('#authTurnstile', {
+      sitekey: TURNSTILE_SITE_KEY,
+      size: 'compact',
+      callback: function(token) { turnstileToken = token; clearTurnstileWatchdog(); },
+      'expired-callback': function() { turnstileToken = null; },
+      'error-callback': function() {
+        turnstileToken = null;
+        showTurnstileError('人机验证加载失败：当前域名可能未在 Cloudflare 允许列表中，或网络受限。请刷新重试，或将访问域名加入 Cloudflare Turnstile 允许列表。');
+      }
+    });
+    if (!turnstileWidgetId) showTurnstileError('人机验证组件创建失败，请刷新页面重试或联系管理员。');
+  } catch (e) {
+    turnstileToken = null;
+    showTurnstileError('人机验证组件创建失败：' + (e && e.message ? e.message : '未知错误') + '。请刷新重试或联系管理员。');
+  }
 }
 function removeTurnstile() {
+  clearTurnstileWatchdog();
   if (turnstileWidgetId && window.turnstile) {
     window.turnstile.remove(turnstileWidgetId);
     turnstileWidgetId = null;
     turnstileToken = null;
   }
   const container = document.getElementById('authTurnstile');
-  if (container) container.style.display = 'none';
+  if (container) { container.style.display = 'none'; container.innerHTML = ''; }
 }
 function resetTurnstile() {
   if (turnstileWidgetId && window.turnstile) {
