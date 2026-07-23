@@ -256,7 +256,9 @@ function showSpyLobbyView() {
 function allowDrop(e) { e.preventDefault(); }
 
 function dragStart(e) {
-  e.dataTransfer.setData('text/plain', e.target.dataset.name);
+  var card = (e.target && e.target.closest) ? e.target.closest('.spy-drag-card') : null;
+  var name = card ? card.getAttribute('data-name') : (e.target && e.target.dataset ? e.target.dataset.name : '');
+  e.dataTransfer.setData('text/plain', name || '');
   e.dataTransfer.effectAllowed = 'move';
 }
 
@@ -515,6 +517,7 @@ window.startLobbySpy = startLobbySpy;
 window.lobbyRevealSpies = lobbyRevealSpies;
 window.resetLobbySpy = resetLobbySpy;
 window.leaveLobbyRoom = leaveLobbyRoom;
+window.assignTeamFromCard = assignTeamFromCard;
 
 // 供 app.js 的 switchModule 在切走时退订内鬼 Lobby/桥接 Realtime 频道（遗留 #7）
 window.cleanupSpyChannel = function() {
