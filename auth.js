@@ -265,6 +265,16 @@ window.openRankEdit = openRankEdit;
 window.closeRankEdit = closeRankEdit;
 window.saveRankEdit = saveRankEdit;
 
+// 事件委托兜底：无论侧边栏 innerHTML 如何重建（updateSidebar 每次重建），
+// 修改段位 / 退出都能命中；同时免疫 inline onclick 被任何策略拦截的极端情况。
+// 与下方 inline onclick、updateSidebar 内的 addEventListener 互为冗余，任一生效即可。
+document.addEventListener('click', function(e) {
+  const t = e.target;
+  if (!t || !t.closest) return;
+  if (t.closest('#btnOpenRankEdit')) { openRankEdit(); return; }
+  if (t.closest('#btnLogout')) { doSignOut(); return; }
+});
+
 // 修改段位：打开弹窗（预填当前段位）
 function openRankEdit() {
   const sel = document.getElementById('rankEditSelect');
