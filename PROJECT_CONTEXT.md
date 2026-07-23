@@ -1,10 +1,10 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.2.14
+> **版本**: V4.2.16
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
-> **最后更新**: 2026-07-22
+> **最后更新**: 2026-07-23
 > **⚠️ 本地文件，不推送到 GitHub**
 
 ---
@@ -228,7 +228,7 @@ valorant-civil-war/
 - [x] 分队模块：玩家加入/离开 toast 通知
 - [x] 分队模块：刷新页面恢复分队结果
 - [x] 分队模块：防止同一房间重名
-- [x] 分队模块：缓存破坏参数 `?v=` 随文件改动递增（当前 app-data.js?v=8 / auth.js?v=19 / teamsplit.js?v=14 / spy-mode.js?v=16 / app.js?v=10 / styles.css?v=14）
+- [x] 分队模块：缓存破坏参数 `?v=` 随文件改动递增（当前 app-data.js?v=9 / auth.js?v=25 / teamsplit.js?v=16 / spy-mode.js?v=16 / app.js?v=11 / styles.css?v=14）
 - [x] 暗色/亮色主题切换（localStorage 持久化）
 
 ### 身份系统改造（V3.4.0）
@@ -327,6 +327,8 @@ start index.html
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| V4.2.16 | 2026-07-23 | 需求（+0.1.0）：内战分队「玩家被房主踢出时广播提示」。subscribeToRoom 新增 Realtime 广播监听 player_kicked/player_left；kickPlayer 踢人时先广播「X 已被房主踢出房间」再删行，其余客户端据此显示明确踢人提示（与普通离开的「X 已离开房间」区分）；被踢者本人由 postgres_changes DELETE 兜底「你已被房主移出房间」（靠 currentPlayerName 自比避免收到自己的广播）；普通成员 leaveRoom 改为退订前先广播 player_left。缓存参数 teamsplit15→16 |
+| V4.2.15 | 2026-07-23 | 安全加固&修复（+0.0.1）：①P0 补 players 表 RLS（init-spy-db.sql 新增 ENABLE RLS + 读/插/改/删策略，房主可删本房间玩家、玩家仅管自己行，堵住"任意登录用户可增删改查全库 players"的高危缺口，需到 Supabase 重新执行脚本生效）。②P1 内战分队房主离开语义修正（原"标 done+删自己行"导致房间半死、其余9人卡死；改为方案Y：房主离开仅本地退出、保留服务器房间与自身占位，可重新进入恢复房主身份，localStorage 存 ts_current_room 凭证，initTeamSplitView 恢复时补订阅）。③P2 Edge Function 去明文 fallback（缺失 SERVICE_ROLE_KEY 时 fail-closed 拒绝服务，不再用已知密钥伪造 HMAC）。④P2 切模块退订 Realtime 频道（switchModule 调 cleanupTeamSplitChannel/cleanupSpyChannel，修遗留 #7 连接泄漏）。缓存参数 app10→11、teamsplit14→15 |
 | V4.2.14 | 2026-07-23 | Bug修复（+0.0.1）：修改段位弹窗**嵌套**修复。Console 诊断确认——rankEditOverlay.parentElement.id='authOverlay'，即 rankEditOverlay 被误包在 authOverlay 内（authOverlay 的 `</div>` 在 line 370 后缺失）。openRankEdit 设 authOverlay.display='none' → 子元素 rankEditOverlay 被父级隐藏。修复：补缺失的 `</div>` 令二者为平级兄弟，position:fixed 独立生效。缓存参数 auth24→25 |根因①（真 bug）：updateSidebar 先用 window._currentUserRank 旧值拼段位文本、最后才 syncCurrentUser 更新——顺序竞态致 UI 显示过期；initAuth 改用 sb.auth.getUser() 从服务端取最新 user_metadata（getSession 返回的是本地缓存、可能缺 rank），重登能显示而刷新不能的根因。jsdom 复现 stale session（缺 rank）场景：修复前段位文本=「未设置」、修复后=R5。②修改段位弹窗点击：jsdom 严格派发 click 验证 popup 由 none→'' 正常打开，代码逻辑无问题，用户侧点不开归因浏览器顽固缓存（需硬刷新拿 auth24）。缓存参数 auth23→24 |jsdom 仿真定位——rankEditOverlay 与 authOverlay 共用 z-index:9999 且前者 DOM 靠后，doSignOut 未关 rankEditOverlay 致状态泄漏；退出再登录时两弹窗同开、rankEditOverlay 盖在登录框上，表现为「登录后弹出修改段位框」。修复：openRankEdit 开时关 authOverlay、toggleAuthOverlay 开时关 rankEditOverlay、doSignOut/onAuthSuccess 均关 rankEditOverlay（互斥）；缓存参数 auth22→23 |——app-data.js 的 Supabase 单例由「缓存结果」改为「同步缓存 Promise 并存到 window」，修复 auth.js/teamsplit.js 并行 top-level await 时二次 createClient 的竞态；缓存参数 app-data8→9 |
 | V4.2.10 | 2026-07-23 | Bug修复（+0.0.1）：修改段位点不开——代码逻辑/CSP/CSS 均正常（jsdom 严格模拟点击 PASS），根因疑为浏览器顽固缓存或 inline 被拦截极端情况；auth.js 顶层新增 document 级 click 事件委托兜底（免疫 innerHTML 重建绑定时序与 inline 拦截），bump 缓存参数 auth21→22 强制刷新。缓存参数 auth21→22 |
 | V4.2.9 | 2026-07-23 | 替换人机验证（+0.0.1）：Cloudflare Turnstile 国内不可达 → 自研轻量验证。前端 auth.js 移除 Turnstile 挂件，改为调 Edge Function `turnstile-verify` 的 challenge/verify 两步（HMAC-SHA256 服务端校验，答案不下发前端，防裸奔）；index.html 删除 Cloudflare api.js、版本号 V4.2.8→V4.2.9、auth20→21。Edge Function 已重写（无状态 HMAC，复用 SUPABASE_SERVICE_ROLE_KEY 无需 set secret），需 `supabase functions deploy turnstile-verify` 生效 |
