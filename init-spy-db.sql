@@ -113,3 +113,45 @@ CREATE TRIGGER trg_spy_room_update
   BEFORE UPDATE ON rooms
   FOR EACH ROW
   EXECUTE FUNCTION public.check_spy_room_update();
+
+-- ============================================================
+-- 3. players 表行级安全（此前完全遗漏：任何持有 anon/publishable key 的登录用户
+--    可对全库 players 表做任意 SELECT/INSERT/UPDATE/DELETE，高危。已在 V4.2.15 补上）
+--   - 登录用户可读所有玩家（加入/展示需要）
+--   - 玩家只能插入/更新/删除"自己"的行（user_id = auth.uid()）
+--   - 房主可删除本房间的任意玩家行（踢人，靠 rooms.host_user_id 子查询判定）
+-- 重新执行本脚本后生效。
+-- ============================================================
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "players readable by authenticated" ON players;
+CREATE POLICY "players readable by authenticated"
+  ON players FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "players insert self" ON players;
+CREATE POLICY "players insert self"
+  ON players FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "players update self" ON players;
+CREATE POLICY "players update self"
+  ON players FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "players delete self" ON players;
+CREATE POLICY "players delete self"
+  ON players FOR DELETE
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "players delete by host" ON players;
+CREATE POLICY "players delete by host"
+  ON players FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM rooms r
+      WHERE r.code = players.room_code
+        AND r.host_user_id = auth.uid()
+    )
+  );

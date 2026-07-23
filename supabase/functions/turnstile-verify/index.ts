@@ -4,7 +4,7 @@
 // 密钥：复用项目自带的 SUPABASE_SERVICE_ROLE_KEY 作为 HMAC 密钥，Deno 自动注入，无需额外 set secret。
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
-const SECRET = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || 'dev-only-insecure-fallback'
+const SECRET = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const TTL_MS = 5 * 60 * 1000 // 题目有效期 5 分钟，防重放/过期
 
 const corsHeaders = {
@@ -14,6 +14,7 @@ const corsHeaders = {
 
 // HMAC-SHA256，返回 hex 字符串
 async function hmac(message) {
+  if (!SECRET) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured (refusing insecure fallback)')
   const key = new TextEncoder().encode(SECRET)
   const data = new TextEncoder().encode(message)
   const cryptoKey = await crypto.subtle.importKey(

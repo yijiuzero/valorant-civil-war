@@ -55,6 +55,9 @@ function switchModule(mod) {
   stopMapSpin(true);
   stopAgentSpin(true);
   stopChallenge();
+  // 退订上一个模块的 Realtime 频道，避免连接泄漏（遗留 #7）
+  if (typeof window.cleanupTeamSplitChannel === 'function') window.cleanupTeamSplitChannel();
+  if (typeof window.cleanupSpyChannel === 'function') window.cleanupSpyChannel();
   // 内鬼模式 & 内战分队 需登录
   if ((mod === 'spy' || mod === 'teamsplit') && !window._currentUser) {
     if (typeof toggleAuthOverlay === 'function') toggleAuthOverlay();

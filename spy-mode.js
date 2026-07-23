@@ -515,3 +515,9 @@ window.startLobbySpy = startLobbySpy;
 window.lobbyRevealSpies = lobbyRevealSpies;
 window.resetLobbySpy = resetLobbySpy;
 window.leaveLobbyRoom = leaveLobbyRoom;
+
+// 供 app.js 的 switchModule 在切走时退订内鬼 Lobby/桥接 Realtime 频道（遗留 #7）
+window.cleanupSpyChannel = function() {
+  if (lobbyChannel) { lobbyChannel.unsubscribe(); lobbyChannel = null; }
+  if (spyChannel) { spyChannel.unsubscribe(); spyChannel = null; }
+};

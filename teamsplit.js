@@ -465,17 +465,14 @@ async function kickPlayer(playerId) {
 async function leaveRoom() {
   isLeaving = true;
   if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
-  if (currentRoomCode) {
-    // 房主离开 → 解散房间
-    if (currentHostUserId && window._currentUser && currentHostUserId === window._currentUser.id) {
-      try { await supabase.from('rooms').update({ status: 'done' }).eq('code', currentRoomCode); } catch (e) {}
-    }
-    if (currentPlayerId) {
-      try {
-        await supabase.from('players').delete().eq('id', currentPlayerId);
-      } catch (e) {}
-      localStorage.removeItem('ts_player_' + currentRoomCode);
-    }
+  const isHost = !!(currentHostUserId && window._currentUser && currentHostUserId === window._currentUser.id);
+  if (currentRoomCode && !isHost && currentPlayerId) {
+    // 普通成员离开：从服务器移除自己（释放名额）
+    try { await supabase.from('players').delete().eq('id', currentPlayerId); } catch (e) {}
+    localStorage.removeItem('ts_player_' + currentRoomCode);
+  } else if (currentRoomCode && isHost) {
+    // 房主离开：保留服务器房间与自身的占位，仅本地退出，可重新进入恢复房主身份（方案 Y）
+    try { localStorage.setItem('ts_current_room', currentRoomCode); } catch (e) {}
   }
   currentRoomCode = null;
   currentPlayerId = null;
@@ -487,7 +484,7 @@ async function leaveRoom() {
   const pi = document.getElementById('playerNameInput');
   if (pi) pi.value = '';
   showTeamsplitView('create');
-  showToast('已离开房间', 2000);
+  showToast(isHost ? '已离开房间（房间已保留，可重新进入）' : '已离开房间', 2000);
 }
 
 async function initTeamSplitView() {
@@ -509,14 +506,21 @@ async function initTeamSplitView() {
     const savedRank = localStorage.getItem('ts_player_rank') || '';
     rs.value = savedRank;
   }
+  if (!currentRoomCode) {
+    const savedRoom = localStorage.getItem('ts_current_room');
+    if (savedRoom) currentRoomCode = savedRoom;
+  }
   if (currentRoomCode) {
     showTeamsplitView('lobby');
     const autoJoined = await tryAutoJoin(currentRoomCode);
     if (autoJoined) {
       await refreshPlayers();
+      subscribeToRoom(currentRoomCode);
+      localStorage.removeItem('ts_current_room');
       return;
     }
     currentRoomCode = null;
+    localStorage.removeItem('ts_current_room');
   }
   const lastResult = localStorage.getItem('ts_last_result');
   if (lastResult) {
@@ -638,3 +642,8 @@ function closeSpyMode() {
 
 window.openSpyMode = openSpyMode;
 window.closeSpyMode = closeSpyMode;
+
+// 供 app.js 的 switchModule 在切换模块时退订 Realtime 频道，避免连接泄漏（遗留 #7）
+window.cleanupTeamSplitChannel = function() {
+  if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
+};
