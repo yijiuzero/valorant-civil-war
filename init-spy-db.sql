@@ -115,6 +115,310 @@ CREATE TRIGGER trg_spy_room_update
   EXECUTE FUNCTION public.check_spy_room_update();
 
 -- ============================================================
+-- 4. 原子化 Lobby 操作函数（消除 read-modify-write 竞态）
+--    前端通过 supabase.rpc() 调用，Postgres 端在单事务内完成，
+--    确保并发加入/离开不会互相覆盖。
+--    SECURITY DEFINER 绕过 BEFORE UPDATE 触发器（这些函数由服务端精确控制）。
+-- ============================================================
+
+-- 4a. 原子追加玩家到 lobby 房间（刷新重连时按 user_id 去重）
+DROP FUNCTION IF EXISTS public.lobby_add_player(text, text, text, integer);
+CREATE OR REPLACE FUNCTION public.lobby_add_player(
+  p_code     text,
+  p_name     text,
+  p_user_id  text,
+  p_rank     integer
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_state jsonb;
+  v_exists boolean;
+BEGIN
+  SELECT spy_state INTO v_state
+  FROM rooms
+  WHERE code = p_code AND status = 'lobby'
+  FOR UPDATE;
+
+  IF v_state IS NULL THEN
+    RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  SELECT count(*) > 0 INTO v_exists
+  FROM jsonb_array_elements(v_state->'players') p
+  WHERE p->>'user_id' = p_user_id;
+
+  IF v_exists THEN
+    UPDATE rooms
+    SET spy_state = jsonb_set(
+      spy_state, '{players}',
+      (SELECT jsonb_agg(
+        CASE WHEN p->>'user_id' = p_user_id
+          THEN jsonb_set(jsonb_set(p, '{name}', to_jsonb(p_name)), '{rank}', to_jsonb(p_rank))
+          ELSE p
+        END)
+       FROM jsonb_array_elements(v_state->'players') p)
+    )
+    WHERE code = p_code
+    RETURNING spy_state INTO v_state;
+  ELSE
+    IF jsonb_array_length(v_state->'players') >= 10 THEN
+      RAISE EXCEPTION '房间已满（最多10人）';
+    END IF;
+    UPDATE rooms
+    SET spy_state = jsonb_set(
+      spy_state, '{players}',
+      (v_state->'players') || jsonb_build_object(
+        'name', p_name, 'user_id', p_user_id, 'team', null, 'rank', p_rank
+      )
+    )
+    WHERE code = p_code
+    RETURNING spy_state INTO v_state;
+  END IF;
+
+  RETURN v_state;
+END;
+$$;
+
+-- 4b. 原子移除玩家（房主离开时自动转移给首个剩余玩家，无人则关闭）
+DROP FUNCTION IF EXISTS public.lobby_remove_player(text, text);
+CREATE OR REPLACE FUNCTION public.lobby_remove_player(
+  p_code     text,
+  p_user_id  text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_state      jsonb;
+  v_host       text;
+  v_remaining  jsonb;
+  v_new_host   text;
+BEGIN
+  SELECT spy_state, host_user_id INTO v_state, v_host
+  FROM rooms
+  WHERE code = p_code AND status = 'lobby'
+  FOR UPDATE;
+
+  IF v_state IS NULL THEN
+    RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  SELECT jsonb_agg(p) INTO v_remaining
+  FROM jsonb_array_elements(v_state->'players') p
+  WHERE p->>'user_id' <> p_user_id;
+
+  IF v_remaining IS NULL THEN
+    v_remaining := '[]'::jsonb;
+  END IF;
+
+  v_state := jsonb_set(v_state, '{players}', v_remaining);
+
+  IF v_host = p_user_id THEN
+    IF jsonb_array_length(v_remaining) > 0 THEN
+      v_new_host := v_remaining->0->>'user_id';
+      UPDATE rooms
+      SET spy_state = v_state, host_user_id = v_new_host
+      WHERE code = p_code
+      RETURNING spy_state INTO v_state;
+    ELSE
+      v_state := jsonb_set(v_state, '{phase}', '"closed"');
+      UPDATE rooms
+      SET spy_state = v_state
+      WHERE code = p_code
+      RETURNING spy_state INTO v_state;
+    END IF;
+  ELSE
+    UPDATE rooms
+    SET spy_state = v_state
+    WHERE code = p_code
+    RETURNING spy_state INTO v_state;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'spy_state', v_state,
+    'host_user_id', COALESCE(v_new_host, v_host),
+    'transferred', v_new_host IS NOT NULL
+  );
+END;
+$$;
+
+-- 4c. 原子设置玩家队伍（A/B/null）
+DROP FUNCTION IF EXISTS public.lobby_set_player_team(text, text, text);
+CREATE OR REPLACE FUNCTION public.lobby_set_player_team(
+  p_code    text,
+  p_user_id text,
+  p_team    text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_state jsonb;
+BEGIN
+  SELECT spy_state INTO v_state
+  FROM rooms
+  WHERE code = p_code AND status = 'lobby'
+  FOR UPDATE;
+
+  IF v_state IS NULL THEN
+    RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  UPDATE rooms
+  SET spy_state = jsonb_set(
+    spy_state, '{players}',
+    (SELECT jsonb_agg(
+      CASE WHEN p->>'user_id' = p_user_id
+        THEN jsonb_set(p, '{team}', CASE WHEN p_team IS NULL THEN 'null'::jsonb ELSE to_jsonb(p_team) END)
+        ELSE p
+      END)
+     FROM jsonb_array_elements(v_state->'players') p)
+  )
+  WHERE code = p_code
+  RETURNING spy_state INTO v_state;
+
+  RETURN v_state;
+END;
+$$;
+
+-- 4d. 原子开始内鬼（服务端随机选内鬼 + 分配任务，仅房主调用）
+DROP FUNCTION IF EXISTS public.lobby_start_spy(text);
+CREATE OR REPLACE FUNCTION public.lobby_start_spy(p_code text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_state      jsonb;
+  v_team_a     jsonb;
+  v_team_b     jsonb;
+  v_spy_a_name text;
+  v_spy_b_name text;
+  v_tasks      jsonb;
+  v_player     jsonb;
+  v_total      integer;
+BEGIN
+  SELECT spy_state INTO v_state
+  FROM rooms
+  WHERE code = p_code AND status = 'lobby'
+  FOR UPDATE;
+
+  IF v_state IS NULL THEN
+    RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  SELECT jsonb_agg(p) INTO v_team_a
+  FROM jsonb_array_elements(v_state->'players') p WHERE p->>'team' = 'A';
+
+  SELECT jsonb_agg(p) INTO v_team_b
+  FROM jsonb_array_elements(v_state->'players') p WHERE p->>'team' = 'B';
+
+  IF v_team_a IS NULL OR v_team_b IS NULL
+     OR jsonb_array_length(v_team_a) = 0 OR jsonb_array_length(v_team_b) = 0 THEN
+    RAISE EXCEPTION '两队都需要有人';
+  END IF;
+
+  v_spy_a_name := v_team_a->(floor(random() * jsonb_array_length(v_team_a))::int)->>'name';
+  v_spy_b_name := v_team_b->(floor(random() * jsonb_array_length(v_team_b))::int)->>'name';
+
+  v_tasks := '{}'::jsonb;
+  v_total := jsonb_array_length(v_state->'players');
+  FOR i IN 0..v_total-1 LOOP
+    v_player := v_state->'players'->i;
+    v_tasks := jsonb_set(v_tasks, ARRAY[v_player->>'name'], to_jsonb(i % 12));
+  END LOOP;
+
+  v_state := jsonb_set(v_state, '{phase}', '"playing"');
+  v_state := jsonb_set(v_state, '{team_a}', COALESCE(v_team_a, '[]'::jsonb));
+  v_state := jsonb_set(v_state, '{team_b}', COALESCE(v_team_b, '[]'::jsonb));
+  v_state := jsonb_set(v_state, '{team_a_spy_name}', to_jsonb(v_spy_a_name));
+  v_state := jsonb_set(v_state, '{team_b_spy_name}', to_jsonb(v_spy_b_name));
+  v_state := jsonb_set(v_state, '{tasks}', v_tasks);
+
+  UPDATE rooms
+  SET spy_state = v_state
+  WHERE code = p_code
+  RETURNING spy_state INTO v_state;
+
+  RETURN v_state;
+END;
+$$;
+
+-- 4e. 原子揭晓内鬼
+DROP FUNCTION IF EXISTS public.lobby_reveal_spy(text);
+CREATE OR REPLACE FUNCTION public.lobby_reveal_spy(p_code text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_state jsonb;
+BEGIN
+  SELECT spy_state INTO v_state
+  FROM rooms
+  WHERE code = p_code AND status = 'lobby'
+  FOR UPDATE;
+
+  IF v_state IS NULL THEN
+    RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  v_state := jsonb_set(v_state, '{phase}', '"revealed"');
+
+  UPDATE rooms
+  SET spy_state = v_state
+  WHERE code = p_code
+  RETURNING spy_state INTO v_state;
+
+  RETURN v_state;
+END;
+$$;
+
+-- 4f. 原子重置内鬼
+DROP FUNCTION IF EXISTS public.lobby_reset_spy(text);
+CREATE OR REPLACE FUNCTION public.lobby_reset_spy(p_code text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_state jsonb;
+BEGIN
+  SELECT spy_state INTO v_state
+  FROM rooms
+  WHERE code = p_code AND status = 'lobby'
+  FOR UPDATE;
+
+  IF v_state IS NULL THEN
+    RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  v_state := jsonb_set(v_state, '{phase}', '"lobby"');
+  v_state := jsonb_set(v_state, '{team_a}', '[]'::jsonb);
+  v_state := jsonb_set(v_state, '{team_b}', '[]'::jsonb);
+  v_state := jsonb_set(v_state, '{team_a_spy_name}', 'null'::jsonb);
+  v_state := jsonb_set(v_state, '{team_b_spy_name}', 'null'::jsonb);
+  v_state := jsonb_set(v_state, '{tasks}', '{}'::jsonb);
+  v_state := jsonb_set(v_state, '{players}',
+    (SELECT jsonb_agg(jsonb_set(p, '{team}', 'null'::jsonb))
+     FROM jsonb_array_elements(v_state->'players') p)
+  );
+
+  UPDATE rooms
+  SET spy_state = v_state
+  WHERE code = p_code
+  RETURNING spy_state INTO v_state;
+
+  RETURN v_state;
+END;
+$$;
+
+-- ============================================================
 -- 3. players 表行级安全（此前完全遗漏：任何持有 anon/publishable key 的登录用户
 --    可对全库 players 表做任意 SELECT/INSERT/UPDATE/DELETE，高危。已在 V4.2.15 补上）
 --   - 登录用户可读所有玩家（加入/展示需要）

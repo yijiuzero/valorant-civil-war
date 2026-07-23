@@ -204,29 +204,29 @@ async function joinSpyLobby(inputCode) {
   var code = (inputCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
   if (!code) { window.showToast && window.showToast('房间码无效', 3000); return; }
   var sb = await getSupabase();
-  var res = await sb.from('rooms').select('spy_state').eq('code', code).single();
-  if (res.error) { window.showToast && window.showToast('加入失败: ' + (res.error.message || res.error.code), 4000); return; }
-  if (!res.data || !res.data.spy_state) { window.showToast && window.showToast('房间不存在', 3000); return; }
-  var state = res.data.spy_state;
   var uid = (window._currentUser && window._currentUser.id) || null;
-  var me = (state.players || []).find(function(p) { return p.name === name; });
-  if (me) {
-    // 同名玩家已存在：区分「同一用户重连」与「真正重名」
-    var sameUser = me.user_id && uid && me.user_id === uid;
-    if (!sameUser) {
-      window.showToast && window.showToast('名字「' + name + '」已被使用，换一个吧', 3000); return;
+  try {
+    var newState = await sb.rpc('lobby_add_player', {
+      p_code: code, p_name: name, p_user_id: uid, p_rank: window._currentUserRank || 0
+    });
+    if (newState.error) {
+      var msg = newState.error.message || '加入失败';
+      if (msg.includes('房间已满')) { window.showToast && window.showToast('房间已满（最多10人）', 2000); }
+      else if (msg.includes('不存在')) { window.showToast && window.showToast('房间不存在或已关闭', 3000); }
+      else { window.showToast && window.showToast('加入失败: ' + msg, 3000); }
+      return;
     }
-    // 同一用户（刷新 / 误退出后重新进入）：直接重连，不重复插入
-    lobbyRoomCode = code; lobbyState = state;
+    lobbyState = newState.data;
+    // 检查 phase：可能是已关闭的房间
+    if (lobbyState && lobbyState.phase && lobbyState.phase !== 'lobby') {
+      window.showToast && window.showToast('游戏已开始', 3000);
+      return;
+    }
+    lobbyRoomCode = code;
     subscribeSpyLobby(code); showSpyLobbyView();
-    return;
+  } catch (e) {
+    window.showToast && window.showToast('加入失败: ' + (e.message || '未知错误'), 3000);
   }
-  if (state.phase !== 'lobby') { window.showToast && window.showToast('游戏已开始', 3000); return; }
-  if (state.players.length >= 10) { window.showToast && window.showToast('房间已满（最多10人）', 2000); return; }
-  state.players.push({ name: name, user_id: uid, team: null, rank: window._currentUserRank || 0 });
-  await sb.from('rooms').update({ spy_state: state }).eq('code', code);
-  lobbyRoomCode = code; lobbyState = state;
-  subscribeSpyLobby(code); showSpyLobbyView();
 }
 
 function subscribeSpyLobby(code) {
@@ -234,7 +234,16 @@ function subscribeSpyLobby(code) {
   getSupabase().then(function(sb) {
     lobbyChannel = sb.channel('lobby_' + code)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code },
-        function(payload) { if (payload.new && payload.new.spy_state) { lobbyState = payload.new.spy_state; renderSpyLobby(); } })
+        function(payload) {
+          if (payload.new && payload.new.spy_state) {
+            lobbyState = payload.new.spy_state;
+            // 同步 rooms 表的 host_user_id 到 lobbyState，确保房主转移对所有客户端生效
+            if (payload.new.host_user_id) {
+              lobbyState.host_user_id = payload.new.host_user_id;
+            }
+            renderSpyLobby();
+          }
+        })
       .subscribe();
   });
 }
@@ -413,13 +422,19 @@ function renderLobbyGameView() {
 
 async function updatePlayerTeam(name, team) {
   if (!lobbyState || !isHost() || !lobbyRoomCode) return;
-  var p = lobbyState.players.find(function(x) { return x.name === name; });
-  if (!p) return;
-  // team=null → 取消分配, team='A'/'B' → 分配到对应队
-  p.team = team;
+  var target = (lobbyState.players || []).find(function(x) { return x.name === name; });
+  if (!target || !target.user_id) return;
   try {
-    await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
-    renderSpyLobby(); // 乐观重渲染：不依赖 Realtime 回推，避免触发器/网络异常时 UI 假死
+    var sb = await getSupabase();
+    var result = await sb.rpc('lobby_set_player_team', {
+      p_code: lobbyRoomCode, p_user_id: target.user_id, p_team: team
+    });
+    if (result.error) {
+      window.showToast && window.showToast('分配失败: ' + (result.error.message || '未知错误'), 3000);
+      return;
+    }
+    lobbyState = result.data;
+    renderSpyLobby();
   } catch (e) { window.showToast && window.showToast('分配失败: ' + e.message, 3000); }
 }
 
@@ -428,57 +443,57 @@ async function startLobbySpy() {
   var teamA = lobbyState.players.filter(function(p) { return p.team === 'A'; });
   var teamB = lobbyState.players.filter(function(p) { return p.team === 'B'; });
   if (!teamA.length || !teamB.length) { window.showToast && window.showToast('两队都需要有人', 2000); return; }
-  lobbyState.team_a = teamA.map(function(p) { return p.name; });
-  lobbyState.team_b = teamB.map(function(p) { return p.name; });
-  lobbyState.team_a_spy_name = lobbyState.team_a[Math.floor(Math.random() * lobbyState.team_a.length)];
-  lobbyState.team_b_spy_name = lobbyState.team_b[Math.floor(Math.random() * lobbyState.team_b.length)];
-  // 给所有人分配任务（扰乱视野，存索引）
-  lobbyState.tasks = {};
-  var allNames = lobbyState.players.map(function(p) { return p.name; });
-  var shuffled = window.spyTasks.slice();
-  for (var i = shuffled.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i+1)); var t = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = t; }
-  allNames.forEach(function(name, idx) {
-    lobbyState.tasks[name] = idx % shuffled.length; // 存的是 spyTasks 原始索引
-  });
-  lobbyState.phase = 'playing';
-  await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
-  renderSpyLobby();
+  try {
+    var sb = await getSupabase();
+    var result = await sb.rpc('lobby_start_spy', { p_code: lobbyRoomCode });
+    if (result.error) {
+      window.showToast && window.showToast('开始失败: ' + (result.error.message || '未知错误'), 3000);
+      return;
+    }
+    lobbyState = result.data;
+    renderSpyLobby();
+  } catch (e) { window.showToast && window.showToast('开始失败: ' + e.message, 3000); }
 }
 
 async function lobbyRevealSpies() {
   if (!lobbyState || !isHost() || !lobbyRoomCode) return;
-  lobbyState.phase = 'revealed';
-  await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
-  renderSpyLobby();
+  try {
+    var sb = await getSupabase();
+    var result = await sb.rpc('lobby_reveal_spy', { p_code: lobbyRoomCode });
+    if (result.error) {
+      window.showToast && window.showToast('揭晓失败: ' + (result.error.message || '未知错误'), 3000);
+      return;
+    }
+    lobbyState = result.data;
+    renderSpyLobby();
+  } catch (e) { window.showToast && window.showToast('揭晓失败: ' + e.message, 3000); }
 }
 
 async function resetLobbySpy() {
   if (!isHost() || !lobbyRoomCode) return;
-  lobbyState.phase = 'lobby'; lobbyState.team_a = []; lobbyState.team_b = [];
-  lobbyState.team_a_spy_name = null; lobbyState.team_b_spy_name = null; lobbyState.tasks = {};
-  lobbyState.players.forEach(function(p) { p.team = null; });
-  await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', lobbyRoomCode);
-  renderSpyLobby();
+  try {
+    var sb = await getSupabase();
+    var result = await sb.rpc('lobby_reset_spy', { p_code: lobbyRoomCode });
+    if (result.error) {
+      window.showToast && window.showToast('重置失败: ' + (result.error.message || '未知错误'), 3000);
+      return;
+    }
+    lobbyState = result.data;
+    renderSpyLobby();
+  } catch (e) { window.showToast && window.showToast('重置失败: ' + e.message, 3000); }
 }
 
 async function leaveLobbyRoom() {
-  var code = lobbyRoomCode, name = window._currentUserDisplayName;
-  if (lobbyState && code && name) {
+  var code = lobbyRoomCode, uid = (window._currentUser && window._currentUser.id) || null;
+  var wasHost = isHost();
+  if (code && uid) {
     try {
-      var remaining = (lobbyState.players || []).filter(function(p) { return p.name !== name; });
-      if (isHost() && lobbyState.phase !== 'lobby') {
-        // 游戏进行中房主离开 → 关闭房间
-        lobbyState.phase = 'closed';
-        lobbyState.players = remaining;
-      } else if (isHost() && remaining.length === 0) {
-        // 房主离开且大厅已无人 → 关闭房间
-        lobbyState.phase = 'closed';
-        lobbyState.players = [];
-      } else {
-        // 普通成员离开 / 房主在大厅离开（还有人）→ 仅移除自己，房间保持大厅以便重连
-        lobbyState.players = remaining;
+      var sb = await getSupabase();
+      var result = await sb.rpc('lobby_remove_player', { p_code: code, p_user_id: uid });
+      if (!result.error && result.data) {
+        // data = { spy_state, host_user_id, transferred }
+        lobbyState = result.data.spy_state || result.data;
       }
-      await (await getSupabase()).from('rooms').update({ spy_state: lobbyState }).eq('code', code);
     } catch (e) { /* 忽略 */ }
   }
   if (lobbyChannel) { lobbyChannel.unsubscribe(); lobbyChannel = null; }

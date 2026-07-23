@@ -293,6 +293,8 @@ valorant-civil-war/
 
 **被踢玩家提示**：V4.2.16 起采用「Realtime 广播 player_kicked + postgres_changes DELETE 双通道」兜底——被踢者本人走 DELETE 通道、其余客户端走广播通道，二者独立互不影响，可靠性较纯 DELETE 显著提升；极端网络抖动下仍可能漏提示，但双通道设计已大幅降低概率。
 
+**内鬼 Lobby 并发竞态修复（V4.2.19 起）**：原 `joinSpyLobby`/`updatePlayerTeam`/`leaveLobbyRoom`/`startLobbySpy`/`lobbyRevealSpies`/`resetLobbySpy` 全部采用 read-modify-write 模式操作 `spy_state` JSONB，并发操作会互相覆盖导致数据丢失。修复方案：新增 6 个 Postgres 原子函数（`lobby_add_player`/`lobby_remove_player`/`lobby_set_player_team`/`lobby_start_spy`/`lobby_reveal_spy`/`lobby_reset_spy`），前端通过 `supabase.rpc()` 调用，Postgres 端用 `SELECT ... FOR UPDATE` 行级锁保证原子性。`lobby_remove_player` 还内置房主转移逻辑：房主离开时自动把 `host_user_id` 移交给首个剩余玩家，无人则关闭房间。需到 Supabase SQL Editor 重新执行 `init-spy-db.sql` 让函数生效。
+
 **房间人数上限**：Supabase free tier 50 channel clients。房间频道 `room_{code}`，单个房间 ≤50 并发。当前无需提升。
 
 **超时清理**：`cleanupOldRooms()` 在 `initTeamSplitView()` 中运行（rooms 完成 >24h / 等待 >2h）。Lobby 房间无同类清理。
