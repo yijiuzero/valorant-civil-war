@@ -459,3 +459,7 @@ CREATE POLICY "players delete by host"
         AND r.host_user_id = auth.uid()
     )
   );
+
+-- 唯一约束：防止同一用户在同一房间有多个玩家行（防前端竞态）
+ALTER TABLE players ADD CONSTRAINT IF NOT EXISTS uniq_player_room_user
+  UNIQUE (room_code, user_id);
