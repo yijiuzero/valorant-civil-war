@@ -1,10 +1,10 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.2.18
+> **版本**: V4.3.0
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
-> **最后更新**: 2026-07-23
+> **最后更新**: 2026-07-25
 > **说明**：本文件现已随代码推送到 GitHub（2026-07-23 起，用户要求纳入版本管理）
 
 ---
@@ -38,7 +38,7 @@ valorant-civil-war/
 
 ### 1. 首页（Home）
 - 展示 5 个功能卡片，点击跳转对应模块
-- 副标题含版本号（`from zer0 · V4.2.18`），侧边栏底部也有
+- 副标题含版本号（`from zer0 · V4.3.0`），侧边栏底部也有
 
 ### 2. 随机选图（Wheel）
 - 13 张地图（Ascent ~ Summit，含 Corrode），支持 Ban 机制
@@ -178,6 +178,7 @@ valorant-civil-war/
 - `rooms.spy_state(JSONB)` 存储全部游戏状态
 - Realtime 频道: `lobby_{code}` 监听 UPDATE 事件
 - `isHost()` 通过 `lobbyState.host_user_id === window._currentUser.id` 动态判定（V4.2.3 起由 display_name 比较改为 user_id 比较，防昵称伪造）
+- **原子操作（V4.2.19 起）**：所有对 `spy_state` 的写入操作（加入/离开/分队/开始/揭晓/重置）均通过 `supabase.rpc()` 调用 Postgres 原子函数完成，使用 `SELECT ... FOR UPDATE` 行级锁消除并发竞态
 
 ### 任务系统
 - 12 条任务，无技能依赖（已删友军火力/战术性失误）
@@ -283,6 +284,14 @@ valorant-civil-war/
 - [x] HMAC 密钥复用 Supabase 自动注入的 `SUPABASE_SERVICE_ROLE_KEY`，**无需额外 set secret**
 - [x] Edge Function 部署：`supabase functions deploy turnstile-verify`（已于 2026-07-23 部署，线上冒烟测试 200 通过；**后续修改 index.ts 后需重新 deploy 才生效**）
 
+### 并发安全修复（V4.2.19）
+- [x] 内鬼 Lobby 并发竞态修复：原 `joinSpyLobby`/`updatePlayerTeam`/`leaveLobbyRoom`/`startLobbySpy`/`lobbyRevealSpies`/`resetLobbySpy` 全部采用 read-modify-write 模式操作 `spy_state` JSONB，并发操作会互相覆盖导致数据丢失
+- [x] 新增 6 个 Postgres 原子函数（`lobby_add_player`/`lobby_remove_player`/`lobby_set_player_team`/`lobby_start_spy`/`lobby_reveal_spy`/`lobby_reset_spy`），前端通过 `supabase.rpc()` 调用，Postgres 端用 `SELECT ... FOR UPDATE` 行级锁保证原子性
+- [x] `lobby_remove_player` 内置房主转移逻辑：房主离开时自动把 `host_user_id` 移交给首个剩余玩家，无人则关闭房间
+- [x] `lobby_start_spy` 在服务端随机选内鬼 + 分配任务，不再信任客户端 Math.random()
+- [x] players 表新增 `(room_code, user_id)` 唯一约束，防止同一用户在同一房间产生多行
+- [x] Realtime 订阅同步 `host_user_id` 到 `lobbyState`，确保房主转移对所有客户端生效
+
 ---
 
 ## 九、待办 / 已知问题
@@ -293,11 +302,14 @@ valorant-civil-war/
 
 **被踢玩家提示**：V4.2.16 起采用「Realtime 广播 player_kicked + postgres_changes DELETE 双通道」兜底——被踢者本人走 DELETE 通道、其余客户端走广播通道，二者独立互不影响，可靠性较纯 DELETE 显著提升；极端网络抖动下仍可能漏提示，但双通道设计已大幅降低概率。
 
-**内鬼 Lobby 并发竞态修复（V4.2.19 起）**：原 `joinSpyLobby`/`updatePlayerTeam`/`leaveLobbyRoom`/`startLobbySpy`/`lobbyRevealSpies`/`resetLobbySpy` 全部采用 read-modify-write 模式操作 `spy_state` JSONB，并发操作会互相覆盖导致数据丢失。修复方案：新增 6 个 Postgres 原子函数（`lobby_add_player`/`lobby_remove_player`/`lobby_set_player_team`/`lobby_start_spy`/`lobby_reveal_spy`/`lobby_reset_spy`），前端通过 `supabase.rpc()` 调用，Postgres 端用 `SELECT ... FOR UPDATE` 行级锁保证原子性。`lobby_remove_player` 还内置房主转移逻辑：房主离开时自动把 `host_user_id` 移交给首个剩余玩家，无人则关闭房间。需到 Supabase SQL Editor 重新执行 `init-spy-db.sql` 让函数生效。
-
 **房间人数上限**：Supabase free tier 50 channel clients。房间频道 `room_{code}`，单个房间 ≤50 并发。当前无需提升。
 
 **超时清理**：`cleanupOldRooms()` 在 `initTeamSplitView()` 中运行（rooms 完成 >24h / 等待 >2h）。Lobby 房间无同类清理。
+
+**已知低危问题（暂不修复）**：
+- `app.js` 多处 innerHTML 拼接未转义（当前数据为硬编码常量，无用户输入入口，无实际风险）
+- 注册/登录接口无限流（Supabase 自带限速，小群内使用风险可忽略）
+- `doSplit` 随机模式使用 `Math.random()`（娱乐场景，不影响安全）
 
 ---
 
@@ -329,6 +341,7 @@ start index.html
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| V4.2.19 | 2026-07-24 | 并发安全修复（+0.0.1）：内鬼 Lobby read-modify-write 竞态修复。新增 6 个 Postgres 原子函数（lobby_add_player/remove/set_team/start_spy/reveal/reset），前端改用 RPC + FOR UPDATE 行级锁，消除并发数据丢失。lobby_remove_player 内置房主转移逻辑。players 表加 (room_code, user_id) 唯一约束。需到 Supabase 重新执行 init-spy-db.sql |
 | V4.2.18 | 2026-07-23 | Bug修复（+0.0.1）：内鬼模式分队/开始/揭晓/重开全部失效的**真凶定位与修复**。根因在 init-spy-db.sql 的 rooms 表触发器 `trg_spy_room_update`（`check_spy_room_update` 函数）：第69行 `uid text := auth.uid()`，随后 `OLD.host_user_id = uid` 拿 UUID 列 `host_user_id` 与 text 变量做 `=` 比较，Postgres 抛 `operator does not exist: uuid = text`。该触发器是 BEFORE UPDATE 且仅 UPDATE 触发→建房间(INSERT)正常、但任何 UPDATE（分队 updatePlayerTeam、开始 startLobbySpy、桥接分配 assignSpies、揭晓、重开）全被杀→行未变→无 Realtime 事件→UI 假死（这也解释了 V4.2.17 只补 window 暴露无效）。修复：① 触发器第69行改为 `OLD.host_user_id::text = uid`（UUID 列转 text 比较）；② 前端 spy-mode.js 给 updatePlayerTeam/startLobbySpy/lobbyRevealSpies/resetLobbySpy 加乐观重渲染（update 成功后本地 renderSpyLobby，不再唯 Realtime 回推），updatePlayerTeam 补 try/catch 提示。需到 Supabase 重新执行 init-spy-db.sql 让触发器生效。缓存参数 spy-mode17→18 |
 | V4.2.17 | 2026-07-23 | Bug修复（+0.0.1）：内鬼独立房间分队失效——`renderSpyLobby` 的 A/B 卡片按钮用内联 `onclick="assignTeamFromCard(this,...)"`，但 spy-mode.js 是 ES module、该函数未挂到 window，点 A/B 直接 ReferenceError「点不动」；同时 `dragStart` 用 `e.target.dataset.name` 取值，抓取点为卡片内层 span/按钮时取不到名字、拖拽空值被 drop 守卫静默丢弃。修复：① window 暴露列表补 `assignTeamFromCard`；② dragStart 改为从抓取点向上 `closest('.spy-drag-card')` 读 `data-name`，拖拽稳定可用。缓存参数 spy-mode16→17 |
 | V4.2.16 | 2026-07-23 | 需求（+0.1.0）：内战分队「玩家被房主踢出时广播提示」。subscribeToRoom 新增 Realtime 广播监听 player_kicked/player_left；kickPlayer 踢人时先广播「X 已被房主踢出房间」再删行，其余客户端据此显示明确踢人提示（与普通离开的「X 已离开房间」区分）；被踢者本人由 postgres_changes DELETE 兜底「你已被房主移出房间」（靠 currentPlayerName 自比避免收到自己的广播）；普通成员 leaveRoom 改为退订前先广播 player_left。缓存参数 teamsplit15→16 |
@@ -371,3 +384,4 @@ start index.html
 | V3.7.0 | 2026-07-21 | Supabase Auth 昵称注册/登录模块（auth.js） |
 | V3.6.1 | 2026-07-20 | Bug修复（内鬼查看身份后无法返回、B队内鬼标签错误、变量命名歧义） |
 | V3.6.0 | 2026-07-20 | 内鬼模式支持独立手动组队（localStorage驱动）；双入口架构 |
+| V4.3.0 | 2026-07-25 | 版本号升级（V4.2.19 → V4.3.0）。审计后确认并发安全修复稳定，无其他重大问题。更新版本号至 index.html、PROJECT_CONTEXT.md |
