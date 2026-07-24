@@ -461,5 +461,7 @@ CREATE POLICY "players delete by host"
   );
 
 -- 唯一约束：防止同一用户在同一房间有多个玩家行（防前端竞态）
-ALTER TABLE players ADD CONSTRAINT IF NOT EXISTS uniq_player_room_user
+-- 唯一约束：防止同一用户在同一房间有多个玩家行（防前端竞态）
+ALTER TABLE players DROP CONSTRAINT IF EXISTS uniq_player_room_user;
+ALTER TABLE players ADD CONSTRAINT uniq_player_room_user
   UNIQUE (room_code, user_id);
