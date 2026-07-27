@@ -1,6 +1,6 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.3.1
+> **版本**: V4.3.2
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
@@ -38,7 +38,7 @@ valorant-civil-war/
 
 ### 1. 首页（Home）
 - 展示 5 个功能卡片，点击跳转对应模块
-- 副标题含版本号（`from zer0 · V4.3.1`），侧边栏底部也有
+- 副标题含版本号（`from zer0 · V4.3.2`），侧边栏底部也有
 
 ### 2. 随机选图（Wheel）
 - 13 张地图（Ascent ~ Summit，含 Corrode），支持 Ban 机制
@@ -384,4 +384,4 @@ start index.html
 | V3.7.0 | 2026-07-21 | Supabase Auth 昵称注册/登录模块（auth.js） |
 | V3.6.1 | 2026-07-20 | Bug修复（内鬼查看身份后无法返回、B队内鬼标签错误、变量命名歧义） |
 | V3.6.0 | 2026-07-20 | 内鬼模式支持独立手动组队（localStorage驱动）；双入口架构 |
-| V4.3.1 | 2026-07-25 | 版本号升级（V4.2.19 → V4.3.1）。审计后确认并发安全修复稳定，无其他重大问题。更新版本号至 index.html、PROJECT_CONTEXT.md |
+| V4.3.2 | 2026-07-25 | 版本号升级（V4.2.19 → V4.3.2）。审计后确认并发安全修复稳定，无其他重大问题。更新版本号至 index.html、PROJECT_CONTEXT.md |
