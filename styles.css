@@ -263,7 +263,7 @@ main::after{
   .agent-card{width:64px;}
   .agent-card img{width:40px;height:40px;}
   .home-card{width:140px;}
-  #globalToast{white-space:normal;text-align:center;max-width:80%;}
+  #globalToast{white-space:normal;text-align:center;max-width:80%;word-break:break-word;}
   body{overflow-y:auto;}
 }
 /* ===== 移动端:侧边栏→底部导航栏 ===== */
@@ -285,7 +285,7 @@ main::after{
   .nav-item{
     flex-direction:column;padding:4px 6px;
     border-left:none;border-top:2px solid transparent;
-    gap:1px;font-size:10px;min-width:0;flex:1;justify-content:center;
+    gap:2px;font-size:11px;min-width:0;flex:1;justify-content:center;
     text-align:center;
   }
   .nav-item.active{
@@ -295,7 +295,7 @@ main::after{
   .nav-icon{font-size:20px;width:auto;}
   .nav-item span:not(.nav-icon){display:inline;}
 
-  main{padding:20px 12px 76px;min-height:calc(100dvh - 60px);}
+  main{padding:20px 12px 80px;min-height:calc(100dvh - 60px);}
   .content-layer{max-width:100%;}
   .module-title{font-size:18px;}
   .module-sub{font-size:12px;margin-bottom:20px;}
@@ -317,9 +317,10 @@ main::after{
   .home-card-icon{font-size:32px;}
 
   #globalToast{bottom:76px;}
+  #themeToggle{right:12px;top:auto;bottom:76px;}
 }
 @media(max-width:420px){
-  main{padding:16px 8px 72px;}
+  main{padding:16px 8px 80px;}
   .module-title{font-size:16px;}
   .module-sub{font-size:11px;margin-bottom:16px;}
   .map-card{width:64px;height:46px;}
@@ -327,7 +328,7 @@ main::after{
   .map-result-card{width:130px;height:88px;}
   .map-result-card .mr-label{font-size:12px;}
   .btn-spin{padding:10px 32px;font-size:15px;margin-top:18px;}
-  .home-card{width:120px;padding:16px 10px;}
+  .home-card{width:calc(50% - 8px);max-width:140px;padding:16px 10px;}
   .home-card-icon{font-size:28px;}
   .home-card-title{font-size:13px;}
   .home-card-desc{font-size:11px;}
@@ -960,7 +961,7 @@ main::after{
   .spy-setup-card{padding:16px 12px;}
   .spy-setup-head{font-size:15px;flex-wrap:wrap;gap:8px;}
   .spy-player-row{font-size:13px;padding:6px 10px;flex-wrap:wrap;gap:6px;}
-  .spy-team-btn{width:32px;height:28px;font-size:12px;}
+  .spy-team-btn{width:44px;height:44px;font-size:14px;}
   .spy-team-col{padding:10px;}
   .spy-team-member{font-size:12px;padding:4px 10px;}
   .spy-team-label{font-size:13px;}
@@ -1052,10 +1053,10 @@ main::after{
   .auth-sidebar-entry{margin:0;padding:6px 10px;font-size:11px;border-style:solid;flex:0 0 auto;}
   .auth-user-display{flex-direction:row;align-items:center;gap:6px;width:auto;padding:0 8px;margin-bottom:0;}
   .auth-user-name{font-size:11px;}
-  .auth-rankedit-btn{height:28px;font-size:11px;padding:0 8px;flex:0 0 auto;}
+  .auth-rankedit-btn{height:44px;font-size:13px;padding:0 12px;flex:0 0 auto;}
   .auth-user-actions{gap:8px;}
   /* 登录弹窗 */
-  .auth-modal{max-width:95vw;padding:24px 18px;}
+  .auth-modal{max-width:95vw;padding:24px 18px;max-height:90vh;overflow-y:auto;}
   .auth-title-text{font-size:18px;}
   .auth-input{font-size:14px;min-height:46px;}
   .auth-submit-btn{min-height:46px;font-size:15px;}

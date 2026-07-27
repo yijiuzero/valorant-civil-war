@@ -315,7 +315,8 @@ function renderSpyLobby() {
       var actions = host ? '<span class="spy-team-btn-row">' + btnA + btnB + '</span>' : '';
       var rk = p.rank || 0;
       var rankTag = (rk && window.getRankName) ? ' <span class="spy-rank-tag">' + window.getRankName(rk) + '</span>' : '';
-      return '<div class="spy-drag-card spy-drag-card-assign" draggable="' + (host ? 'true' : 'false') + '" data-name="' + esc(p.name) + '" ondragstart="dragStart(event)">' +
+      var isMobile = window.matchMedia('(max-width: 640px)').matches;
+      return '<div class="spy-drag-card spy-drag-card-assign' + (isMobile ? ' spy-drag-card-mobile' : '') + '" draggable="' + (host && !isMobile ? 'true' : 'false') + '" data-name="' + esc(p.name) + '" ondragstart="dragStart(event)">' +
         '<span class="spy-drag-name">' + esc(p.name) + rankTag + '</span>' + actions + '</div>';
     }
 
