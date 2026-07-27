@@ -355,7 +355,7 @@ function renderLobbyGameView() {
   }
   var myName = window._currentUserDisplayName || '';
   var isSpy = (myName === lobbyState.team_a_spy_name || myName === lobbyState.team_b_spy_name);
-  var teamLabel = (lobbyState.team_a && lobbyState.team_a.indexOf(myName) !== -1) ? '🔴 A队' : '🔵 B队';
+  var teamLabel = (lobbyState.team_a && lobbyState.team_a.some(function(p) { return p.name === myName; })) ? '🔴 A队' : '🔵 B队';
   function rankTagOf(name) {
     var rk = 0; var ps = lobbyState.players || [];
     for (var i = 0; i < ps.length; i++) { if (ps[i].name === name) { rk = ps[i].rank || 0; break; } }
