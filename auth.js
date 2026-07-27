@@ -11,11 +11,11 @@ async function getSupabase() {
 }
 
 function toEmail(nickname) {
-  const slug = nickname.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (slug) return slug + AUTH_DOMAIN;
+  const clean = nickname.trim().toLowerCase();
+  const slug = clean.replace(/[^a-z0-9]/g, '');
   // 纯中文/无ASCII：用确定性短码，相同昵称永远相同邮箱
   var h = 0;
-  for (var i = 0; i < nickname.length; i++) h = ((h << 5) - h + nickname.charCodeAt(i)) | 0;
+  for (var i = 0; i < clean.length; i++) h = ((h << 5) - h + clean.charCodeAt(i)) | 0;
   return 'u' + Math.abs(h).toString(36) + AUTH_DOMAIN;
 }
 function userDisplayName(user) {
