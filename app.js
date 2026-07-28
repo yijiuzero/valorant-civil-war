@@ -13,7 +13,7 @@ function stopMapSpin(resetButtons = true) {
     if (s) s.disabled = false;
     document.querySelectorAll('.mc-btn').forEach(b => b.disabled = false);
   }
-  document.querySelectorAll('.map-card').forEach(c => c.classList.remove('highlight'));
+  document.querySelectorAll('.map-card').forEach(c => c.classList.remove('highlight','spotlight','loser-fade'));
 }
 
 function stopAgentSpin(resetButtons = true) {
@@ -39,15 +39,20 @@ function stopChallenge() {
   }
 }
 
-// 全局吐司提示
+// 全局吐司提示（支持手动关闭）
 function showToast(msg, duration) {
   if (duration === undefined) duration = 2000;
   const t = document.getElementById('globalToast');
   if (!t) return;
   if (toastTimeout) { clearTimeout(toastTimeout); toastTimeout = null; }
-  t.innerText = msg;
+  t.innerHTML = msg + '<span class="toast-close" onclick="hideToast()">✕</span>';
   t.style.opacity = '1';
   toastTimeout = setTimeout(() => { t.style.opacity = '0'; toastTimeout = null; }, duration);
+}
+function hideToast() {
+  const t = document.getElementById('globalToast');
+  if (t) t.style.opacity = '0';
+  if (toastTimeout) { clearTimeout(toastTimeout); toastTimeout = null; }
 }
 
 // ---------- 模块切换 ----------
@@ -70,10 +75,26 @@ function switchModule(mod) {
     if (active) i.setAttribute('aria-current', 'page');
     else i.removeAttribute('aria-current');
   });
-  contentLayers.forEach(l => l.style.display = 'none');
+  // 模块切换淡出→淡入过渡
+  contentLayers.forEach(l => {
+    if (l.style.display !== 'none') {
+      l.style.transition = 'opacity 0.15s';
+      l.style.opacity = '0';
+      setTimeout(() => { l.style.display = 'none'; }, 150);
+    }
+  });
   const tl = document.getElementById('module-' + mod);
-  if (tl) tl.style.display = '';
-  if (mod === 'home') mainArea.style.backgroundImage = 'url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg)';
+  if (tl) {
+    tl.style.display = '';
+    tl.style.opacity = '0';
+    tl.style.transition = 'opacity 0.25s';
+    requestAnimationFrame(() => { tl.style.opacity = '1'; });
+  }
+  if (mod === 'home') {
+    const bg = document.getElementById('heroBg');
+    if (bg) bg.style.backgroundImage = 'url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg)';
+    mainArea.style.backgroundImage = '';
+  }
   else if (mod === 'wheel') { if (!mapCardsRendered) { renderMapCards(); mapCardsRendered = true; } }
   else if (mod === 'agent') { if (!agentsRendered) { renderAgents(); agentsRendered = true; } }
   else if (mod === 'teamsplit') initTeamSplitView();
@@ -141,7 +162,7 @@ function drawMaps() {
   document.querySelectorAll('.mc-btn').forEach(x => x.disabled = true);
   const rd = document.getElementById('mapResults');
   if (rd) rd.innerHTML = '';
-  document.querySelectorAll('.map-card').forEach(c => c.classList.remove('highlight'));
+  document.querySelectorAll('.map-card').forEach(c => { c.classList.remove('highlight','spotlight','loser-fade'); });
   const dur = 1500, tickMs = 80;
   let st, lastTick = -tickMs;
   function tick(now) {
@@ -160,10 +181,25 @@ function drawMaps() {
       const sw = shuffleArray(p);
       const w = sw.slice(0, n);
       document.querySelectorAll('.map-card').forEach(c => c.classList.remove('highlight'));
-      w.forEach(x => { const c = document.querySelector(`.map-card[data-map="${x.en}"]`); if (c) c.classList.add('highlight'); });
-      if (w.length) { mainArea.style.backgroundImage = `url(${w[0].img})`; showMapResults(w); }
+      // 仪式：先让所有非选中地图淡出，再让选中地图聚光灯
+      const losers = Array.from(document.querySelectorAll('.map-card:not(.banned)')).filter(c => !w.some(x => x.en === c.dataset.map));
+      losers.forEach(c => c.classList.add('loser-fade'));
+      w.forEach(x => { const c = document.querySelector(`.map-card[data-map="${x.en}"]`); if (c) { c.classList.remove('loser-fade'); c.classList.add('spotlight'); } });
+      // 延迟揭晓结果卡片，预加载背景图
+      setTimeout(() => {
+        w.forEach(x => { const c = document.querySelector(`.map-card[data-map="${x.en}"]`); if (c) c.classList.remove('spotlight'); });
+        if (w.length) { 
+          // 预加载背景图
+          const bgImg = new Image();
+          bgImg.onload = () => { mainArea.style.backgroundImage = `url(${w[0].img})`; showMapResults(w); };
+          bgImg.onerror = () => { mainArea.style.backgroundImage = `url(${w[0].img})`; showMapResults(w); };
+          bgImg.src = w[0].img;
+        }
+      }, 800);
       b.disabled = false;
       document.querySelectorAll('.mc-btn').forEach(x => x.disabled = false);
+      // "再来一次" 按钮文本
+      if (b) b.textContent = '再来一次 🔄';
     } else {
       mapTimer = requestAnimationFrame(tick);
     }
@@ -179,7 +215,7 @@ function showMapResults(w) {
     w.forEach((m, i) => {
       setTimeout(() => {
         const e = c.querySelector(`[data-map="${m.en}"]`);
-        if (e) { e.style.backgroundImage = `url(${m.img})`; e.classList.add('show'); }
+        if (e) { e.style.backgroundImage = `url(${m.img})`; e.classList.add('animate-in'); }
       }, i * 150);
     });
   }, 50);
@@ -320,6 +356,7 @@ function spinChallenge() {
     li = ci;
     if (el < maxDuration && pg < 1) setTimeout(() => requestAnimationFrame(tick), iv);
     else {
+      if (el >= maxDuration) showToast('抽取超时，请重试', 2000);
       if (t) { t.textContent = challengeRules[ti]; t.className = 'machine-text result'; }
       challengeHistory.unshift(challengeRules[ti]);
       if (challengeHistory.length > 20) challengeHistory.pop();
@@ -377,37 +414,66 @@ function toggleTheme() {
 function updateThemeToggleLabel() {
   const b = document.getElementById('themeToggle');
   if (!b) return;
-  b.textContent = document.documentElement.classList.contains('theme-dark') ? '☀️' : '🌙';
+  const isDark = document.documentElement.classList.contains('theme-dark');
+  b.innerHTML = isDark
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
 }
 
 async function init() {
-  applyThemeFromStorage();
-  const tb = document.getElementById('themeToggle');
-  if (tb) tb.addEventListener('click', toggleTheme);
-  navItems = Array.from(document.querySelectorAll('.nav-item'));
-  contentLayers = Array.from(document.querySelectorAll('.content-layer'));
-  mainArea = document.getElementById('mainArea');
-  initMapUI();
-  initAgentUI();
-  navItems.forEach(i => i.addEventListener('click', () => switchModule(i.dataset.module)));
-  // 键盘可达性：为 role=button + tabindex 的非原生元素（导航项/首页卡片/内鬼入口）提供 Enter/Space 激活
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
-      const el = e.target.closest && e.target.closest('[role="button"][tabindex]');
-      if (el) { e.preventDefault(); el.click(); }
-    } else if (e.key === 'Escape') {
-      const ov = document.getElementById('authOverlay');
-      if (ov && ov.style.display !== 'none') {
-        ov.style.display = 'none';
-        const entry = document.getElementById('authSidebarEntry');
-        if (entry) entry.focus();
+  try {
+    applyThemeFromStorage();
+    const tb = document.getElementById('themeToggle');
+    if (tb) tb.addEventListener('click', toggleTheme);
+    navItems = Array.from(document.querySelectorAll('.nav-item'));
+    contentLayers = Array.from(document.querySelectorAll('.content-layer'));
+    mainArea = document.getElementById('mainArea');
+    initMapUI();
+    initAgentUI();
+    navItems.forEach(i => i.addEventListener('click', () => switchModule(i.dataset.module)));
+    
+    // 网络状态检测
+    function updateNetStatus() {
+      const el = document.getElementById('netStatus');
+      if (!el) return;
+      if (navigator.onLine) {
+        el.classList.remove('offline', 'visible');
+      } else {
+        el.textContent = '网络已断开，部分功能不可用';
+        el.classList.add('offline', 'visible');
       }
     }
-  });
-  switchModule('home');
-  // 静默检测已有登录 session（不弹窗）
-  if (typeof initAuth === 'function') {
-    try { await initAuth(); } catch (e) { /* optional */ }
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+    
+    // 页面可见性变化：暂停/恢复动画
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { stopMapSpin(false); stopAgentSpin(false); }
+    });
+    
+    // 键盘可达性
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        const el = e.target.closest && e.target.closest('[role="button"][tabindex]');
+        if (el) { e.preventDefault(); el.click(); }
+      } else if (e.key === 'Escape') {
+        const ov = document.getElementById('authOverlay');
+        if (ov && ov.style.display !== 'none') {
+          ov.style.display = 'none';
+          const entry = document.getElementById('authSidebarEntry');
+          if (entry) entry.focus();
+        }
+        hideToast();
+      }
+    });
+    
+    switchModule('home');
+    if (typeof initAuth === 'function') {
+      try { await initAuth(); } catch (e) { /* optional */ }
+    }
+  } catch (e) {
+    console.error('初始化失败:', e);
+    showToast('页面初始化失败，请刷新重试', 5000);
   }
 }
 

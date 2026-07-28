@@ -41,11 +41,20 @@ function showTeamsplitView(view) {
   const spyEl = document.getElementById('teamsplitSpy');
   if (createEl) createEl.style.display = 'none';
   if (lobbyEl) lobbyEl.style.display = 'none';
-  if (resultEl) resultEl.style.display = 'none';
+  if (resultEl) { resultEl.style.display = 'none'; resultEl.classList.remove('slide-left','slide-right'); }
   if (spyEl) spyEl.style.display = 'none';
   if (view === 'create' && createEl) createEl.style.display = '';
   else if (view === 'lobby' && lobbyEl) lobbyEl.style.display = '';
-  else if (view === 'result' && resultEl) resultEl.style.display = '';
+  else if (view === 'result' && resultEl) {
+    resultEl.style.display = '';
+    // 触发对决入场动画
+    const teamA = resultEl.querySelector('.teamsplit-team:first-child');
+    const teamB = resultEl.querySelector('.teamsplit-team:last-child');
+    const vs = resultEl.querySelector('.teamsplit-vs');
+    if (teamA) { teamA.classList.remove('slide-left'); void teamA.offsetWidth; teamA.classList.add('slide-left'); }
+    if (teamB) { teamB.classList.remove('slide-right'); void teamB.offsetWidth; teamB.classList.add('slide-right'); }
+    if (vs) { vs.classList.remove('animate-vs'); void vs.offsetWidth; vs.classList.add('animate-vs'); }
+  }
 }
 
 function escapeHtml(str) {
@@ -80,7 +89,27 @@ function updatePlayerList(players) {
   currentPlayers = players || [];
   const isHost = isCurrentUserHost();
   count.textContent = players.length;
-  list.innerHTML = players.map(function(p) {
+  if (players.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-text">还没有人加入<br>分享房间码给好友吧</div></div>';
+    list.style.display = 'flex';
+    list.style.alignItems = 'center';
+    list.style.justifyContent = 'center';
+  } else {
+    list.innerHTML = players.map(function(p) {
+      const cls = p.id === currentPlayerId ? ' self' : '';
+      const hostBadge = p.user_id === currentHostUserId ? '<span class="teamsplit-host-badge">房主</span>' : '';
+      const pRank = p.rank || 0;
+      const rankIcon = pRank ? '<img class="teamsplit-rank-icon" src="' + getRankIcon(pRank) + '" alt="' + getRankName(pRank) + '" title="' + getRankName(pRank) + '" loading="lazy">' : '';
+      let kickBtn = '';
+      if (isHost && p.id !== currentPlayerId) {
+        kickBtn = '<button class="teamsplit-kick-btn" data-pid="' + p.id + '" title="踢出玩家">&times;</button>';
+      }
+      return '<div class="teamsplit-player-chip' + cls + '">' + rankIcon + escapeHtml(p.name) + hostBadge + kickBtn + '</div>';
+    }).join('');
+    list.style.display = '';
+    list.style.alignItems = '';
+    list.style.justifyContent = '';
+  }
     const cls = p.id === currentPlayerId ? ' self' : '';
     const hostBadge = p.user_id === currentHostUserId ? '<span class="teamsplit-host-badge">房主</span>' : '';
     const pRank = p.rank || 0;

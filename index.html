@@ -4,50 +4,140 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <meta name="color-scheme" content="light dark">
-<title>无畏契约 · 战术转盘 · V4.4.0</title>
+<meta name="theme-color" content="#0f1923" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#eff1f5" media="(prefers-color-scheme: light)">
+<title>无畏契约 · 战术转盘 · V4.5.0</title>
 
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=16">
 </head>
 <body>
+<a href="#mainArea" class="skip-link">跳转到主内容</a>
+<div id="netStatus" class="net-status"></div>
 
 <nav class="sidebar">
   <div class="sidebar-logo">
-    <h1>⚡ VALORANT</h1>
-    <span>战术工具集</span>
+    <div class="logo-mark">V</div>
+    <div class="logo-text">
+      <h1>VALORANT</h1>
+      <span>战术工具集</span>
+    </div>
   </div>
   <ul class="nav-list">
-    <li class="nav-item active" data-module="home" role="button" tabindex="0" aria-label="首页"><span class="nav-icon">🏠</span><span>首页</span></li>
-    <li class="nav-item" data-module="wheel" role="button" tabindex="0" aria-label="随机选图"><span class="nav-icon">🎯</span><span>随机选图</span></li>
-    <li class="nav-item" data-module="agent" role="button" tabindex="0" aria-label="随机特工"><span class="nav-icon">🧩</span><span>随机特工</span></li>
-    <li class="nav-item" data-module="stats" role="button" tabindex="0" aria-label="内战专用"><span class="nav-icon">📊</span><span>内战专用</span></li>
-    <li class="nav-item" data-module="teamsplit" role="button" tabindex="0" aria-label="内战分队"><span class="nav-icon">⚔️</span><span>内战分队</span><span class="nav-lock">🔒</span></li>
-    <li class="nav-item" data-module="spy" role="button" tabindex="0" aria-label="内鬼模式"><span class="nav-icon">🕵️</span><span>内鬼模式</span><span class="nav-lock">🔒</span></li>
+    <li class="nav-item active" data-module="home" role="button" tabindex="0" aria-label="首页">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>首页</span>
+    </li>
+    <li class="nav-item" data-module="wheel" role="button" tabindex="0" aria-label="随机选图">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      <span>随机选图</span>
+    </li>
+    <li class="nav-item" data-module="agent" role="button" tabindex="0" aria-label="随机特工">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>随机特工</span>
+    </li>
+    <li class="nav-item" data-module="stats" role="button" tabindex="0" aria-label="内战专用">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      <span>内战专用</span>
+    </li>
+    <li class="nav-item" data-module="teamsplit" role="button" tabindex="0" aria-label="内战分队">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="9" x2="9" y2="5"/><line x1="7" y1="7" x2="3" y2="3"/><line x1="10" y1="5" x2="5" y2="10"/></svg>
+      <span>内战分队</span><span class="nav-lock">🔒</span>
+    </li>
+    <li class="nav-item" data-module="spy" role="button" tabindex="0" aria-label="内鬼模式">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>内鬼模式</span><span class="nav-lock">🔒</span>
+    </li>
   </ul>
-  <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">🔑 登录 / 注册</div>
-  <div class="auth-user-display" id="authUserDisplay" style="display:none;"></div>
+  <div class="sidebar-player" id="sidebarPlayer" style="display:none;">
+    <div class="player-avatar">V</div>
+    <div class="player-info">
+      <div class="player-name" id="playerName">-</div>
+      <div class="player-rank" id="playerRank">-</div>
+    </div>
+      <div class="player-actions">
+        <button class="player-rankedit" onclick="openRankEdit()" title="修改段位">✎</button>
+        <button class="player-logout" onclick="doSignOut()" title="退出登录">⏻</button>
+      </div>
+  </div>
+  <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">登录 / 注册</div>
   <div class="sidebar-footer">
-    <div style="opacity:0.6;">from zer0 · V4.4.0</div>
-    <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">问题/需求反馈</a>
+    <span class="footer-ver">V4.5.0</span>
+    <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">反馈</a>
   </div>
 </nav>
 
 <main id="mainArea">
   <!-- 首页内容 -->
-  <div class="content-layer" id="module-home">
-    <div class="module-title">🏠 无畏契约 · 战术工具集</div>
-<div class="module-sub">专为云南瓦搭群打造 | from zer0 · V4.4.0</div>
-    <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:20px;">
-      <div class="home-card" role="button" tabindex="0" onclick="switchModule('wheel')"><div class="home-card-icon">🎯</div><div class="home-card-title">随机选图</div><div class="home-card-desc">随机抽取地图</div></div>
-      <div class="home-card" role="button" tabindex="0" onclick="switchModule('agent')"><div class="home-card-icon">🧩</div><div class="home-card-title">随机特工</div><div class="home-card-desc">随机抽取特工</div></div>
-      <div class="home-card" role="button" tabindex="0" onclick="switchModule('stats')"><div class="home-card-icon">📊</div><div class="home-card-title">内战专用</div><div class="home-card-desc">内战转盘</div></div>
-      <div class="home-card" role="button" tabindex="0" onclick="switchModule('teamsplit')"><div class="home-card-icon">⚔️</div><div class="home-card-title">内战分队</div><div class="home-card-desc">10人随机分队</div></div>
-      <div class="home-card" role="button" tabindex="0" onclick="switchModule('spy')"><div class="home-card-icon">🕵️</div><div class="home-card-title">内鬼模式</div><div class="home-card-desc">安插内鬼 · 秘密任务</div></div>
+  <div class="content-layer home-hero" id="module-home">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-badge">V4.5.0 · 云南瓦搭群</div>
+      <div class="hero-title">无畏契约 · 战术工具集</div>
+      <div class="hero-desc">为内战而生的随机工具 · 选图 · 选特工 · 分队 · 内鬼</div>
+      <div class="hero-cards">
+        <div class="hero-card" role="button" tabindex="0" onclick="switchModule('wheel')">
+          <div class="hero-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+          <div class="hero-card-title">随机选图</div>
+          <div class="hero-card-desc">随机抽取地图，支持 Ban 机制</div>
+          <div class="hero-card-preview">
+            <span class="preview-tag">13 张地图</span>
+            <span class="preview-tag">Ban 机制</span>
+          </div>
+        </div>
+        <div class="hero-card" role="button" tabindex="0" onclick="switchModule('agent')">
+          <div class="hero-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="hero-card-title">随机特工</div>
+          <div class="hero-card-desc">按角色筛选，一键随机抽取</div>
+          <div class="hero-card-preview">
+            <span class="preview-tag">30 特工</span>
+            <span class="preview-tag">冠军阵容</span>
+          </div>
+        </div>
+        <div class="hero-card" role="button" tabindex="0" onclick="switchModule('stats')">
+          <div class="hero-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+          </div>
+          <div class="hero-card-title">内战专用</div>
+          <div class="hero-card-desc">挑战规则转盘，随机整活</div>
+          <div class="hero-card-preview">
+            <span class="preview-tag">50+ 规则</span>
+            <span class="preview-tag">历史记录</span>
+          </div>
+        </div>
+        <div class="hero-card" role="button" tabindex="0" onclick="switchModule('teamsplit')">
+          <div class="hero-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg>
+          </div>
+          <div class="hero-card-title">内战分队</div>
+          <div class="hero-card-desc">10 人线上房间，段位 / 随机分队</div>
+          <div class="hero-card-preview">
+            <span class="preview-tag">需登录</span>
+            <span class="preview-tag">在线 Lobby</span>
+          </div>
+        </div>
+        <div class="hero-card" role="button" tabindex="0" onclick="switchModule('spy')">
+          <div class="hero-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="hero-card-title">内鬼模式</div>
+          <div class="hero-card-desc">秘密任务 · 身份翻转 · 戏剧揭晓</div>
+          <div class="hero-card-preview">
+            <span class="preview-tag">需登录</span>
+            <span class="preview-tag">12 个任务</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- 随机选图内容 -->
   <div class="content-layer" id="module-wheel" style="display:none;">
-    <div class="module-title">🎯 随机选图</div>
+    <div class="module-title">随机选图</div>
     <div class="module-sub">选择数量,点击抽取,随机选取无畏契约地图</div>
     <div class="map-count">
       <span>抽取数量:</span>
@@ -68,7 +158,7 @@
 
   <!-- 随机特工内容 -->
   <div class="content-layer" id="module-agent" style="display:none;">
-    <div class="module-title">🧩 随机特工</div>
+    <div class="module-title">随机特工</div>
     <div class="module-sub">筛选角色,选择数量,点击抽取</div>
     <div class="agent-filters" id="agentFilters">
       <button class="af-btn active" data-role="all">全部</button>
@@ -94,7 +184,7 @@
   
   <!-- 内战分队 -->
   <div class="content-layer" id="module-teamsplit" style="display:none;">
-    <div class="module-title">⚔️ 内战分队</div>
+    <div class="module-title">内战分队</div>
     <div class="module-sub">创建或加入房间，凑齐 10 人后随机分队</div>
     <div class="teamsplit-room" id="teamsplitRoom">
       <div class="teamsplit-create teamsplit-panel" id="teamsplitCreate">
@@ -273,7 +363,7 @@
   </div>
   <!-- 内战专用 - 转盘 -->
   <div class="content-layer" id="module-stats" style="display:none;">
-    <div class="module-title">📊 内战专用</div>
+    <div class="module-title">内战专用</div>
     <div class="module-sub">内战转盘 · 随机抽取挑战规则</div>
     <div class="challenge-machine">
       <div class="machine-deco"><span class="machine-dot"></span><span class="machine-dot"></span><span class="machine-dot"></span></div>
@@ -292,7 +382,7 @@
   </div>
   <!-- 独立内鬼模式 -->
   <div class="content-layer" id="module-spy" style="display:none;">
-    <div class="module-title">🕵️ 内鬼模式</div>
+    <div class="module-title">内鬼模式</div>
     <div class="module-sub">可选手动组队或从已有分队房间进入</div>
 
     <!-- 入口选择 -->
@@ -331,20 +421,22 @@
     <div id="spyLobbyView" style="display:none;width:100%;max-width:660px;"></div>
   </div>
 </main>
-<button id="themeToggle" aria-label="切换主题" title="切换主题">🌙</button>
+<button id="themeToggle" aria-label="切换主题" title="切换主题">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
 <div id="globalToast" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <script src="app-data.js?v=9"></script>
   <script type="module" src="auth.js?v=25"></script>
-  <script type="module" src="teamsplit.js?v=16"></script>
-  <script type="module" src="spy-mode.js?v=18"></script>
-  <script defer src="app.js?v=11"></script>
+  <script type="module" src="teamsplit.js?v=17"></script>
+  <script type="module" src="spy-mode.js?v=19"></script>
+  <script defer src="app.js?v=13"></script>
 
 <!-- 登录弹窗 -->
 <div class="auth-overlay" id="authOverlay" role="dialog" aria-modal="true" aria-labelledby="authTitle" style="display:none;" onclick="if(event.target===this)toggleAuthOverlay()">
   <div class="auth-card">
     <div class="auth-close" onclick="toggleAuthOverlay()">✕</div>
-    <div class="auth-logo">🕹️</div>
+    <div class="auth-logo">V</div>
     <div class="auth-title" id="authTitle">欢迎回来</div>
     <div class="auth-subtitle" id="authSubtitle">用昵称和密码登录</div>
     <div class="auth-form">
@@ -374,7 +466,7 @@
 <div class="auth-overlay" id="rankEditOverlay" role="dialog" aria-modal="true" aria-labelledby="rankEditTitle" style="display:none;" onclick="if(event.target===this)closeRankEdit()">
   <div class="auth-card">
     <div class="auth-close" onclick="closeRankEdit()">✕</div>
-    <div class="auth-logo">🎖️</div>
+    <div class="auth-logo">V</div>
     <div class="auth-title" id="rankEditTitle">修改段位</div>
     <div class="auth-subtitle" id="rankEditSubtitle">更新你的当前段位</div>
     <div class="auth-form">

@@ -128,6 +128,9 @@ function renderSpyPlaying() {
 async function revealSpies() {
   if (!isSpyHost() || !spyState || !spyRoomCode) return;
   spyState.phase = 'revealed'; spyState.revealed = true;
+  // 仪式感延迟：先揭晓中...
+  renderSpyAssigning();
+  await new Promise(r => setTimeout(r, 1200));
   try {
     await (await getSupabase()).from('rooms').update({ spy_state: spyState }).eq('code', spyRoomCode);
     renderSpyRevealed();
@@ -146,6 +149,11 @@ function renderSpyRevealed() {
   var at = document.getElementById('revealTaskA'), bt = document.getElementById('revealTaskB');
   if (at && taskA) at.textContent = taskA.icon + ' ' + taskA.title + '：' + taskA.desc;
   if (bt && taskB) bt.textContent = taskB.icon + ' ' + taskB.title + '：' + taskB.desc;
+  // 触发动画
+  var cols = document.querySelectorAll('.spy-reveal-col');
+  cols.forEach(function(col) { col.classList.remove('reveal-animate'); void col.offsetWidth; col.classList.add('reveal-animate'); });
+  var names = document.querySelectorAll('.spy-reveal-name');
+  names.forEach(function(n) { n.classList.remove('spy-name-flash'); void n.offsetWidth; n.classList.add('spy-name-flash'); });
 }
 
 function findPlayerById(id) {
@@ -262,7 +270,15 @@ function showSpyLobbyView() {
 }
 
 // ===== 拖拽分队 =====
-function allowDrop(e) { e.preventDefault(); }
+function allowDrop(e) { 
+  e.preventDefault(); 
+  var col = e.target && e.target.closest ? e.target.closest('.spy-drag-col') : null;
+  if (col) col.classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  var col = e.target && e.target.closest ? e.target.closest('.spy-drag-col') : null;
+  if (col) col.classList.remove('drag-over');
+}
 
 function dragStart(e) {
   var card = (e.target && e.target.closest) ? e.target.closest('.spy-drag-card') : null;
@@ -326,11 +342,11 @@ function renderSpyLobby() {
       '<div style="font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:12px;">群友登录后在"内鬼模式→加入线上房间"输入房间码</div>' +
       (host
         ? '<div class="spy-drag-area">' +
-          '<div class="spy-drag-col spy-drag-unassigned" ondragover="allowDrop(event)" ondrop="handleDropTeam(event,null)">' +
+          '<div class="spy-drag-col spy-drag-unassigned" ondragover="allowDrop(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropTeam(event,null)">' +
             '<div class="spy-drag-label">待分配</div><div class="spy-drag-list">' + unassigned.map(dragCard).join('') + '</div></div>' +
-          '<div class="spy-drag-col team-a" ondragover="allowDrop(event)" ondrop="handleDropTeam(event,\'A\')">' +
+          '<div class="spy-drag-col team-a" ondragover="allowDrop(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropTeam(event,\'A\')">' +
             '<div class="spy-drag-label">🔴 A队 (' + teamA.length + '人)</div><div class="spy-drag-list">' + teamA.map(dragCard).join('') + '</div></div>' +
-          '<div class="spy-drag-col team-b" ondragover="allowDrop(event)" ondrop="handleDropTeam(event,\'B\')">' +
+          '<div class="spy-drag-col team-b" ondragover="allowDrop(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropTeam(event,\'B\')">' +
             '<div class="spy-drag-label">🔵 B队 (' + teamB.length + '人)</div><div class="spy-drag-list">' + teamB.map(dragCard).join('') + '</div></div>' +
           '</div>'
         : '<div class="spy-drag-area">' +
@@ -373,12 +389,12 @@ function renderLobbyGameView() {
     var taskB = lobbyState.tasks && lobbyState.tasks[lobbyState.team_b_spy_name];
     var taskBD = (taskB != null && window.spyTasks[taskB]) ? window.spyTasks[taskB].icon + ' ' + window.spyTasks[taskB].title : '';
     // 所有玩家任务列表
-    var allTaskRows = (lobbyState.players || []).map(function(p) {
+    var allTaskRows = (lobbyState.players || []).map(function(p, idx) {
       var isSpyP = (p.name === lobbyState.team_a_spy_name || p.name === lobbyState.team_b_spy_name);
       var tIdx = lobbyState.tasks && lobbyState.tasks[p.name];
       var tInfo = (tIdx != null && window.spyTasks[tIdx]) ? window.spyTasks[tIdx].icon + ' ' + window.spyTasks[tIdx].title : '-';
       var teamEmoji = p.team === 'A' ? '🔴' : '🔵';
-      return '<div class="spy-reveal-row' + (isSpyP ? ' spy-revealed-spy' : '') + '"><span class="spy-reveal-row-team">' + teamEmoji + '</span><span class="spy-reveal-row-name">' + esc(p.name) + rankTagOf(p.name) + (isSpyP ? ' 🕵️' : '') + '</span><span class="spy-reveal-row-task">' + tInfo + '</span></div>';
+      return '<div class="spy-reveal-row' + (isSpyP ? ' spy-revealed-spy spy-row-reveal' : ' spy-row-reveal') + '" style="animation-delay:' + (idx * 0.1 + 0.5) + 's;"><span class="spy-reveal-row-team">' + teamEmoji + '</span><span class="spy-reveal-row-name">' + esc(p.name) + rankTagOf(p.name) + (isSpyP ? ' 🕵️' : '') + '</span><span class="spy-reveal-row-task">' + tInfo + '</span></div>';
     }).join('');
 
     el.innerHTML = codeHtml +
@@ -533,6 +549,7 @@ window.createSpyLobby = createSpyLobby;
 window.joinSpyLobby = joinSpyLobby;
 window.updatePlayerTeam = updatePlayerTeam;
 window.allowDrop = allowDrop;
+window.handleDragLeave = handleDragLeave;
 window.dragStart = dragStart;
 window.handleDropTeam = handleDropTeam;
 window.startLobbySpy = startLobbySpy;

@@ -190,35 +190,27 @@ async function handleAuthSubmit() {
 
 function updateSidebar() {
   const entry = document.getElementById('authSidebarEntry');
-  const display = document.getElementById('authUserDisplay');
+  const player = document.getElementById('sidebarPlayer');
   if (!entry) return;
   // 先同步最新用户态（_currentUser/_currentUserRank 等），再用其渲染，
   // 避免「用旧 rank 拼文本、最后才更新 rank」的竞态（刷新后段位回退为未设置的根因）
   syncCurrentUser();
-    if (currentUser) {
-      entry.style.display = 'none';
-      if (display) {
-        var rankTxt = window._currentUserRank ? (window.getRankName ? window.getRankName(window._currentUserRank) : '') : '未设置';
-        display.innerHTML =
-          '<div class="auth-user-name"></div>' +
-          '<div class="auth-user-actions">' +
-            '<button type="button" class="auth-rankedit-btn" id="btnOpenRankEdit" onclick="openRankEdit()">修改段位</button>' +
-            '<span class="auth-logout-link" id="btnLogout" onclick="doSignOut()">退出</span>' +
-          '</div>';
-        display.querySelector('.auth-user-name').textContent = userDisplayName(currentUser) + ' ';
-        var rankSpan = document.createElement('span');
-        rankSpan.className = 'auth-user-rank';
-        rankSpan.textContent = rankTxt;
-        display.querySelector('.auth-user-name').appendChild(rankSpan);
-        display.style.display = '';
-        var reb = document.getElementById('btnOpenRankEdit');
-        if (reb) reb.addEventListener('click', openRankEdit);
-        var lo = document.getElementById('btnLogout');
-        if (lo) lo.addEventListener('click', doSignOut);
+  if (currentUser) {
+    entry.style.display = 'none';
+    if (player) {
+      const nameEl = document.getElementById('playerName');
+      const rankEl = document.getElementById('playerRank');
+      const avatarEl = player.querySelector('.player-avatar');
+      if (nameEl) nameEl.textContent = userDisplayName(currentUser);
+      if (rankEl) {
+        rankEl.textContent = window._currentUserRank ? (window.getRankName ? window.getRankName(window._currentUserRank) : '') : '未设置';
       }
-    } else {
+      if (avatarEl) avatarEl.textContent = userDisplayName(currentUser).charAt(0).toUpperCase();
+      player.style.display = 'flex';
+    }
+  } else {
     entry.style.display = '';
-    if (display) display.style.display = 'none';
+    if (player) player.style.display = 'none';
   }
   syncCurrentUser();
 }
