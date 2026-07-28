@@ -84,21 +84,12 @@ function switchModule(mod) {
     if (active) i.setAttribute('aria-current', 'page');
     else i.removeAttribute('aria-current');
   });
-  // 模块切换淡出→淡入过渡
+  // 模块切换：直接切换，不额外做淡出淡入（CSS 已有 moduleFadeIn 入场动画）
   contentLayers.forEach(l => {
-    if (l.style.display !== 'none' && l.id !== 'module-' + mod) {
-      l.style.transition = 'opacity 0.15s';
-      l.style.opacity = '0';
-      setTimeout(() => { l.style.display = 'none'; }, 150);
-    }
+    if (l.style.display !== 'none') l.style.display = 'none';
   });
   const tl = document.getElementById('module-' + mod);
-  if (tl) {
-    tl.style.display = '';
-    tl.style.opacity = '0';
-    tl.style.transition = 'opacity 0.25s';
-    requestAnimationFrame(() => { tl.style.opacity = '1'; });
-  }
+  if (tl) tl.style.display = '';
   if (mod === 'home') {
     const bg = document.getElementById('heroBg');
     if (bg) bg.style.backgroundImage = 'url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg)';
