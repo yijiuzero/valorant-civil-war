@@ -45,7 +45,16 @@ function showToast(msg, duration) {
   const t = document.getElementById('globalToast');
   if (!t) return;
   if (toastTimeout) { clearTimeout(toastTimeout); toastTimeout = null; }
-  t.innerHTML = msg + '<span class="toast-close" onclick="hideToast()">✕</span>';
+  // 安全：用 textContent 替代 innerHTML，防止 XSS
+  t.textContent = '';
+  const span = document.createElement('span');
+  span.textContent = msg;
+  t.appendChild(span);
+  const closeBtn = document.createElement('span');
+  closeBtn.className = 'toast-close';
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', hideToast);
+  t.appendChild(closeBtn);
   t.style.opacity = '1';
   toastTimeout = setTimeout(() => { t.style.opacity = '0'; toastTimeout = null; }, duration);
 }

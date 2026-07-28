@@ -1,4 +1,6 @@
-﻿/* VALORANT 品牌字体 */
+﻿@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
+
+/* VALORANT 品牌字体 */
 @font-face {
   font-family: 'VALORANT';
   src: local('DIN Condensed'), local('Tungsten'), local('Bahnschrift Condensed');
@@ -6,7 +8,6 @@
   font-style: normal;
   font-stretch: condensed;
 }
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
 
 :root {
   --bg: #eff1f5;
@@ -31,6 +32,17 @@
   --glow-orange: rgba(245,158,11,0.5);
   /* 字体族 */
   --font-display: 'Oswald', 'DIN Condensed', 'Tungsten', sans-serif;
+  /* 动画时长 */
+  --t-fast: 0.15s;
+  --t-base: 0.25s;
+  --t-slow: 0.4s;
+  --t-celebration: 0.7s;
+  /* z-index */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 110;
+  --z-overlay: 120;
+  --z-modal: 9999;
 }
 
 .theme-dark {
@@ -509,32 +521,11 @@ main::after{
   background:var(--accent); color:white; padding:10px 24px;
   border-radius:40px; font-size:14px; font-weight:500;
   z-index:1000; opacity:0; transition:opacity 0.2s ease;
-  pointer-events:none; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.3);
+  white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.3);
+  cursor:pointer; pointer-events:auto;
+  display:flex;align-items:center;gap:8px;
+  padding-right:16px;
 }
-
-@media(max-width:768px){
-  .sidebar{width:60px;min-width:60px;}
-  .sidebar-logo{padding:0 12px 16px;}
-  .logo-mark{width:36px;height:36px;font-size:18px;margin:0 auto;}
-  .logo-text{display:none;}
-  .nav-item span:not(.nav-icon){display:none;}
-  .nav-item{justify-content:center;padding:14px 0;}
-  .sidebar-footer{display:none;}
-  .sidebar-player{margin:0 8px 8px;padding:8px;justify-content:center;}
-  .player-info{display:none;}
-  .player-actions{gap:2px;}
-  main{padding:30px 16px;}
-  .module-title{font-size:20px;}
-  .map-card{width:90px;height:60px;}
-  .map-card .mc-label{font-size:12px;}
-  .map-result-card{width:160px;height:110px;}
-  .agent-card{width:64px;}
-  .agent-card img{width:40px;height:40px;}
-  .hero-cards{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;}
-  .hero-card{padding:20px 12px;}
-  .hero-card-icon{width:40px;height:40px;}
-  .hero-title{font-size:36px;}
-  #globalToast{white-space:normal;text-align:center;max-width:80%;word-break:break-word;}
   body{overflow-y:auto;}
 }
 /* ===== 移动端:侧边栏→底部导航栏 ===== */
@@ -583,9 +574,6 @@ main::after{
   .agent-card img{width:40px;height:40px;}
 
   .btn-machine{padding:10px 28px;font-size:15px;}
-
-  .home-card{width:140px;padding:20px 12px;}
-  .home-card-icon{font-size:32px;}
 
   #globalToast{bottom:76px;}
   #themeToggle{right:12px;top:auto;bottom:76px;}
@@ -1113,9 +1101,6 @@ main::after{
   .teamsplit-code-display{font-size:20px;}
   .teamsplit-player-row{padding:8px 10px;font-size:12px;}
   .teamsplit-input,.teamsplit-select{min-height:42px;font-size:13px;}
-  .teamsplit-team-player{padding:6px 8px;font-size:12px;}
-  .auth-modal{padding:20px 14px;}
-  .auth-title-text{font-size:16px;}
 }
 
 /* ===== 阶段二：核心体验动效 ===== */
@@ -1382,7 +1367,6 @@ main::after{
   .spy-team-label{font-size:13px;}
   .spy-player-list{gap:4px;}
   /* 游戏面板 */
-  .spy-card-main{padding:0;}
   .spy-card-body{padding:14px;}
   .spy-task-card{padding:10px;}
   .spy-task-icon{font-size:20px;}
@@ -1477,10 +1461,7 @@ main::after{
   .player-actions{gap:2px;}
   .player-rankedit,.player-logout{width:24px;height:24px;font-size:12px;}
   /* 登录弹窗 */
-  .auth-modal{max-width:95vw;padding:24px 18px;max-height:90vh;overflow-y:auto;}
-  .auth-title-text{font-size:18px;}
   .auth-input{font-size:14px;min-height:46px;}
-  .auth-submit-btn{min-height:46px;font-size:15px;}
   /* 内战分队 */
   .teamsplit-panel{padding:18px 12px;}
   .teamsplit-room{gap:12px;}
@@ -1490,12 +1471,6 @@ main::after{
   .teamsplit-player-row{padding:10px 12px;font-size:13px;flex-wrap:wrap;gap:8px;}
   .teamsplit-player-row .teamsplit-rank-icon{width:18px;height:18px;}
   .teamsplit-kick-btn{width:40px;height:40px;font-size:16px;}
-  .teamsplit-actions{flex-wrap:wrap;gap:8px;}
-  .teamsplit-actions button{flex:1;min-width:100px;font-size:14px;min-height:44px;}
-  .teamsplit-result-header{font-size:15px;flex-wrap:wrap;gap:8px;}
-  .teamsplit-team-column{padding:12px 10px;gap:6px;}
-  .teamsplit-team-name{font-size:14px;}
-  .teamsplit-team-player{padding:8px 10px;font-size:13px;}
   /* 内战分队内鬼桥接 */
   .teamsplit-spy{padding:14px 10px;}
   .teamsplit-panel-sub{font-size:13px;}
@@ -1516,19 +1491,6 @@ main::after{
 }
 
 /* ===== 批量打磨：第三批细节 ===== */
-
-/* --- 统一动画时长变量 --- */
-:root {
-  --t-fast: 0.15s;
-  --t-base: 0.25s;
-  --t-slow: 0.4s;
-  --t-celebration: 0.7s;
-  --z-base: 1;
-  --z-dropdown: 100;
-  --z-sticky: 110;
-  --z-overlay: 120;
-  --z-modal: 9999;
-}
 
 /* --- 品牌文本选中 --- */
 ::selection { background: var(--accent); color: #fff; }
@@ -1612,13 +1574,6 @@ main::after{
 }
 
 /* --- Toast 改进：支持手动关闭 --- */
-#globalToast{
-  cursor:pointer;
-  pointer-events:auto;
-  display:flex;align-items:center;gap:8px;
-  padding-right:16px;
-}
-#globalToast::after{content:'✕';opacity:0.7;font-size:12px;margin-left:4px;}
 
 /* --- 3D 透视容器 --- */
 .map-results{perspective:800px;}

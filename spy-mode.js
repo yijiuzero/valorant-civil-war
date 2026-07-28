@@ -83,10 +83,19 @@ async function assignSpies() {
   if (!isSpyHost() || !spyRoomCode) return;
   var all = spyTeamA.concat(spyTeamB);
   if (all.length < 4) { window.showToast && window.showToast('至少需要4人（每队≥2）', 3000); return; }
-  var spyA = spyTeamA[Math.floor(Math.random() * spyTeamA.length)];
-  var spyB = spyTeamB[Math.floor(Math.random() * spyTeamB.length)];
-  var taskA = Math.floor(Math.random() * window.spyTasks.length);
-  var taskB = Math.floor(Math.random() * window.spyTasks.length);
+  // 使用 crypto.getRandomValues() 保证不可预测性
+  var randA = new Uint32Array(1);
+  crypto.getRandomValues(randA);
+  var spyA = spyTeamA[randA[0] % spyTeamA.length];
+  var randB = new Uint32Array(1);
+  crypto.getRandomValues(randB);
+  var spyB = spyTeamB[randB[0] % spyTeamB.length];
+  var randTaskA = new Uint32Array(1);
+  crypto.getRandomValues(randTaskA);
+  var taskA = randTaskA[0] % window.spyTasks.length;
+  var randTaskB = new Uint32Array(1);
+  crypto.getRandomValues(randTaskB);
+  var taskB = randTaskB[0] % window.spyTasks.length;
   if (taskB === taskA && window.spyTasks.length > 1) taskB = (taskA + 1) % window.spyTasks.length;
   var newState = { phase: 'playing', team_a_spy: spyA.id, team_b_spy: spyB.id, tasks: {}, revealed: false };
   newState.tasks[String(spyA.id)] = taskA;
