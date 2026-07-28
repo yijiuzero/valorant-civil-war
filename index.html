@@ -6,9 +6,372 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#0f1923" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#eff1f5" media="(prefers-color-scheme: light)">
-<title>无畏契约 · 战术转盘 · V4.5.2</title>
+<meta name="description" content="无畏契约战术工具集 - 随机选图、随机特工、内战分队、内鬼模式，为瓦搭群打造的VALORANT内战助手">
+<meta property="og:title" content="无畏契约 · 战术工具集">
+<meta property="og:description" content="随机选图、随机特工、内战分队、内鬼模式，为瓦搭群打造的VALORANT内战助手">
+<meta property="og:type" content="website">
 
-  <link rel="stylesheet" href="styles.css?v=16">
+<!-- 预连接第三方域名，加速资源加载 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://media.valorant-api.com">
+<link rel="preconnect" href="https://cmsassets.rgpub.io">
+
+<title>无畏契约 · 战术转盘 · V4.5.3</title>
+
+  <!-- 关键CSS内联：加速首屏渲染 -->
+  <style>
+    /* === 基础排版 === */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+      overscroll-behavior: none;
+    }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+    /* === CSS变量 === */
+    :root {
+      --bg: #eff1f5;
+      --sidebar-bg: #e4e7ec;
+      --accent: #d63b49;
+      --accent2: #b87a25;
+      --text: #1e293b;
+      --text-dim: #64748b;
+      --card: #e9ecf0;
+      --hover: #dde1e8;
+      --border: #d2d6de;
+      --role-duelist: #ff4655;
+      --role-initiator: #3b82f6;
+      --role-controller: #22c55e;
+      --role-sentinel: #f59e0b;
+      --glow-accent: rgba(255,70,85,0.5);
+      --glow-accent2: rgba(232,166,64,0.5);
+      --glow-red: rgba(255,70,85,0.6);
+      --glow-blue: rgba(59,130,246,0.5);
+      --glow-green: rgba(34,197,94,0.5);
+      --glow-orange: rgba(245,158,11,0.5);
+      --font-display: 'Oswald', 'DIN Condensed', 'Tungsten', sans-serif;
+    }
+    .theme-dark {
+      --bg: #0f1923;
+      --sidebar-bg: #1a242d;
+      --accent: #ff4655;
+      --accent2: #e8a640;
+      --text: #e0e7ee;
+      --text-dim: #7b8a9b;
+      --card: #1e2d3d;
+      --hover: #2a3f52;
+      --border: #2a3a48;
+      --glow-accent: rgba(255,70,85,0.6);
+      --glow-accent2: rgba(232,166,64,0.6);
+      --glow-red: rgba(255,70,85,0.7);
+      --glow-blue: rgba(59,130,246,0.6);
+      --glow-green: rgba(34,197,94,0.6);
+      --glow-orange: rgba(245,158,11,0.6);
+    }
+
+    /* === 侧边栏 === */
+    .sidebar {
+      width: 220px; min-width: 220px; background: var(--sidebar-bg);
+      display: flex; flex-direction: column; border-right: 1px solid var(--border);
+      padding: 24px 0; z-index: 10; position: relative;
+    }
+    .sidebar::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .sidebar-logo {
+      padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-mark {
+      width: 36px; height: 36px; border-radius: 4px;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 700; font-size: 20px; flex-shrink: 0;
+    }
+    .logo-text h1 {
+      font-size: 16px; font-weight: 700; color: var(--accent);
+      font-family: var(--font-display); text-transform: uppercase; letter-spacing: 2px; line-height: 1.1;
+    }
+    .logo-text span { font-size: 11px; color: var(--text-dim); display: block; margin-top: 2px; }
+    .nav-list { list-style: none; flex: 1; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 20px; cursor: pointer; transition: all .2s;
+      font-size: 14px; color: var(--text-dim);
+      border-left: 3px solid transparent; position: relative; font-weight: 500;
+    }
+    .nav-item::before {
+      content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+      width: 0; height: 0;
+      border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+      border-left: 6px solid var(--accent);
+      opacity: 0; transition: opacity .2s;
+    }
+    .nav-item:hover { background: var(--hover); color: var(--text); }
+    .nav-item:hover::before { opacity: 0.4; }
+    .nav-item.active {
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      color: var(--accent); border-left-color: var(--accent); font-weight: 600;
+    }
+    .nav-item.active::before { opacity: 1; }
+    .nav-lock { font-size: 11px; margin-left: auto; opacity: .5; }
+    .nav-icon { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.7; transition: opacity .2s; }
+    .nav-item.active .nav-icon { opacity: 1; stroke: var(--accent); }
+    .sidebar-footer {
+      padding: 16px 20px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; color: var(--text-dim);
+    }
+    .footer-ver { opacity: 0.6; }
+    .sidebar-feedback-link { color: var(--accent); text-decoration: none; transition: opacity .2s; }
+    .sidebar-feedback-link:hover { opacity: .8; text-decoration: underline; }
+
+    /* === 主区域 === */
+    main {
+      flex: 1; position: relative;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 20px;
+      background-size: cover; background-position: center; background-repeat: no-repeat;
+      background-image: url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg);
+      transition: background-image .6s ease; background-color: var(--bg);
+    }
+    main::after {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(15,25,35,.3); z-index: 0; pointer-events: none;
+      transition: background .6s ease;
+    }
+    .content-layer {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      width: 100%; max-width: 1300px;
+      animation: moduleFadeIn .35s ease;
+    }
+    @keyframes moduleFadeIn {
+      0% { opacity: 0; transform: translateY(12px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .home-hero { animation: none; }
+    .module-title {
+      font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--accent);
+      font-family: var(--font-display); text-transform: uppercase; letter-spacing: 3px;
+    }
+    .module-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 32px; }
+
+    /* === 首页 Hero === */
+    .home-hero {
+      position: relative; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      background-image: url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg);
+      filter: blur(2px) brightness(0.4); transition: background-image 0.6s ease; z-index: 0;
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(15,25,35,0.7) 0%, rgba(15,25,35,0.4) 50%, rgba(15,25,35,0.8) 100%);
+      z-index: 1;
+    }
+    .hero-content {
+      position: relative; z-index: 2; text-align: center;
+      padding: 40px 20px; max-width: 900px; width: 100%;
+    }
+    .hero-badge {
+      display: inline-block; padding: 4px 16px;
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      border-radius: 999px; font-size: 12px; color: var(--text-dim);
+      margin-bottom: 16px; background: color-mix(in srgb, var(--accent) 5%, transparent);
+      font-family: var(--font-display); letter-spacing: 1px;
+    }
+    .hero-title {
+      font-family: var(--font-display); font-size: 48px; font-weight: 700; color: #fff;
+      text-transform: uppercase; letter-spacing: 4px; margin-bottom: 12px;
+      text-shadow: 0 0 40px rgba(255,70,85,0.3); line-height: 1.1;
+    }
+    .hero-desc { font-size: 16px; color: rgba(255,255,255,0.7); margin-bottom: 40px; }
+    .hero-cards {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px; max-width: 800px; margin: 0 auto;
+    }
+    .hero-card {
+      background: color-mix(in srgb, var(--card) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+      border-radius: 12px; padding: 24px 16px; text-align: center; cursor: pointer;
+      transition: all .3s cubic-bezier(.25,.8,.25,1);
+      backdrop-filter: blur(8px); position: relative; overflow: hidden;
+    }
+    .hero-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, transparent 50%, rgba(255,70,85,0.08));
+      pointer-events: none;
+    }
+    .hero-card:hover {
+      background: color-mix(in srgb, var(--card) 20%, transparent);
+      border-color: var(--accent); transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 16px 48px rgba(255,70,85,0.25);
+    }
+    .hero-card-icon {
+      width: 48px; height: 48px; margin: 0 auto 12px;
+      color: var(--accent); opacity: 0.9; transition: all .3s;
+    }
+    .hero-card:hover .hero-card-icon {
+      opacity: 1; filter: drop-shadow(0 0 8px var(--glow-accent)); transform: scale(1.1);
+    }
+    .hero-card-title {
+      font-family: var(--font-display); font-size: 16px; font-weight: 700;
+      color: #fff; margin-bottom: 6px; letter-spacing: 1px;
+    }
+    .hero-card-desc { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 12px; }
+    .hero-card-preview { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+    .preview-tag {
+      font-size: 10px; padding: 2px 8px; border-radius: 4px;
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      color: var(--accent); font-weight: 600;
+    }
+
+    /* === 主题切换按钮 === */
+    #themeToggle {
+      position: fixed; right: 16px; top: 16px; width: 40px; height: 40px;
+      border-radius: 50%; border: 1px solid var(--border);
+      background: var(--card); color: var(--text); cursor: pointer; z-index: 120;
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.12);
+      transition: all .25s cubic-bezier(.25,.8,.25,1);
+    }
+    #themeToggle svg { width: 22px; height: 22px; }
+    #themeToggle:hover {
+      transform: scale(1.1) rotate(15deg);
+      box-shadow: 0 4px 16px rgba(0,0,0,.2), 0 0 20px var(--glow-accent);
+    }
+    #themeToggle:active { transform: scale(.95) rotate(0deg); }
+
+    /* === Toast === */
+    #globalToast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--accent); color: white; padding: 10px 24px;
+      border-radius: 40px; font-size: 14px; font-weight: 500;
+      z-index: 1000; opacity: 0; transition: opacity 0.2s ease;
+      white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      cursor: pointer; pointer-events: auto;
+      display: flex; align-items: center; gap: 8px; padding-right: 16px;
+    }
+
+    /* === 空状态 === */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 20px; color: var(--text-dim); text-align: center; width: 100%;
+    }
+    .empty-state-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.5; }
+    .empty-state-text { font-size: 13px; line-height: 1.5; }
+
+    /* === 错误状态 === */
+    .error-state {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 30px 20px; color: var(--accent); text-align: center; width: 100%;
+    }
+    .error-state-icon { font-size: 28px; margin-bottom: 10px; }
+    .error-state-text { font-size: 13px; line-height: 1.5; }
+    .error-retry-btn {
+      margin-top: 12px; padding: 8px 20px; border-radius: 8px;
+      border: 1px solid var(--accent); background: transparent;
+      color: var(--accent); cursor: pointer; font-size: 13px; font-weight: 600;
+      transition: all .2s; font-family: inherit;
+    }
+    .error-retry-btn:hover { background: var(--accent); color: #fff; }
+
+    /* === 骨架屏 === */
+    .skeleton {
+      background: linear-gradient(90deg, var(--card) 25%, var(--hover) 50%, var(--card) 75%);
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.5s infinite; border-radius: 8px;
+    }
+    @keyframes skeletonShimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* === 网络状态 === */
+    .net-status {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+      padding: 8px 16px; text-align: center; font-size: 13px; font-weight: 600;
+      transform: translateY(-100%); transition: transform .3s;
+      background: var(--accent); color: #fff;
+    }
+    .net-status.visible { transform: translateY(0); }
+    .net-status.offline { background: #ef4444; }
+
+    /* === 跳转链接 === */
+    .skip-link {
+      position: fixed; top: -100px; left: 16px; z-index: 9999;
+      background: var(--accent); color: #fff; padding: 8px 16px;
+      border-radius: 0 0 8px 8px; font-size: 13px; font-weight: 700;
+      text-decoration: none; transition: top .2s;
+    }
+    .skip-link:focus { top: 0; }
+
+    /* === 滚动条 === */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    /* === 品牌文本选中 === */
+    ::selection { background: var(--accent); color: #fff; }
+    ::-moz-selection { background: var(--accent); color: #fff; }
+
+    /* === 减少动效 === */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* === 移动端基础 === */
+    @media (max-width: 640px) {
+      body { flex-direction: column; overflow-y: auto; min-height: 100dvh; }
+      .sidebar {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        width: 100%; min-width: unset; flex-direction: row; height: 60px; padding: 0;
+        border-right: none; border-top: 1px solid var(--border); z-index: 100;
+      }
+      .sidebar-logo, .sidebar-footer { display: none; }
+      .nav-list {
+        display: flex; flex-direction: row; justify-content: space-around;
+        align-items: stretch; height: 100%; padding: 0;
+      }
+      .nav-item {
+        flex-direction: column; padding: 4px 6px;
+        border-left: none; border-top: 2px solid transparent;
+        gap: 2px; font-size: 11px; min-width: 0; flex: 1; justify-content: center; text-align: center;
+      }
+      .nav-item.active { border-left-color: transparent; border-top-color: var(--accent); }
+      .nav-icon { font-size: 20px; width: auto; }
+      .nav-item span:not(.nav-icon) { display: inline; }
+      main { padding: 20px 12px 80px; min-height: calc(100dvh - 60px); }
+      .content-layer { max-width: 100%; }
+      .module-title { font-size: 18px; }
+      .module-sub { font-size: 12px; margin-bottom: 20px; }
+      #globalToast { bottom: 76px; }
+      #themeToggle { right: 12px; top: auto; bottom: 76px; }
+    }
+  </style>
+
+  <!-- 非关键CSS异步加载 -->
+  <link rel="preload" href="styles.css?v=16" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles.css?v=16"></noscript>
 </head>
 <body>
 <a href="#mainArea" class="skip-link">跳转到主内容</a>
@@ -61,7 +424,7 @@
   </div>
   <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">登录 / 注册</div>
   <div class="sidebar-footer">
-    <span class="footer-ver">V4.5.2</span>
+    <span class="footer-ver">V4.5.3</span>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">反馈</a>
   </div>
 </nav>
@@ -72,7 +435,7 @@
     <div class="hero-bg" id="heroBg"></div>
     <div class="hero-overlay"></div>
     <div class="hero-content">
-      <div class="hero-badge">V4.5.2 · 云南瓦搭群</div>
+      <div class="hero-badge">V4.5.3 · 云南瓦搭群</div>
       <div class="hero-title">无畏契约 · 战术工具集</div>
       <div class="hero-desc">为内战而生的随机工具 · 选图 · 选特工 · 分队 · 内鬼</div>
       <div class="hero-cards">
