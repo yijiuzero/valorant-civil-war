@@ -428,7 +428,14 @@ async function init() {
     navItems = Array.from(document.querySelectorAll('.nav-item'));
     contentLayers = Array.from(document.querySelectorAll('.content-layer'));
     mainArea = document.getElementById('mainArea');
-    initMapUI();
+    
+    // DOM 就绪检测：关键元素缺失时中断初始化并提示
+    if (!mainArea) {
+      console.error('初始化失败: mainArea DOM 元素不存在');
+      const toast = document.getElementById('globalToast');
+      if (toast) { toast.textContent = '页面初始化失败，请刷新重试'; toast.style.opacity = '1'; }
+      return;
+    }
     initAgentUI();
     navItems.forEach(i => i.addEventListener('click', () => switchModule(i.dataset.module)));
     

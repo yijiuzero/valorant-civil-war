@@ -63,7 +63,13 @@ async function doSignUp(nickname, password, rank) {
   }
   // 注册成功但无 session → 邮箱确认未关，立即尝试登录
   const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email: email, password: password });
-  if (loginErr) throw loginErr;
+  if (loginErr) {
+    // 区分邮箱未确认 vs 通用错误
+    if (loginErr.message && loginErr.message.includes('Email not confirmed')) {
+      throw new Error('注册成功！请前往邮箱确认后再登录（确认后回来即可登录）');
+    }
+    throw loginErr;
+  }
   currentUser = loginData.session ? loginData.session.user : null;
   if (currentUser) { onAuthSuccess(); return; }
   throw new Error('注册成功但登录失败，请刷新后重试');

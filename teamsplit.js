@@ -110,16 +110,6 @@ function updatePlayerList(players) {
     list.style.alignItems = '';
     list.style.justifyContent = '';
   }
-    const cls = p.id === currentPlayerId ? ' self' : '';
-    const hostBadge = p.user_id === currentHostUserId ? '<span class="teamsplit-host-badge">房主</span>' : '';
-    const pRank = p.rank || 0;
-    const rankIcon = pRank ? '<img class="teamsplit-rank-icon" src="' + getRankIcon(pRank) + '" alt="' + getRankName(pRank) + '" title="' + getRankName(pRank) + '" loading="lazy">' : '';
-    let kickBtn = '';
-    if (isHost && p.id !== currentPlayerId) {
-      kickBtn = '<button class="teamsplit-kick-btn" data-pid="' + p.id + '" title="踢出玩家">&times;</button>';
-    }
-    return '<div class="teamsplit-player-chip' + cls + '">' + rankIcon + escapeHtml(p.name) + hostBadge + kickBtn + '</div>';
-  }).join('');
   list.querySelectorAll('.teamsplit-kick-btn').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -513,8 +503,9 @@ async function kickPlayer(playerId) {
         });
       } catch (e) {}
     }
-    const result = await supabase.from('players').delete().eq('id', parseInt(playerId)).eq('room_code', currentRoomCode);
-    if (result.error) throw result.error;
+    // 使用 security definer RPC 踢人（严格校验房主身份）
+    const { error } = await supabase.rpc('kick_player', { p_room_code: currentRoomCode, p_player_id: parseInt(playerId) });
+    if (error) throw error;
     showToast('已将该玩家移出房间', 2000);
     refreshPlayers();
   } catch (e) {

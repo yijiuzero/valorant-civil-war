@@ -295,6 +295,7 @@ SECURITY DEFINER
 AS $$
 DECLARE
   v_state      jsonb;
+  v_host       uuid;
   v_team_a     jsonb;
   v_team_b     jsonb;
   v_spy_a_name text;
@@ -303,13 +304,18 @@ DECLARE
   v_player     jsonb;
   v_total      integer;
 BEGIN
-  SELECT spy_state INTO v_state
+  SELECT spy_state, host_user_id INTO v_state, v_host
   FROM rooms
   WHERE code = p_code AND status = 'lobby'
   FOR UPDATE;
 
   IF v_state IS NULL THEN
     RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  -- 仅房主可开始内鬼模式
+  IF v_host IS NULL OR v_host != auth.uid() THEN
+    RAISE EXCEPTION '仅房主可开始内鬼模式';
   END IF;
 
   SELECT jsonb_agg(p) INTO v_team_a
@@ -358,14 +364,20 @@ SECURITY DEFINER
 AS $$
 DECLARE
   v_state jsonb;
+  v_host  uuid;
 BEGIN
-  SELECT spy_state INTO v_state
+  SELECT spy_state, host_user_id INTO v_state, v_host
   FROM rooms
   WHERE code = p_code AND status = 'lobby'
   FOR UPDATE;
 
   IF v_state IS NULL THEN
     RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  -- 仅房主可揭晓内鬼
+  IF v_host IS NULL OR v_host != auth.uid() THEN
+    RAISE EXCEPTION '仅房主可揭晓内鬼';
   END IF;
 
   v_state := jsonb_set(v_state, '{phase}', '"revealed"');
@@ -388,14 +400,20 @@ SECURITY DEFINER
 AS $$
 DECLARE
   v_state jsonb;
+  v_host  uuid;
 BEGIN
-  SELECT spy_state INTO v_state
+  SELECT spy_state, host_user_id INTO v_state, v_host
   FROM rooms
   WHERE code = p_code AND status = 'lobby'
   FOR UPDATE;
 
   IF v_state IS NULL THEN
     RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  -- 仅房主可重置内鬼
+  IF v_host IS NULL OR v_host != auth.uid() THEN
+    RAISE EXCEPTION '仅房主可重置内鬼';
   END IF;
 
   v_state := jsonb_set(v_state, '{phase}', '"lobby"');
@@ -458,7 +476,58 @@ CREATE POLICY "players delete by host"
       WHERE r.code = players.room_code
         AND r.host_user_id = auth.uid()
     )
+    AND user_id != auth.uid()  -- 不能删除自己
   );
+
+-- 安全踢人函数（security definer，严格校验房主身份）
+DROP FUNCTION IF EXISTS public.kick_player(text, integer);
+CREATE OR REPLACE FUNCTION public.kick_player(
+  p_room_code text,
+  p_player_id integer
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_host    uuid;
+  v_target  jsonb;
+BEGIN
+  -- 查找房间
+  SELECT host_user_id INTO v_host
+  FROM rooms
+  WHERE code = p_room_code;
+
+  IF v_host IS NULL THEN
+    RAISE EXCEPTION '房间不存在';
+  END IF;
+
+  -- 仅房主可踢人
+  IF v_host != auth.uid() THEN
+    RAISE EXCEPTION '仅房主可踢人';
+  END IF;
+
+  -- 查找目标玩家
+  SELECT jsonb_build_object('id', id, 'name', name, 'user_id', user_id)
+  INTO v_target
+  FROM players
+  WHERE id = p_player_id AND room_code = p_room_code;
+
+  IF v_target IS NULL THEN
+    RAISE EXCEPTION '玩家不存在';
+  END IF;
+
+  -- 不能踢自己
+  IF (v_target->>'user_id')::text = auth.uid()::text THEN
+    RAISE EXCEPTION '不能踢出自己';
+  END IF;
+
+  -- 执行删除
+  DELETE FROM players WHERE id = p_player_id AND room_code = p_room_code;
+
+  RETURN v_target;
+END;
+$$;
 
 -- 唯一约束：防止同一用户在同一房间有多个玩家行（防前端竞态）
 -- 唯一约束：防止同一用户在同一房间有多个玩家行（防前端竞态）
