@@ -86,7 +86,7 @@ function switchModule(mod) {
   });
   // 模块切换淡出→淡入过渡
   contentLayers.forEach(l => {
-    if (l.style.display !== 'none') {
+    if (l.style.display !== 'none' && l.id !== 'module-' + mod) {
       l.style.transition = 'opacity 0.15s';
       l.style.opacity = '0';
       setTimeout(() => { l.style.display = 'none'; }, 150);
