@@ -93,9 +93,11 @@ function switchModule(mod) {
   if (mod === 'home') {
     const bg = document.getElementById('heroBg');
     if (bg) bg.style.backgroundImage = 'url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg)';
-    mainArea.style.backgroundImage = '';
+    mainArea.classList.add('homepage');
+  } else {
+    mainArea.classList.remove('homepage');
   }
-  else if (mod === 'wheel') { if (!mapCardsRendered) { renderMapCards(); mapCardsRendered = true; } }
+  if (mod === 'wheel') { if (!mapCardsRendered) { renderMapCards(); mapCardsRendered = true; } }
   else if (mod === 'agent') { if (!agentsRendered) { renderAgents(); agentsRendered = true; } }
   else if (mod === 'teamsplit') initTeamSplitView();
   else if (mod === 'stats') initChallengeMachine();

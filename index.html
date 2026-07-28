@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://media.valorant-api.com">
 <link rel="preconnect" href="https://cmsassets.rgpub.io">
 
-<title>无畏契约 · 战术转盘 · V4.5.3</title>
+<title>无畏契约 · 战术转盘 · V4.5.5</title>
 
   <!-- 关键CSS内联：加速首屏渲染 -->
   <style>
@@ -140,8 +140,6 @@
       flex: 1; position: relative;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 40px 20px;
-      background-size: cover; background-position: center; background-repeat: no-repeat;
-      background-image: url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg);
       transition: background-image .6s ease; background-color: var(--bg);
     }
     main::after {
@@ -149,6 +147,7 @@
       background: rgba(15,25,35,.3); z-index: 0; pointer-events: none;
       transition: background .6s ease;
     }
+    main.homepage::after { display: none; }
     .content-layer {
       position: relative; z-index: 1;
       display: flex; flex-direction: column; align-items: center;
@@ -168,14 +167,14 @@
 
     /* === 首页 Hero === */
     .home-hero {
-      position: relative; align-self: stretch; min-height: 0;
+      position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
     .hero-bg {
       position: absolute; inset: 0;
       background-size: cover; background-position: center;
       background-image: url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg);
-      filter: blur(2px) brightness(0.4); transition: background-image 0.6s ease; z-index: 0;
+      filter: blur(2px) brightness(0.4); transition: background-image 0s ease; z-index: 0;
     }
     .hero-overlay {
       position: absolute; inset: 0;
@@ -184,29 +183,29 @@
     }
     .hero-content {
       position: relative; z-index: 2; text-align: center;
-      padding: 40px 20px; max-width: 900px; width: 100%;
+      padding: 20px; max-width: 900px; width: 100%;
     }
     .hero-badge {
       display: inline-block; padding: 4px 16px;
       border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
       border-radius: 999px; font-size: 12px; color: var(--text-dim);
-      margin-bottom: 16px; background: color-mix(in srgb, var(--accent) 5%, transparent);
+      margin-bottom: 12px; background: color-mix(in srgb, var(--accent) 5%, transparent);
       font-family: var(--font-display); letter-spacing: 1px;
     }
     .hero-title {
-      font-family: var(--font-display); font-size: 48px; font-weight: 700; color: #fff;
-      text-transform: uppercase; letter-spacing: 4px; margin-bottom: 12px;
+      font-family: var(--font-display); font-size: 42px; font-weight: 700; color: #fff;
+      text-transform: uppercase; letter-spacing: 4px; margin-bottom: 10px;
       text-shadow: 0 0 40px rgba(255,70,85,0.3); line-height: 1.1;
     }
-    .hero-desc { font-size: 16px; color: rgba(255,255,255,0.7); margin-bottom: 40px; }
+    .hero-desc { font-size: 15px; color: rgba(255,255,255,0.7); margin-bottom: 24px; }
     .hero-cards {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 16px; max-width: 800px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px; max-width: 700px; margin: 0 auto;
     }
     .hero-card {
       background: color-mix(in srgb, var(--card) 10%, transparent);
       border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
-      border-radius: 12px; padding: 24px 16px; text-align: center; cursor: pointer;
+      border-radius: 12px; padding: 18px 12px; text-align: center; cursor: pointer;
       transition: all .3s cubic-bezier(.25,.8,.25,1);
       backdrop-filter: blur(8px); position: relative; overflow: hidden;
     }
@@ -221,20 +220,20 @@
       box-shadow: 0 16px 48px rgba(255,70,85,0.25);
     }
     .hero-card-icon {
-      width: 48px; height: 48px; margin: 0 auto 12px;
+      width: 40px; height: 40px; margin: 0 auto 10px;
       color: var(--accent); opacity: 0.9; transition: all .3s;
     }
     .hero-card:hover .hero-card-icon {
       opacity: 1; filter: drop-shadow(0 0 8px var(--glow-accent)); transform: scale(1.1);
     }
     .hero-card-title {
-      font-family: var(--font-display); font-size: 16px; font-weight: 700;
-      color: #fff; margin-bottom: 6px; letter-spacing: 1px;
+      font-family: var(--font-display); font-size: 14px; font-weight: 700;
+      color: #fff; margin-bottom: 4px; letter-spacing: 1px;
     }
-    .hero-card-desc { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 12px; }
-    .hero-card-preview { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+    .hero-card-desc { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 10px; }
+    .hero-card-preview { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
     .preview-tag {
-      font-size: 10px; padding: 2px 8px; border-radius: 4px;
+      font-size: 10px; padding: 2px 6px; border-radius: 4px;
       background: color-mix(in srgb, var(--accent) 15%, transparent);
       color: var(--accent); font-weight: 600;
     }
@@ -424,7 +423,7 @@
   </div>
   <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">登录 / 注册</div>
   <div class="sidebar-footer">
-    <span class="footer-ver">V4.5.3</span>
+    <span class="footer-ver">V4.5.5</span>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">反馈</a>
   </div>
 </nav>
@@ -435,7 +434,7 @@
     <div class="hero-bg" id="heroBg"></div>
     <div class="hero-overlay"></div>
     <div class="hero-content">
-      <div class="hero-badge">V4.5.3 · 云南瓦搭群</div>
+      <div class="hero-badge">V4.5.4 · 云南瓦搭群</div>
       <div class="hero-title">无畏契约 · 战术工具集</div>
       <div class="hero-desc">为内战而生的随机工具 · 选图 · 选特工 · 分队 · 内鬼</div>
       <div class="hero-cards">
