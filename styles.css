@@ -98,6 +98,7 @@ body{
   display:flex;flex-direction:column;border-right:1px solid var(--border);
   padding:24px 0;z-index:10;
   position:relative;
+  transition:all .3s ease;
 }
 /* VALORANT 风格侧边栏底部斜切装饰 */
 .sidebar::after{
