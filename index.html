@@ -144,6 +144,12 @@
       width: 100%; max-width: 1300px;
       animation: moduleFadeIn .35s ease;
     }
+    .content-layer.home-hero {
+      max-width: none;
+      box-sizing: border-box;
+      flex: 1;
+      align-self: stretch;
+    }
     @keyframes moduleFadeIn {
       0% { opacity: 0; transform: translateY(12px); }
       100% { opacity: 1; transform: translateY(0); }
@@ -157,7 +163,6 @@
 
     /* === 首页 Hero === */
     .home-hero {
-      flex: 1; align-self: stretch; position: relative;
       display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
     .hero-content {
