@@ -166,6 +166,7 @@ function drawMaps() {
   const dur = 1500, tickMs = 80;
   let st, lastTick = -tickMs;
   function tick(now) {
+    if (!mapTimer) return;
     if (!st) st = now;
     if (now - lastTick < tickMs) { mapTimer = requestAnimationFrame(tick); return; }
     lastTick = now;
@@ -305,6 +306,7 @@ function randomAgent() {
   const dur = 1200, tickMs = 80;
   let st, lastTick = -tickMs;
   function tick(now) {
+    if (!agentTimer) return;
     if (!st) st = now;
     if (now - lastTick < tickMs) { agentTimer = requestAnimationFrame(tick); return; }
     lastTick = now;
