@@ -1,6 +1,6 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.5.3
+> **版本**: V4.5.11
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
@@ -385,6 +385,14 @@ start index.html
 | V3.6.1 | 2026-07-20 | Bug修复（内鬼查看身份后无法返回、B队内鬼标签错误、变量命名歧义） |
 | V3.6.0 | 2026-07-20 | 内鬼模式支持独立手动组队（localStorage驱动）；双入口架构 |
 | V4.5.3 | 2026-07-28 | Bug 修复（+0.0.1）：性能优化。包含：关键CSS内联（首屏渲染优化）、preconnect 第三方域名、SEO meta 标签（description/og:title）、styles.css 异步加载（rel=preload） |
+| V4.5.11 | 2026-07-29 | Bug 修复（+0.0.1）：删除冗余CSS/JS引用，修复移动端适配。删除.hero-bg/.hero-overlay/.nav-icon等冗余样式；移动端增加首页hero响应式适配；删除main.homepage::after遮罩控制 |
+| V4.5.10 | 2026-07-29 | Bug 修复（+0.0.1）：首页居中、降低亮度、删除AI图标。.hero-content添加flex居中；main::after遮罩加深到0.45；删除导航栏SVG图标 |
+| V4.5.9 | 2026-07-29 | Bug 修复（+0.0.1）：首页hero-content居中。原因：.home-hero用position:absolute脱离flex流；修复：改回flex:1;align-self:stretch |
+| V4.5.8 | 2026-07-29 | 重构（+0.0.1）：删除hero-bg和hero-overlay冗余层，首页背景图直接设在main上，结构更清晰 |
+| V4.5.7 | 2026-07-29 | Bug 修复（+0.0.1）：修复首页尺寸/背景图/地图结果卡片。main统一设置VALORANT背景图；首页hero改为absolute全屏；去掉地图卡片rotateY和resultGlow动画 |
+| V4.5.6 | 2026-07-28 | Bug 修复（+0.0.1）：修复首页丑陋和需要滚动的问题。main不再设置背景图，仅hero-bg显示；main::after遮罩层在首页时隐藏；.home-hero改为absolute定位由main控制高度；缩小首页内容尺寸 |
+| V4.5.5 | 2026-07-28 | Bug 修复（+0.0.1）：修复模块切换闪烁问题。去掉JS的opacity淡出淡入逻辑，直接display切换，CSS已有moduleFadeIn入场动画 |
+| V4.5.4 | 2026-07-28 | Bug 修复（+0.0.1）：修复首页内容不显示和窗口放大问题。switchModule中forEach排除目标模块；.home-hero改为min-height:0+align-self:stretch |
 | V4.5.2 | 2026-07-28 | Bug 修复（+0.0.1）：代码审查修复。包含：showToast XSS 漏洞（innerHTML→textContent）、@import 位置错误、内鬼选择 Math.random()→crypto.getRandomValues()、清理死CSS规则、合并重复:root选择器 |
 | V4.5.1 | 2026-07-28 | Bug 修复（+0.0.1）：上线前全检修复 5 个 P0 阻塞项。包含：lobby_start_spy/reveal/reset 房主校验、players 表 RLS DELETE 安全漏洞、teamsplit.js 死代码清理、app.js init() DOM 防御、auth.js 注册后登录误导 |
 | V4.5.0 | 2026-07-28 | 需求（+0.1.0）：UI 全面优化方案（方案C）三阶段全部完成 + 批量细节打磨（三批打包）。包含：品牌氛围增强、核心体验重设计、全面视觉重构、模块切换过渡、空/错误/加载态、触屏修复、网络检测、内鬼揭晓延迟、拖拽高亮、自定义滚动条等。版本号 V4.4.0→V4.5.0 |
