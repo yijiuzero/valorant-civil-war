@@ -502,13 +502,13 @@ main::after{
 }
 /* ===== 移动端:侧边栏→底部导航栏 ===== */
 @media(max-width:640px){
-  body{flex-direction:column;overflow-y:auto;min-height:100dvh;}
+  body{flex-direction:column!important;overflow-y:auto;min-height:100dvh!important;}
   .sidebar{
-    position:fixed;bottom:0;left:0;right:0;
-    width:100%;min-width:unset;
-    flex-direction:row;height:60px;padding:0;
-    border-right:none;border-top:1px solid var(--border);
-    z-index:100;
+    position:fixed!important;bottom:0!important;left:0!important;right:0!important;
+    width:100%!important;min-width:unset!important;
+    flex-direction:row!important;height:60px!important;padding:0!important;
+    border-right:none!important;border-top:1px solid var(--border)!important;
+    z-index:100!important;
   }
   .sidebar-logo,.sidebar-footer{display:none;}
   .nav-list{

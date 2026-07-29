@@ -318,38 +318,21 @@
       }
     }
 
-    /* === 移动端基础 === */
+    /* === 移动端关键样式（防止加载时布局崩坏） === */
     @media (max-width: 640px) {
-      body { flex-direction: column; overflow-y: auto; min-height: 100dvh; }
+      body { flex-direction: column; min-height: 100dvh; }
       .sidebar {
         position: fixed; bottom: 0; left: 0; right: 0;
         width: 100%; min-width: unset; flex-direction: row; height: 60px; padding: 0;
         border-right: none; border-top: 1px solid var(--border); z-index: 100;
       }
       .sidebar-logo, .sidebar-footer { display: none; }
-      .nav-list {
-        display: flex; flex-direction: row; justify-content: space-around;
-        align-items: stretch; height: 100%; padding: 0;
-      }
-      .nav-item {
-        flex-direction: column; padding: 4px 6px;
-        border-left: none; border-top: 2px solid transparent;
-        gap: 2px; font-size: 11px; min-width: 0; flex: 1; justify-content: center; text-align: center;
-      }
-      .nav-item.active { border-left-color: transparent; border-top-color: var(--accent); }
-      .nav-item span { display: inline; }
-      main { padding: 20px 12px; min-height: calc(100dvh - 60px); }
-      .content-layer { max-width: 100%; }
-      .module-title { font-size: 18px; }
-      .module-sub { font-size: 12px; margin-bottom: 20px; }
-      #globalToast { bottom: 76px; }
-      #themeToggle { right: 12px; top: auto; bottom: 76px; }
-      .home-hero { flex: 1; align-self: stretch; }
+      .nav-list { display: flex; flex-direction: row; justify-content: space-around; align-items: stretch; height: 100%; padding: 0; }
+      .nav-item { flex-direction: column; padding: 4px 6px; border-left: none; border-top: 2px solid transparent; gap: 2px; font-size: 11px; min-width: 0; flex: 1; justify-content: center; text-align: center; }
+      .nav-item.active { border-top-color: var(--accent); }
+      main { padding: 20px 12px 80px; min-height: calc(100dvh - 60px); }
       .hero-title { font-size: 28px; }
-      .hero-desc { font-size: 14px; margin-bottom: 24px; }
       .hero-cards { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
-      .hero-card { padding: 16px 10px; }
-      .hero-card-icon { width: 36px; height: 36px; }
     }
   </style>
 
