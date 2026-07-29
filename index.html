@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://media.valorant-api.com">
 <link rel="preconnect" href="https://cmsassets.rgpub.io">
 
-<title>无畏契约 · 战术转盘 · V4.5.7</title>
+<title>无畏契约 · 战术转盘 · V4.5.8</title>
 
   <!-- 关键CSS内联：加速首屏渲染 -->
   <style>
@@ -109,23 +109,12 @@
       font-size: 14px; color: var(--text-dim);
       border-left: 3px solid transparent; position: relative; font-weight: 500;
     }
-    .nav-item::before {
-      content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-      width: 0; height: 0;
-      border-top: 6px solid transparent; border-bottom: 6px solid transparent;
-      border-left: 6px solid var(--accent);
-      opacity: 0; transition: opacity .2s;
-    }
     .nav-item:hover { background: var(--hover); color: var(--text); }
-    .nav-item:hover::before { opacity: 0.4; }
     .nav-item.active {
       background: color-mix(in srgb, var(--accent) 10%, transparent);
       color: var(--accent); border-left-color: var(--accent); font-weight: 600;
     }
-    .nav-item.active::before { opacity: 1; }
     .nav-lock { font-size: 11px; margin-left: auto; opacity: .5; }
-    .nav-icon { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.7; transition: opacity .2s; }
-    .nav-item.active .nav-icon { opacity: 1; stroke: var(--accent); }
     .sidebar-footer {
       padding: 16px 20px; border-top: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
@@ -146,10 +135,9 @@
     }
     main::after {
       content: ''; position: absolute; inset: 0;
-      background: rgba(15,25,35,.3); z-index: 0; pointer-events: none;
+      background: rgba(15,25,35,.45); z-index: 0; pointer-events: none;
       transition: background .6s ease;
     }
-    main.homepage::after { display: none; }
     .content-layer {
       position: relative; z-index: 1;
       display: flex; flex-direction: column; align-items: center;
@@ -175,6 +163,7 @@
     .hero-content {
       position: relative; z-index: 2; text-align: center;
       padding: 20px; max-width: 900px; width: 100%;
+      display: flex; flex-direction: column; align-items: center;
     }
     .hero-badge {
       display: inline-block; padding: 4px 16px;
@@ -377,27 +366,21 @@
   </div>
   <ul class="nav-list">
     <li class="nav-item active" data-module="home" role="button" tabindex="0" aria-label="首页">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span>首页</span>
     </li>
     <li class="nav-item" data-module="wheel" role="button" tabindex="0" aria-label="随机选图">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
       <span>随机选图</span>
     </li>
     <li class="nav-item" data-module="agent" role="button" tabindex="0" aria-label="随机特工">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <span>随机特工</span>
     </li>
     <li class="nav-item" data-module="stats" role="button" tabindex="0" aria-label="内战专用">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
       <span>内战专用</span>
     </li>
     <li class="nav-item" data-module="teamsplit" role="button" tabindex="0" aria-label="内战分队">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="9" x2="9" y2="5"/><line x1="7" y1="7" x2="3" y2="3"/><line x1="10" y1="5" x2="5" y2="10"/></svg>
       <span>内战分队</span><span class="nav-lock">🔒</span>
     </li>
     <li class="nav-item" data-module="spy" role="button" tabindex="0" aria-label="内鬼模式">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <span>内鬼模式</span><span class="nav-lock">🔒</span>
     </li>
   </ul>
@@ -414,7 +397,7 @@
   </div>
   <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">登录 / 注册</div>
   <div class="sidebar-footer">
-    <span class="footer-ver">V4.5.7</span>
+    <span class="footer-ver">V4.5.8</span>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">反馈</a>
   </div>
 </nav>
@@ -423,7 +406,7 @@
   <!-- 首页内容 -->
   <div class="content-layer home-hero" id="module-home">
     <div class="hero-content">
-      <div class="hero-badge">V4.5.7 · 云南瓦搭群</div>
+      <div class="hero-badge">V4.5.8 · 云南瓦搭群</div>
       <div class="hero-title">无畏契约 · 战术工具集</div>
       <div class="hero-desc">为内战而生的随机工具 · 选图 · 选特工 · 分队 · 内鬼</div>
       <div class="hero-cards">

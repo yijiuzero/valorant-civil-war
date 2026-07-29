@@ -130,26 +130,12 @@ body{
   position:relative;
   font-weight:500;
 }
-.nav-item::before{
-  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
-  width:0;height:0;
-  border-top:6px solid transparent;border-bottom:6px solid transparent;
-  border-left:6px solid var(--accent);
-  opacity:0;transition:opacity .2s;
-}
 .nav-item:hover{background:var(--hover);color:var(--text);}
-.nav-item:hover::before{opacity:0.4;}
 .nav-item.active{
   background:color-mix(in srgb, var(--accent) 10%, transparent);color:var(--accent);
   border-left-color:var(--accent);font-weight:600;
 }
-.nav-item.active::before{opacity:1;}
 .nav-lock{font-size:11px;margin-left:auto;opacity:.5}
-.nav-icon{
-  width:20px;height:20px;flex-shrink:0;
-  opacity:0.7;transition:opacity .2s;
-}
-.nav-item.active .nav-icon{opacity:1;stroke:var(--accent);}
 .sidebar-footer{
   padding:16px 20px;border-top:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
@@ -202,11 +188,10 @@ main{
 }
 main::after{
   content:'';position:absolute;inset:0;
-  background:rgba(15,25,35,.3);
+  background:rgba(15,25,35,.45);
   z-index:0;pointer-events:none;
   transition:background .6s ease;
 }
-main.homepage::after{display:none;}
 /* 模块切换过渡动画 */
 .content-layer{
   position:relative;z-index:1;
@@ -554,8 +539,7 @@ main.homepage::after{display:none;}
     border-left-color:transparent;
     border-top-color:var(--accent);
   }
-  .nav-icon{font-size:20px;width:auto;}
-  .nav-item span:not(.nav-icon){display:inline;}
+  .nav-item span{display:inline;}
 
   main{padding:20px 12px 80px;min-height:calc(100dvh - 60px);}
   .content-layer{max-width:100%;}
