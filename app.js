@@ -212,15 +212,13 @@ function drawMaps() {
 function showMapResults(w) {
   const c = document.getElementById('mapResults');
   if (!c) return;
-  c.innerHTML = w.map(m => `<div class="map-result-card" data-map="${m.en}" style="background-color:#1e2d3d;"><div class="mr-label">🎉 ${m.cn} (${m.en})</div></div>`).join('');
-  setTimeout(() => {
-    w.forEach((m, i) => {
-      setTimeout(() => {
-        const e = c.querySelector(`[data-map="${m.en}"]`);
-        if (e) { e.style.backgroundImage = `url(${m.img})`; e.classList.add('animate-in'); }
-      }, i * 150);
+  c.innerHTML = w.map(m => `<div class="map-result-card" data-map="${m.en}" style="background-image:url(${m.img});background-color:#1e2d3d;"><div class="mr-label">🎉 ${m.cn} (${m.en})</div></div>`).join('');
+  // 触发入场动画
+  requestAnimationFrame(() => {
+    c.querySelectorAll('.map-result-card').forEach((e, i) => {
+      setTimeout(() => e.classList.add('show'), i * 120);
     });
-  }, 50);
+  });
 }
 
 // ---------- 特工模块 ----------
