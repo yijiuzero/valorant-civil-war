@@ -201,7 +201,7 @@ main::after{
   max-width:1300px;
   animation:moduleFadeIn .35s ease;
 }
-.content-layer.home-hero{max-width:none!important;flex:1;align-self:stretch;}
+.content-layer.home-hero{max-width:none!important;flex:1;align-self:stretch;display:flex;align-items:center;justify-content:center;}
 @keyframes moduleFadeIn{
   0%{opacity:0;transform:translateY(12px);}
   100%{opacity:1;transform:translateY(0);}
