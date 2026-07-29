@@ -1,6 +1,6 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.5.12
+> **版本**: V4.5.13
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
@@ -385,6 +385,7 @@ start index.html
 | V3.6.1 | 2026-07-20 | Bug修复（内鬼查看身份后无法返回、B队内鬼标签错误、变量命名歧义） |
 | V3.6.0 | 2026-07-20 | 内鬼模式支持独立手动组队（localStorage驱动）；双入口架构 |
 | V4.5.3 | 2026-07-28 | Bug 修复（+0.0.1）：性能优化。包含：关键CSS内联（首屏渲染优化）、preconnect 第三方域名、SEO meta 标签（description/og:title）、styles.css 异步加载（rel=preload） |
+| V4.5.13 | 2026-07-29 | 移动端导航适配：侧边栏改为侧滑抽屉 + 汉堡菜单。768px 以下显示汉堡按钮，点击从左侧滑出 260px 宽抽屉，点击遮罩或 ESC 关闭。main 区域顶部留 64px 空间避免被汉堡遮挡。移除旧底部导航栏样式，所有模块在移动端保持功能一致。缓存参数 app14→15、styles16→17 |
 | V4.5.12 | 2026-07-29 | Bug 修复（+0.0.1）：drawMaps/randomAgent 的 tick 函数在切模块后动画不停。stopMapSpin/stopAgentSpin 会 cancelAnimationFrame 并置 null timer，但正在执行的 tick 不检查该状态，会一路跑完 else 分支重新 requestAnimationFrame。修复：两个 tick 开头加 `if (!mapTimer) return;` / `if (!agentTimer) return;` 守卫。缓存参数 app13→14 |
 | V4.5.11 | 2026-07-29 | Bug 修复（+0.0.1）：删除冗余CSS/JS引用，修复移动端适配。删除.hero-bg/.hero-overlay/.nav-icon等冗余样式；移动端增加首页hero响应式适配；删除main.homepage::after遮罩控制 |
 | V4.5.10 | 2026-07-29 | Bug 修复（+0.0.1）：首页居中、降低亮度、删除AI图标。.hero-content添加flex居中；main::after遮罩加深到0.45；删除导航栏SVG图标 |

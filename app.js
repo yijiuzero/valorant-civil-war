@@ -95,6 +95,8 @@ function switchModule(mod) {
   } else {
     mainArea.classList.remove('homepage');
   }
+  // 移动端：选完模块后关闭抽屉
+  if (window.innerWidth <= 768) closeNavDrawer();
   if (mod === 'wheel') { if (!mapCardsRendered) { renderMapCards(); mapCardsRendered = true; } }
   else if (mod === 'agent') { if (!agentsRendered) { renderAgents(); agentsRendered = true; } }
   else if (mod === 'teamsplit') initTeamSplitView();
@@ -395,7 +397,27 @@ function initChallengeMachine() {
   }
 }
 
-// ---------- 页面初始化 & 事件绑定 ----------
+// ---------- 移动端抽屉导航 ----------
+let navHamburger = null, navDrawerOverlay = null;
+
+function openNavDrawer() {
+  if (!navHamburger) return;
+  document.body.classList.add('drawer-open');
+  navHamburger.setAttribute('aria-expanded', 'true');
+  navDrawerOverlay.style.display = 'block';
+  requestAnimationFrame(() => navDrawerOverlay.classList.add('open'));
+}
+function closeNavDrawer() {
+  if (!navHamburger) return;
+  document.body.classList.remove('drawer-open');
+  navHamburger.setAttribute('aria-expanded', 'false');
+  navDrawerOverlay.classList.remove('open');
+  setTimeout(() => { navDrawerOverlay.style.display = 'none'; }, 300);
+}
+function toggleNavDrawer() {
+  if (document.body.classList.contains('drawer-open')) closeNavDrawer();
+  else openNavDrawer();
+}
 function applyThemeFromStorage() {
   const s = localStorage.getItem('ui-theme');
   const d = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -425,6 +447,23 @@ async function init() {
     applyThemeFromStorage();
     const tb = document.getElementById('themeToggle');
     if (tb) tb.addEventListener('click', toggleTheme);
+
+    // 移动端汉堡菜单
+    navHamburger = document.getElementById('navHamburger');
+    navDrawerOverlay = document.getElementById('navDrawerOverlay');
+    if (navHamburger) {
+      navHamburger.addEventListener('click', toggleNavDrawer);
+    }
+    if (navDrawerOverlay) {
+      navDrawerOverlay.addEventListener('click', closeNavDrawer);
+    }
+    // ESC 关闭抽屉
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.body.classList.contains('drawer-open')) {
+        closeNavDrawer();
+      }
+    });
+
     navItems = Array.from(document.querySelectorAll('.nav-item'));
     contentLayers = Array.from(document.querySelectorAll('.content-layer'));
     mainArea = document.getElementById('mainArea');

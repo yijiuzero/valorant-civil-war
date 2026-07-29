@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://media.valorant-api.com">
 <link rel="preconnect" href="https://cmsassets.rgpub.io">
 
-<title>无畏契约 · 战术转盘 · V4.5.12</title>
+<title>无畏契约 · 战术转盘 · V4.5.13</title>
 
   <!-- 关键CSS内联：加速首屏渲染 -->
   <style>
@@ -314,13 +314,43 @@
     /* === 品牌文本选中 === */
     ::selection { background: var(--accent); color: #fff; }
     ::-moz-selection { background: var(--accent); color: #fff; }
+
+    /* === 移动端导航：汉堡菜单 + 侧滑抽屉 === */
+    #navHamburger {
+      display: none;
+      position: fixed; left: 12px; top: 12px;
+      width: 44px; height: 44px;
+      border-radius: 8px; border: 1px solid var(--border);
+      background: var(--card); color: var(--text);
+      cursor: pointer; z-index: 200;
+      align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.12);
+      transition: all .2s;
+    }
+    #navHamburger svg { width: 22px; height: 22px; }
+    #navHamburger:hover { background: var(--hover); transform: scale(1.05); }
+    #navHamburger:active { transform: scale(.95); }
+
+    .nav-drawer-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 95;
+      opacity: 0;
+      transition: opacity .3s ease;
+    }
+    .nav-drawer-overlay.open { opacity: 1; }
   </style>
 
   <!-- 非关键CSS异步加载 -->
-  <link rel="preload" href="styles.css?v=16" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="styles.css?v=16"></noscript>
+  <link rel="preload" href="styles.css?v=17" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles.css?v=17"></noscript>
 </head>
 <body>
+<button id="navHamburger" aria-label="打开导航菜单" title="菜单">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div class="nav-drawer-overlay" id="navDrawerOverlay"></div>
 <a href="#mainArea" class="skip-link">跳转到主内容</a>
 <div id="netStatus" class="net-status"></div>
 
@@ -365,7 +395,7 @@
   </div>
   <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">登录 / 注册</div>
   <div class="sidebar-footer">
-    <span class="footer-ver">V4.5.12</span>
+    <span class="footer-ver">V4.5.13</span>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">反馈</a>
   </div>
 </nav>
@@ -374,7 +404,7 @@
   <!-- 首页内容 -->
   <div class="content-layer home-hero" id="module-home">
     <div class="hero-content">
-      <div class="hero-badge">V4.5.12 · 云南瓦搭群</div>
+      <div class="hero-badge">V4.5.13 · 云南瓦搭群</div>
       <div class="hero-title">无畏契约 · 战术工具集</div>
       <div class="hero-desc">为内战而生的随机工具 · 选图 · 选特工 · 分队 · 内鬼</div>
       <div class="hero-cards">
@@ -732,7 +762,7 @@
   <script type="module" src="auth.js?v=25"></script>
   <script type="module" src="teamsplit.js?v=17"></script>
   <script type="module" src="spy-mode.js?v=19"></script>
-  <script defer src="app.js?v=14"></script>
+  <script defer src="app.js?v=15"></script>
 
 <!-- 登录弹窗 -->
 <div class="auth-overlay" id="authOverlay" role="dialog" aria-modal="true" aria-labelledby="authTitle" style="display:none;" onclick="if(event.target===this)toggleAuthOverlay()">
