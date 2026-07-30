@@ -523,7 +523,7 @@ main::after{
     transition:transform .3s cubic-bezier(.25,.8,.25,1)!important;
     box-shadow:4px 0 24px rgba(0,0,0,.25);
   }
-  body.drawer-open .sidebar{transform:translateX(0);}
+  body.drawer-open .sidebar{transform:translateX(0) !important;}
   .sidebar-logo,.sidebar-footer{display:flex;}
   .nav-list{
     display:block;
