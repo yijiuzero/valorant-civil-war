@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://media.valorant-api.com">
 <link rel="preconnect" href="https://cmsassets.rgpub.io">
 
-<title>无畏契约 · 战术转盘 · V4.5.16</title>
+<title>无畏契约 · 战术转盘 · V4.5.17</title>
 
   <!-- 关键CSS内联：加速首屏渲染 -->
   <style>
@@ -343,8 +343,8 @@
   </style>
 
   <!-- 非关键CSS异步加载 -->
-  <link rel="preload" href="styles.css?v=20" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="styles.css?v=20"></noscript>
+  <link rel="preload" href="styles.css?v=21" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles.css?v=21"></noscript>
 </head>
 <body>
 <button id="navHamburger" aria-label="打开导航菜单" title="菜单">
@@ -395,7 +395,7 @@
   </div>
   <div class="auth-sidebar-entry" id="authSidebarEntry" onclick="toggleAuthOverlay()">登录 / 注册</div>
   <div class="sidebar-footer">
-    <span class="footer-ver">V4.5.16</span>
+    <span class="footer-ver">V4.5.17</span>
     <a class="sidebar-feedback-link" href="https://github.com/yijiuzero/valorant-civil-war/issues/new" target="_blank" rel="noreferrer">反馈</a>
   </div>
 </nav>
@@ -404,7 +404,7 @@
   <!-- 首页内容 -->
   <div class="content-layer home-hero" id="module-home">
     <div class="hero-content">
-      <div class="hero-badge">V4.5.16 · 云南瓦搭群</div>
+      <div class="hero-badge">V4.5.17 · 云南瓦搭群</div>
       <div class="hero-title">无畏契约 · 战术工具集</div>
       <div class="hero-desc">为内战而生的随机工具 · 选图 · 选特工 · 分队 · 内鬼</div>
       <div class="hero-cards">
@@ -725,22 +725,19 @@
           <div class="spy-entry-title">创建线上房间</div>
           <div class="spy-entry-desc">创建房间 → 群友加入 → 分队 → 自动内鬼</div>
         </div>
-        <div class="spy-entry-card" role="button" tabindex="0" onclick="showRoomCodeInput()">
+        <div class="spy-entry-card" role="button" tabindex="0" onclick="showJoinRoomView()">
           <div class="spy-entry-icon">🔗</div>
           <div class="spy-entry-title">加入线上房间</div>
           <div class="spy-entry-desc">输入房间码加入，登录后查看内鬼身份</div>
         </div>
-        <div class="spy-entry-card" role="button" tabindex="0" onclick="switchModule('teamsplit')">
-          <div class="spy-entry-icon">📋</div>
-          <div class="spy-entry-title">从分队房间进入</div>
-          <div class="spy-entry-desc">在内战分队中完成分房后再开启内鬼模式</div>
-        </div>
       </div>
-      <!-- 加入房间输入 -->
-      <div id="spyJoinRoomPanel" style="display:none;margin-top:20px;">
+    </div>
+    <!-- 加入房间（独立全屏视图） -->
+    <div id="spyJoinRoomView" style="display:none;width:100%;max-width:480px;">
+      <div class="spy-setup-card">
         <div class="spy-setup-head">
           <span>🔗 输入房间码</span>
-          <button class="spy-setup-back" onclick="hideRoomCodeInput()">← 返回</button>
+          <button class="spy-setup-back" onclick="backToSpyEntry()">← 返回</button>
         </div>
         <div class="spy-setup-input-row">
           <input class="teamsplit-input" id="joinRoomCodeInput" type="text" placeholder="输入6位房间码" maxlength="8" style="text-transform:uppercase;" onkeydown="if(event.key==='Enter')joinSpyLobby(this.value)">

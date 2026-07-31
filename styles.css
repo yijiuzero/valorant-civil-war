@@ -611,7 +611,12 @@ main::after{
   .btn-machine{padding:10px 28px;font-size:15px;}
 
   #globalToast{bottom:24px;}
-  #themeToggle{right:12px;top:12px;}
+  /* 加入房间视图：移动端更友好 */
+  #spyJoinRoomView{max-width:100%;}
+  #spyJoinRoomView .spy-setup-card{padding:20px 16px;}
+  #spyJoinRoomView .spy-setup-input-row{flex-direction:column;gap:10px;}
+  #spyJoinRoomView .teamsplit-input{width:100%;font-size:15px;min-height:48px;letter-spacing:2px;text-align:center;}
+  #spyJoinRoomView .btn-machine{width:100%;min-height:48px;font-size:15px;}
 }
 @media(max-width:420px){
   main{padding:16px 8px;padding-top:64px;}

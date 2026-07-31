@@ -529,7 +529,7 @@ async function leaveLobbyRoom() {
 
 // ========== 入口工具 ==========
 function backToSpyEntry() {
-  ['spyStandaloneSetup','spyStandaloneGame','spyQuickRoomSetup','spyQuickRoomResult','spyJoinRoomPanel','spyLobbyView'].forEach(function(id) {
+  ['spyStandaloneSetup','spyStandaloneGame','spyQuickRoomSetup','spyQuickRoomResult','spyJoinRoomPanel','spyLobbyView','spyJoinRoomView'].forEach(function(id) {
     var el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   var entry = document.getElementById('spyStandaloneEntry'); if (entry) entry.style.display = '';
@@ -540,6 +540,15 @@ function showRoomCodeInput() {
     var el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   var panel = document.getElementById('spyJoinRoomPanel'); if (panel) panel.style.display = '';
+}
+
+function showJoinRoomView() {
+  ['spyStandaloneEntry','spyLobbyView','spyStandaloneGame','spyQuickRoomResult','spyQuickRoomSetup','spyStandaloneSetup'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  var view = document.getElementById('spyJoinRoomView'); if (view) view.style.display = '';
+  // 自动聚焦输入框
+  setTimeout(function() { var i = document.getElementById('joinRoomCodeInput'); if (i) i.focus(); }, 100);
 }
 
 function hideRoomCodeInput() {
@@ -554,6 +563,7 @@ window.revealSpies = revealSpies;
 window.backToSpyEntry = backToSpyEntry;
 window.showRoomCodeInput = showRoomCodeInput;
 window.hideRoomCodeInput = hideRoomCodeInput;
+window.showJoinRoomView = showJoinRoomView;
 window.createSpyLobby = createSpyLobby;
 window.joinSpyLobby = joinSpyLobby;
 window.updatePlayerTeam = updatePlayerTeam;
