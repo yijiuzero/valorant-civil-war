@@ -1,6 +1,6 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.5.17
+> **版本**: V4.5.18
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
@@ -385,6 +385,7 @@ start index.html
 | V3.6.1 | 2026-07-20 | Bug修复（内鬼查看身份后无法返回、B队内鬼标签错误、变量命名歧义） |
 | V3.6.0 | 2026-07-20 | 内鬼模式支持独立手动组队（localStorage驱动）；双入口架构 |
 | V4.5.3 | 2026-07-28 | Bug 修复（+0.0.1）：性能优化。包含：关键CSS内联（首屏渲染优化）、preconnect 第三方域名、SEO meta 标签（description/og:title）、styles.css 异步加载（rel=preload） |
+| V4.5.18 | 2026-07-31 | 内鬼模式入口居中修复：`#spyStandaloneEntry` 和 `.spy-entry-cards` 加 `align-items:stretch/center`，卡片内容 flex 居中，标题和副标题 width:100% 居中。缓存参数 styles21→22 |
 | V4.5.17 | 2026-07-31 | 内鬼模式适配优化：移除「从分队房间进入」入口卡片；加入线上房间改为独立全屏视图（输入框居中、按钮加宽加大）。缓存参数 styles20→21 |
 | V4.5.16 | 2026-07-31 | 移动端适配优化：首页 hero 区域缩小间距/字体/卡片尺寸；内鬼模式入口卡片固定宽度改为自适应、Lobby 大厅输入行纵向排列、拖拽区域/游戏面板/揭晓改为单列。缓存参数 styles19→20 |
 | V4.5.15 | 2026-07-31 | Bug 修复（+0.0.1）：移动端导航栏仍显示电脑端样式。CSS 语法错误：`#globalToast` 规则内多了一个 `body{overflow-y:auto};}`，导致浏览器解析出错，768px 媒体查询及后续规则全部失效。修复：移除多余的 `body{overflow-y:auto};}`。缓存参数 styles18→19 |

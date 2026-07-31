@@ -552,14 +552,15 @@ main::after{
     padding-top:64px;
   }
   .content-layer{max-width:100%;}
-  .module-title{font-size:18px;}
-  .module-sub{font-size:12px;margin-bottom:20px;}
+  .hero-badge{margin-left:auto;margin-right:auto;}
+  .module-title{font-size:18px;text-align:center;width:100%;}
+  .module-sub{font-size:12px;margin-bottom:20px;text-align:center;width:100%;}
 
   .home-hero{flex:1;align-self:stretch;}
   .hero-content{padding:20px 12px;}
   .hero-title{font-size:24px;letter-spacing:2px;}
   .hero-desc{font-size:13px;margin-bottom:16px;}
-  .hero-cards{grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;max-width:100%;}
+  .hero-badge{margin-left:auto;margin-right:auto;}
   .hero-card{padding:12px 8px;}
   .hero-card-icon{width:32px;height:32px;}
   .hero-card-title{font-size:12px;}
@@ -567,11 +568,12 @@ main::after{
   .preview-tag{font-size:9px;padding:1px 4px;}
 
   /* 内鬼模式入口卡片：固定宽度改为自适应 */
-  .spy-entry-cards{flex-direction:column;gap:10px;}
-  .spy-entry-card{width:100%;max-width:100%;padding:18px 14px;box-sizing:border-box;}
+  .spy-entry-cards{flex-direction:column;gap:10px;width:100%;align-items:stretch;}
+  .spy-entry-card{width:100%;max-width:100%;padding:18px 14px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;align-items:center;}
   .spy-entry-icon{font-size:34px;margin-bottom:8px;}
   .spy-entry-title{font-size:15px;}
   .spy-entry-desc{font-size:12px;}
+  #spyStandaloneEntry{max-width:100%;width:100%;margin:0 auto;display:flex;flex-direction:column;align-items:center;}
   /* 内鬼 Lobby 大厅 */
   .spy-setup-card{padding:16px 12px;}
   .spy-setup-head{font-size:15px;flex-wrap:wrap;gap:8px;}
@@ -612,8 +614,11 @@ main::after{
 
   #globalToast{bottom:24px;}
   /* 加入房间视图：移动端更友好 */
-  #spyJoinRoomView{max-width:100%;}
+  #spyJoinRoomView{max-width:100%;width:100%;}
   #spyJoinRoomView .spy-setup-card{padding:20px 16px;}
+  #spyJoinRoomView .spy-setup-input-row{flex-direction:column;gap:10px;}
+  #spyJoinRoomView .teamsplit-input{width:100%;font-size:15px;min-height:48px;letter-spacing:2px;text-align:center;}
+  #spyJoinRoomView .btn-machine{width:100%;min-height:48px;font-size:15px;}
   #spyJoinRoomView .spy-setup-input-row{flex-direction:column;gap:10px;}
   #spyJoinRoomView .teamsplit-input{width:100%;font-size:15px;min-height:48px;letter-spacing:2px;text-align:center;}
   #spyJoinRoomView .btn-machine{width:100%;min-height:48px;font-size:15px;}
