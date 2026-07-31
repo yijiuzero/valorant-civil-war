@@ -1,6 +1,6 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.5.15
+> **版本**: V4.5.16
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
@@ -385,6 +385,7 @@ start index.html
 | V3.6.1 | 2026-07-20 | Bug修复（内鬼查看身份后无法返回、B队内鬼标签错误、变量命名歧义） |
 | V3.6.0 | 2026-07-20 | 内鬼模式支持独立手动组队（localStorage驱动）；双入口架构 |
 | V4.5.3 | 2026-07-28 | Bug 修复（+0.0.1）：性能优化。包含：关键CSS内联（首屏渲染优化）、preconnect 第三方域名、SEO meta 标签（description/og:title）、styles.css 异步加载（rel=preload） |
+| V4.5.16 | 2026-07-31 | 移动端适配优化：首页 hero 区域缩小间距/字体/卡片尺寸；内鬼模式入口卡片固定宽度改为自适应、Lobby 大厅输入行纵向排列、拖拽区域/游戏面板/揭晓改为单列。缓存参数 styles19→20 |
 | V4.5.15 | 2026-07-31 | Bug 修复（+0.0.1）：移动端导航栏仍显示电脑端样式。CSS 语法错误：`#globalToast` 规则内多了一个 `body{overflow-y:auto};}`，导致浏览器解析出错，768px 媒体查询及后续规则全部失效。修复：移除多余的 `body{overflow-y:auto};}`。缓存参数 styles18→19 |
 | V4.5.14 | 2026-07-30 | Bug 修复（+0.0.1）：移动端侧滑抽屉打不开。`body.drawer-open .sidebar` 的 `transform:translateX(0)` 没有加 `!important`，被媒体查询里 `.sidebar` 的 `transform:translateX(-100%) !important` 覆盖。修复：加 `!important`。缓存参数 styles17→18 |
 | V4.5.13 | 2026-07-29 | 移动端导航适配：侧边栏改为侧滑抽屉 + 汉堡菜单。768px 以下显示汉堡按钮，点击从左侧滑出 260px 宽抽屉，点击遮罩或 ESC 关闭。main 区域顶部留 64px 空间避免被汉堡遮挡。移除旧底部导航栏样式，所有模块在移动端保持功能一致。缓存参数 app14→15、styles16→17 |

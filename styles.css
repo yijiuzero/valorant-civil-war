@@ -556,11 +556,46 @@ main::after{
   .module-sub{font-size:12px;margin-bottom:20px;}
 
   .home-hero{flex:1;align-self:stretch;}
-  .hero-title{font-size:28px;}
-  .hero-desc{font-size:14px;margin-bottom:24px;}
-  .hero-cards{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;}
-  .hero-card{padding:16px 10px;}
-  .hero-card-icon{width:36px;height:36px;}
+  .hero-content{padding:20px 12px;}
+  .hero-title{font-size:24px;letter-spacing:2px;}
+  .hero-desc{font-size:13px;margin-bottom:16px;}
+  .hero-cards{grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;max-width:100%;}
+  .hero-card{padding:12px 8px;}
+  .hero-card-icon{width:32px;height:32px;}
+  .hero-card-title{font-size:12px;}
+  .hero-card-desc{font-size:10px;}
+  .preview-tag{font-size:9px;padding:1px 4px;}
+
+  /* 内鬼模式入口卡片：固定宽度改为自适应 */
+  .spy-entry-cards{flex-direction:column;gap:10px;}
+  .spy-entry-card{width:100%;max-width:100%;padding:18px 14px;box-sizing:border-box;}
+  .spy-entry-icon{font-size:34px;margin-bottom:8px;}
+  .spy-entry-title{font-size:15px;}
+  .spy-entry-desc{font-size:12px;}
+  /* 内鬼 Lobby 大厅 */
+  .spy-setup-card{padding:16px 12px;}
+  .spy-setup-head{font-size:15px;flex-wrap:wrap;gap:8px;}
+  .spy-setup-input-row{flex-direction:column;gap:8px;}
+  .spy-player-row{font-size:13px;padding:6px 10px;flex-wrap:wrap;gap:6px;}
+  .spy-team-btn{width:44px;height:44px;font-size:14px;}
+  .spy-team-col{padding:10px;}
+  .spy-team-member{font-size:12px;padding:4px 10px;}
+  .spy-team-label{font-size:13px;}
+  .spy-drag-area{grid-template-columns:1fr;}
+  .spy-playing-layout{grid-template-columns:1fr;}
+  .spy-team-preview{grid-template-columns:1fr;}
+  .spy-reveal-teams{grid-template-columns:1fr;}
+  .spy-init-icon{font-size:42px;}
+  .spy-reveal-icon{font-size:42px;}
+  .spy-card-body{padding:14px;}
+  .spy-task-card{padding:10px;}
+  .spy-task-icon{font-size:20px;}
+  .spy-task-title{font-size:14px;}
+  .spy-warning{font-size:11px;}
+  .spy-reveal-card{padding:20px 14px;}
+  .spy-reveal-row{font-size:12px;gap:6px;padding:4px 8px;}
+  .spy-reveal-row-name{min-width:40px;}
+  .spy-reveal-row-task{font-size:11px;}
 
   .map-cards{gap:8px;}
   .map-card{width:80px;height:56px;}
@@ -587,11 +622,11 @@ main::after{
   .map-result-card{width:130px;height:88px;}
   .map-result-card .mr-label{font-size:12px;}
   .btn-spin{padding:10px 32px;font-size:15px;margin-top:18px;}
-  .hero-cards{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;}
-  .hero-card{padding:16px 10px;}
-  .hero-card-icon{width:36px;height:36px;}
-  .hero-title{font-size:28px;}
-  .hero-desc{font-size:14px;margin-bottom:24px;}
+  .hero-cards{grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;}
+  .hero-card{padding:10px 6px;}
+  .hero-card-icon{width:28px;height:28px;}
+  .hero-title{font-size:22px;}
+  .hero-desc{font-size:12px;margin-bottom:12px;}
   .agent-card{width:52px;padding:4px 2px;}
   .agent-card img{width:34px;height:34px;}
   .agent-card .agent-name{font-size:10px;}
