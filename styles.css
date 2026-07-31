@@ -500,8 +500,6 @@ main::after{
   display:flex;align-items:center;gap:8px;
   padding-right:16px;
 }
-  body{overflow-y:auto;}
-}
 /* ===== 移动端:侧边栏→侧滑抽屉 ===== */
 @media(max-width:768px){
   body{
