@@ -505,6 +505,7 @@ main::after{
   body{
     flex-direction:column!important;
     overflow-y:auto;
+    overflow-x:hidden;
     min-height:100dvh!important;
   }
   #navHamburger{display:flex;}
@@ -552,6 +553,9 @@ main::after{
     padding-top:64px;
   }
   .content-layer{max-width:100%;}
+  /* 修复 ID 优先级覆盖：确保这两个模块在移动端不超过视口宽度 */
+  #module-teamsplit{max-width:100%;}
+  .challenge-machine{max-width:100%;}
   .hero-badge{margin-left:auto;margin-right:auto;}
   .module-title{font-size:18px;text-align:center;width:100%;}
   .module-sub{font-size:12px;margin-bottom:20px;text-align:center;width:100%;}
@@ -1015,6 +1019,8 @@ main::after{
   .teamsplit-create-grid{
     display:flex;
   }
+  /* 内联 flex 行（段位/随机分队两个大按钮）在移动端改为纵向，避免横排溢出 */
+  #module-teamsplit .teamsplit-action-stack > div{flex-direction:column;gap:10px;}
   .teamsplit-count-badge{
     width:100%;
     min-width:0;
@@ -1038,10 +1044,11 @@ main::after{
   .teamsplit-inline-btn,
   .teamsplit-secondary-btn,
   .teamsplit-primary-btn,
-  #btnResetSplit{
-    width:100%;
+    #btnResetSplit{
+      width:100%;
+    }
+    #module-teamsplit{max-width:100%;}
   }
-}
 /* ===== 主题切换按钮 ===== */
 #themeToggle {
   position: fixed;
