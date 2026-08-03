@@ -203,98 +203,7 @@ valorant-civil-war/
 
 ---
 
-## 八、已完成
-
-### 核心功能
-- [x] 随机选图（Ban 机制、动画、结果展示）
-- [x] 随机特工（角色筛选、冠军阵容）
-- [x] 内战转盘（动画、历史记录、切模块自动停止）
-- [x] 分队模块基础流程（创建/加入/分队/离开）
-- [x] 分队模块修复：加入流程合并 → 拆回两步（V2.1.2~V2.1.5）
-- [x] 分队模块修复：切换页签后保留房间状态
-- [x] 分队模块修复：创建者自动加入
-- [x] 分队模块修复：resetSplit 恢复房间状态
-- [x] 分队模块修复：结果页添加离开按钮
-- [x] 分队模块修复：移除不存在的 temp_id 字段
-- [x] 分队模块：段位系统（rank 1-9、段位选择、段位图标）
-- [x] 分队模块：按段位平衡分队（贪心算法）
-- [x] 分队模块：房主系统（房主标识、房主权限）
-- [x] 分队模块：踢人功能
-- [x] 分队模块：被踢玩家 toast 提示 + 自动返回
-- [x] 分队模块：随机分队模式（Fisher-Yates）
-- [x] 分队模块：分队按钮禁用（防并发）
-- [x] 分队模块：joinLobby 检查房间 done 状态
-- [x] 分队模块：房间超时清理（24h done / 2h waiting）
-- [x] 分队模块：点击房间码复制（含 fallback）
-- [x] 分队模块：玩家加入/离开 toast 通知
-- [x] 分队模块：刷新页面恢复分队结果
-- [x] 分队模块：防止同一房间重名
-- [x] 分队模块：缓存破坏参数 `?v=` 随文件改动递增（当前 app-data.js?v=9 / auth.js?v=25 / teamsplit.js?v=16 / spy-mode.js?v=18 / app.js?v=11 / styles.css?v=14）
-- [x] 暗色/亮色主题切换（localStorage 持久化）
-
-### 身份系统改造（V3.4.0）
-- [x] 身份系统：匿名登录（supabase.auth.signInAnonymously）
-- [x] 房主系统：rooms.host_user_id 持久化判定（替代 deviceId）
-- [x] 数据库变更：rooms 表 host_user_id 列 + players 表 user_id 列
-- [x] 分队模块：自动恢复身份（tryAutoJoin 用 user_id 匹配）
-- [x] 移除 deviceId 方案，全面切换为 user_id
-
-### 移动端适配（V3.4.0）
-- [x] 移动端适配：侧边栏→底部导航栏（768px/640px/420px 三断点响应式）
-- [x] 编码修复：app-data.js / styles.css 添加 UTF-8 BOM 解决中文乱码
-- [x] body overflow 改为 overflow-x:hidden（768px 断点开放 overflow-y:auto）
-- [x] 触摸目标 ≥44px（mc-btn、ac-btn、ac-mode-btn、teamsplit-kick-btn）
-- [x] 版本号移动端可见（首页副标题 + 侧边栏底部双端显示）
-
-### Bug 修复（V3.6.1）
-- [x] showToast 重叠消失（清除旧定时器）
-- [x] stopChallenge 重复定义（合并为一个）
-- [x] spinChallenge 切模块不停（tick 内检查 machineSpinning）
-- [x] joinLobby 未检查房间 done 状态
-- [x] doSplit 分队过程按钮未禁用（防并发）
-- [x] copyRoomCode 无 fallback（execCommand 兜底）
-- [x] stopAgentSpin 中 btn 变量名错误
-- [x] overscroll-behavior 防止移动端下拉刷新误触
-- [x] :focus-visible 焦点环（键盘导航友好）
-- [x] #themeToggle 样式从 inline 移入 CSS
-- [x] 移除 content-layer 入场动画（避免闪烁）
-- [x] 清理临时文件（fix.js、fix-toast.js、fix-spinbtn.js、git_query.js）
-
-### 其他
-- [x] GitHub 仓库初始化并推送
-- [x] Git 代理配置（127.0.0.1:7897）
-
-### 前端可访问性维护（V3.14.0）
-- [x] 键盘导航：导航项/首页卡片/内鬼入口/房间码复制支持 Enter/Space 激活（全局 keydown 委托 `[role="button"][tabindex]`）
-- [x] 尊重系统「减少动效」偏好（`@media (prefers-reduced-motion: reduce)` 全局关闭动画/过渡）
-- [x] 登录弹窗焦点管理：打开聚焦昵称输入框、Esc 关闭并返还焦点到侧边栏登录入口；`role="dialog" aria-modal`
-- [x] 无障碍属性：toast `role="status" aria-live="polite"`、切换模块设 `aria-current="page"`、内鬼 Lobby 复制按钮 `aria-label`
-
-### 移动端分队修复（V3.15.0）
-- [x] 内鬼 Lobby 每张玩家卡片加 A队/B队 点击分配按钮（触屏/鼠标/键盘通用，原生 `<button>`）
-- [x] 已分配按钮显示 ✓，再点即取消分配（`updatePlayerTeam(name, null)` toggle）
-- [x] 复用 `.spy-team-btn` / `-a` / `-b` 样式，桌面 HTML5 拖拽保留作增强
-- [x] 修复手机端 HTML5 拖拽不触发导致无法分队、内鬼流程卡死的问题
-- [x] 名字从卡片 `data-name` 读取，避免拼入 onclick 字符串（XSS/引号安全）
-
-### 人机验证接入（V4.2.9 起为自研轻量验证）
-- [x] 原 Cloudflare Turnstile 在国内（昆明）常加载失败、且需第三方 CDN，V4.2.9 起替换为**自研轻量人机验证**
-- [x] 无第三方 CDN 依赖，纯前端 + Supabase Edge Function（`turnstile-verify`，函数名历史遗留但逻辑已换），国内 100% 可达
-- [x] 校验逻辑（无状态 HMAC 方案）：①challenge 时服务端生成算术题，对「答案|时间戳|随机值」做 HMAC-SHA256 签名（**答案不下发前端**）；②verify 时前端提交答案，服务端用该答案重算 HMAC 与带来的签名比对，一致即通过；③题目 5 分钟有效期防重放。攻击者无密钥无法伪造签名绕过 → 防裸奔
-- [x] HMAC 密钥复用 Supabase 自动注入的 `SUPABASE_SERVICE_ROLE_KEY`，**无需额外 set secret**
-- [x] Edge Function 部署：`supabase functions deploy turnstile-verify`（已于 2026-07-23 部署，线上冒烟测试 200 通过；**后续修改 index.ts 后需重新 deploy 才生效**）
-
-### 并发安全修复（V4.2.19）
-- [x] 内鬼 Lobby 并发竞态修复：原 `joinSpyLobby`/`updatePlayerTeam`/`leaveLobbyRoom`/`startLobbySpy`/`lobbyRevealSpies`/`resetLobbySpy` 全部采用 read-modify-write 模式操作 `spy_state` JSONB，并发操作会互相覆盖导致数据丢失
-- [x] 新增 6 个 Postgres 原子函数（`lobby_add_player`/`lobby_remove_player`/`lobby_set_player_team`/`lobby_start_spy`/`lobby_reveal_spy`/`lobby_reset_spy`），前端通过 `supabase.rpc()` 调用，Postgres 端用 `SELECT ... FOR UPDATE` 行级锁保证原子性
-- [x] `lobby_remove_player` 内置房主转移逻辑：房主离开时自动把 `host_user_id` 移交给首个剩余玩家，无人则关闭房间
-- [x] `lobby_start_spy` 在服务端随机选内鬼 + 分配任务，不再信任客户端 Math.random()
-- [x] players 表新增 `(room_code, user_id)` 唯一约束，防止同一用户在同一房间产生多行
-- [x] Realtime 订阅同步 `host_user_id` 到 `lobbyState`，确保房主转移对所有客户端生效
-
----
-
-## 九、待办 / 已知问题
+## 八、待办 / 已知问题
 
 **【已修复 V4.2.7】侧边栏「修改段位」按钮**（原「未修复」项，经代码+CSS 核对确认已可用）：
 - 结论：代码逻辑与 CSS 均正常。`updateSidebar()` 用 innerHTML 重建后用 `getElementById('btnOpenRankEdit').addEventListener('click', openRankEdit)` 绑定；`openRankEdit` 取 `rankEditOverlay` 显示弹窗；`.auth-rankedit-btn`/`.auth-user-actions` 无 pointer-events 遮挡、布局为纵向 flex + 按钮独占一行（V4.2.5 已修挤压问题）。
@@ -313,7 +222,7 @@ valorant-civil-war/
 
 ---
 
-## 十、Git 规范
+## 九、Git 规范
 
 - 分支: main（默认直接提交，不另开 feature 分支）
 - 提交风格: 前缀: 简短描述（如 fix:、feat:、chore:）
@@ -323,7 +232,7 @@ valorant-civil-war/
 
 ---
 
-## 十一、快速上手
+## 十、快速上手
 
 ```bash
 # 克隆
@@ -337,7 +246,7 @@ start index.html
 ---
 
 
-## 十二、版本历史
+## 十一、版本历史
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
@@ -409,81 +318,3 @@ start index.html
 | V4.5.0 | 2026-07-28 | 需求（+0.1.0）：UI 全面优化方案（方案C）三阶段全部完成 + 批量细节打磨（三批打包）。包含：品牌氛围增强、核心体验重设计、全面视觉重构、模块切换过渡、空/错误/加载态、触屏修复、网络检测、内鬼揭晓延迟、拖拽高亮、自定义滚动条等。版本号 V4.4.0→V4.5.0 |
 | V4.4.0 | 2026-07-28 | 需求（+0.1.0）：UI 全面优化方案（方案C）规划并纳入 PROJECT_CONTEXT.md。分三阶段迭代：A 品牌氛围增强 → B 核心体验重设计 → C 全面视觉重构。版本号 V4.3.2→V4.4.0 |
 | V4.3.2 | 2026-07-27 | 版本号升级（V4.2.19 → V4.3.2）。审计后确认并发安全修复稳定，无其他重大问题。更新版本号至 index.html、PROJECT_CONTEXT.md |
-
----
-
-## 十三、UI 全面优化方案（方案C）
-
-> **状态**: 规划中
-> **目标**: 从"功能原型"升级为"品牌级产品"，建立 VALORANT 竞技调性
-> **策略**: 分阶段迭代，每阶段独立可交付
-
-### 核心问题诊断
-
-| # | 问题 | 影响 |
-|---|------|------|
-| 1 | **品牌调性缺失** | 圆角卡片+系统字体+柔和阴影 = 通用 admin，缺乏 VALORANT 竞技张力 |
-| 2 | **体验时刻平淡** | 抽奖揭晓只是淡入，缺乏"哇"的仪式感 |
-| 3 | **模块切换生硬** | `display:none` 直接切，无过渡动画 |
-| 4 | **信息架构** | "内战专用"命名模糊，分队→内鬼 4 层嵌套太深 |
-
-### 阶段一：品牌氛围增强（A 优先）
-
-**目标**: 不改变布局结构，只强化视觉表现力。低成本、高回报。
-
-| 任务 | 内容 | 预估 |
-|------|------|------|
-| 字体升级 | 标题引入 VALORANT 风格字体（Tungsten / DIN Condensed web 替代），正文保持系统字体 | 0.5 天 |
-| 氛围背景 | 暗色模式加微妙噪点/网格纹理，模块切换时背景色微妙过渡 | 0.5 天 |
-| 卡片悬浮态 | 地图卡片 hover 红色辉光边框，特工卡片 hover 角色色溢出 | 0.5 天 |
-| 关键动画 | 抽中地图"卡片飞入"动画，内鬼揭晓"翻转揭示"效果 | 1 天 |
-
-**交付物**: 字体文件/链接、CSS 变量扩展、关键帧动画库
-
-### 阶段二：核心体验重设计（B 核心）
-
-**目标**: 重新设计 3 个核心"体验时刻"，建立仪式感。
-
-| 任务 | 内容 | 预估 |
-|------|------|------|
-| 抽地图仪式 | 所有地图快速闪烁 → 聚光灯打到选中 → 选中地图放大+边框发光从中央弹出 | 1 天 |
-| 分队结果 | A/B 队从屏幕两侧滑入，中间 VS 辉光，队员名依次弹出 | 0.5 天 |
-| 内鬼揭晓 | 全员头像排列 → 内鬼头像翻转/高亮揭示 → 红色闪烁警告 | 1 天 |
-| 转盘升级 | 老虎机外观重设计（金属质感+霓虹边框），结果揭晓动效 | 0.5 天 |
-
-**交付物**: 3 个核心模块的 HTML/CSS/JS 重构
-
-### 阶段三：全面视觉重构（C 长期）
-
-**目标**: 信息架构到视觉表现全面升级。
-
-| 任务 | 内容 | 预估 |
-|------|------|------|
-| 侧边栏重构 | VALORANT 风格图标（不用 emoji）、红色锐利切角指示器、玩家卡片（段位+头像） | 1 天 |
-| 首页 Hero | 全屏背景、大型悬停卡片（hover 显示玩法预览）、最近活动/统计 | 1 天 |
-| 动效系统 | 模块切换 shared element transition、统一"抽奖揭晓"动画语言、滚动视差 | 1 天 |
-| 移动端打磨 | 全模块响应式精细调整、触摸手势优化 | 0.5 天 |
-| 登录/弹窗 | 弹窗 VALORANT 风格重设计、段位选择器组件化 | 0.5 天 |
-
-**交付物**: 完整设计系统、组件库、动效规范
-
-### 时间总览
-
-| 场景 | 时间 |
-|------|------|
-| 全职投入 | 8-12 天 |
-| 业余推进（每天 2-3h） | 3-4 周 |
-
-### 执行原则
-
-1. **每阶段独立可交付** — 阶段一完成即可发布，不憋大招
-2. **CSS 优先，JS 不动** — 方案 A/B 阶段只改样式，逻辑层不动
-3. **渐进增强** — 动画全部加 `@media (prefers-reduced-motion: reduce)` 兜底
-4. **移动端优先测试** — 每阶段完成后真机验证
-
-### 当前进度
-
-- [x] 阶段一：品牌氛围增强
-- [x] 阶段二：核心体验重设计
-- [x] 阶段三：全面视觉重构
-- [x] 批量细节打磨（三批打包）
