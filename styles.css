@@ -346,6 +346,8 @@ main::after{
   grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
   gap:16px;
   max-width:800px;
+  width:100%;
+  min-width:0;
   margin:0 auto;
 }
 .hero-card{
@@ -359,6 +361,8 @@ main::after{
   backdrop-filter:blur(8px);
   position:relative;
   overflow:hidden;
+  min-width:0;
+  min-height:0;
 }
 .hero-card::before{
   content:'';position:absolute;inset:0;
@@ -556,20 +560,26 @@ main::after{
   /* 修复 ID 优先级覆盖：确保这两个模块在移动端不超过视口宽度 */
   #module-teamsplit{max-width:100%;}
   .challenge-machine{max-width:100%;}
-  .hero-badge{margin-left:auto;margin-right:auto;}
-  .module-title{font-size:18px;text-align:center;width:100%;}
-  .module-sub{font-size:12px;margin-bottom:20px;text-align:center;width:100%;}
+  /* 修复 hero-cards 移动端溢出：缩小 minmax 并加 min-width:0 */
+  .hero-cards{
+    grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+    gap:10px;
+    max-width:100%;
+    min-width:0;
+  }
+  .hero-card{padding:12px 6px;min-width:0;}
+  .hero-card-icon{width:30px;height:30px;margin-bottom:8px;}
+  .hero-card-title{font-size:11px;}
+  .hero-card-desc{font-size:9px;line-height:1.3;}
+  .preview-tag{font-size:8px;padding:1px 4px;}
+  .hero-content{padding:20px 8px;}
+  .hero-title{font-size:22px;letter-spacing:2px;}
+  .hero-badge{margin-left:auto;margin-right:auto;padding:6px 16px;font-size:11px;}
+  .hero-desc{font-size:12px;margin-bottom:16px;}
 
   .home-hero{flex:1;align-self:stretch;}
-  .hero-content{padding:20px 12px;}
-  .hero-title{font-size:24px;letter-spacing:2px;}
-  .hero-desc{font-size:13px;margin-bottom:16px;}
-  .hero-badge{margin-left:auto;margin-right:auto;}
-  .hero-card{padding:12px 8px;}
-  .hero-card-icon{width:32px;height:32px;}
-  .hero-card-title{font-size:12px;}
-  .hero-card-desc{font-size:10px;}
-  .preview-tag{font-size:9px;padding:1px 4px;}
+  .module-title{font-size:18px;text-align:center;width:100%;}
+  .module-sub{font-size:12px;margin-bottom:20px;text-align:center;width:100%;}
 
   /* 内鬼模式入口卡片：固定宽度改为自适应 */
   .spy-entry-cards{flex-direction:column;gap:10px;width:100%;align-items:stretch;}
@@ -643,12 +653,17 @@ main::after{
   .map-card .mc-label{font-size:10px;white-space:normal;line-height:1.1;padding:2px 0;}
   .map-result-card{width:130px;height:88px;}
   .map-result-card .mr-label{font-size:12px;}
-  .btn-spin{padding:10px 32px;font-size:15px;margin-top:18px;}
-  .hero-cards{grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;}
-  .hero-card{padding:10px 6px;}
-  .hero-card-icon{width:28px;height:28px;}
-  .hero-title{font-size:22px;}
-  .hero-desc{font-size:12px;margin-bottom:12px;}
+  .btn-spin{padding:10px 28px;font-size:14px;margin-top:14px;}
+  /* 420px 下 hero-cards 固定两列避免溢出 */
+  .hero-cards{grid-template-columns:repeat(2,1fr);gap:8px;min-width:0;width:100%;}
+  .hero-card{padding:10px 4px;min-width:0;}
+  .hero-card-icon{width:24px;height:24px;margin-bottom:6px;}
+  .hero-card-title{font-size:10px;}
+  .hero-card-desc{font-size:9px;line-height:1.3;}
+  .preview-tag{font-size:7px;padding:1px 3px;}
+  .hero-title{font-size:20px;letter-spacing:1px;}
+  .hero-desc{font-size:11px;margin-bottom:12px;}
+  .hero-badge{padding:5px 12px;font-size:10px;}
   .agent-card{width:52px;padding:4px 2px;}
   .agent-card img{width:34px;height:34px;}
   .agent-card .agent-name{font-size:10px;}

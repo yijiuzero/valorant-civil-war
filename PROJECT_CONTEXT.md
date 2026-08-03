@@ -1,6 +1,6 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.5.20
+> **版本**: V4.5.21
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
@@ -387,7 +387,7 @@ start index.html
 | V4.5.3 | 2026-07-28 | Bug 修复（+0.0.1）：性能优化。包含：关键CSS内联（首屏渲染优化）、preconnect 第三方域名、SEO meta 标签（description/og:title）、styles.css 异步加载（rel=preload） |
 | V4.5.18 | 2026-07-31 | 内鬼模式入口居中修复：`#spyStandaloneEntry` 和 `.spy-entry-cards` 加 `align-items:stretch/center`，卡片内容 flex 居中，标题和副标题 width:100% 居中。缓存参数 styles21→22 |
 | V4.5.19 | 2026-08-03 | 移动端内战分队/内战专用模块溢出修复：teamsplit「段位分队/随机分队」两个按钮内联 flex 横排改为移动端纵向（命中 `#module-teamsplit .teamsplit-action-stack > div`）；修复 `#module-teamsplit` ID 优先级覆盖导致移动端 max-width 约束失效（加 ID 级 `max-width:100%`）；`.challenge-machine` 移动端 `max-width:100%`；`body` 加 `overflow-x:hidden` 兜底。缓存参数 styles22→23 |
-| V4.5.20 | 2026-08-03 | Bug修复（+0.0.1）：移动端响应式溢出全面修复。`.challenge-machine` + `.machine-frame` + `.machine-display` 加 `min-width:0` 和 `max-width:100%`；`.machine-text` 加 `word-break:break-word`；`.teamsplit-panel` 加 `min-width:0` + `max-width:100%` + `overflow:hidden`；`.teamsplit-room` + `.teamsplit-panel-head` + `.teamsplit-room-code` + `.teamsplit-join-row` + `.teamsplit-action-stack` 加 `min-width:0` + `width:100%`；`.teamsplit-teams` 加 `min-width:0`；`.challenge-count` + `.challenge-history` 加 `min-width:0`；768px 加 stats 模块字体/间距收紧；640px 加 stats 模块 + teamsplit 面板 padding 收紧；420px 加 `!important` 强制 inline flex 纵向排列 + 房间码字间距 1px。 |
+| V4.5.21 | 2026-08-03 | Bug修复（+0.0.1）：首页 hero-cards 移动端溢出修复。`.hero-cards` 加 `min-width:0` + `width:100%`；`.hero-card` 加 `min-width:0` + `min-height:0`；768px `minmax(150px,1fr)` 改为 `minmax(110px,1fr)` 并收紧卡片字号/间距/图标；420px 固定两列 `repeat(2,1fr)` 彻底避免 auto-fit 撑爆。 |
 | V4.5.17 | 2026-07-31 | 内鬼模式适配优化：移除「从分队房间进入」入口卡片；加入线上房间改为独立全屏视图（输入框居中、按钮加宽加大）。缓存参数 styles20→21 |
 | V4.5.16 | 2026-07-31 | 移动端适配优化：首页 hero 区域缩小间距/字体/卡片尺寸；内鬼模式入口卡片固定宽度改为自适应、Lobby 大厅输入行纵向排列、拖拽区域/游戏面板/揭晓改为单列。缓存参数 styles19→20 |
 | V4.5.15 | 2026-07-31 | Bug 修复（+0.0.1）：移动端导航栏仍显示电脑端样式。CSS 语法错误：`#globalToast` 规则内多了一个 `body{overflow-y:auto};}`，导致浏览器解析出错，768px 媒体查询及后续规则全部失效。修复：移除多余的 `body{overflow-y:auto};}`。缓存参数 styles18→19 |
