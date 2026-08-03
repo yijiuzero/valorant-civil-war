@@ -626,6 +626,14 @@ main::after{
   #spyJoinRoomView .spy-setup-input-row{flex-direction:column;gap:10px;}
   #spyJoinRoomView .teamsplit-input{width:100%;font-size:15px;min-height:48px;letter-spacing:2px;text-align:center;}
   #spyJoinRoomView .btn-machine{width:100%;min-height:48px;font-size:15px;}
+  /* 内战转盘：移动端容器自适应 */
+  .challenge-machine{gap:14px;max-width:100%;}
+  .machine-frame{padding:20px 16px;}
+  .machine-text{font-size:17px;}
+  .machine-text.result{font-size:19px;}
+  .machine-text.idle{font-size:14px;}
+  .btn-machine{padding:10px 24px;font-size:14px;}
+  #module-stats .module-sub{margin-bottom:20px;}
 }
 @media(max-width:420px){
   main{padding:16px 8px;padding-top:64px;}
@@ -655,6 +663,9 @@ main::after{
 /* ===== 内战分队模块 ===== */
 #module-teamsplit{
   max-width:860px;
+  width:100%;
+  min-width:0;
+  overflow:hidden;
 }
 .teamsplit-rank-icon{
   width:22px;
@@ -669,15 +680,20 @@ main::after{
   align-items:center;
   gap:18px;
   width:100%;
+  max-width:100%;
+  min-width:0;
 }
 .teamsplit-panel{
   width:100%;
+  max-width:100%;
+  min-width:0;
   padding:28px;
   border-radius:18px;
   background:color-mix(in srgb,var(--sidebar-bg) 78%,rgba(10,16,24,.78));
   border:1px solid color-mix(in srgb,var(--accent) 16%,var(--border));
   box-shadow:0 20px 50px rgba(0,0,0,.2);
   backdrop-filter:blur(14px);
+  overflow:hidden;
 }
 .teamsplit-panel-head{
   display:flex;
@@ -685,6 +701,7 @@ main::after{
   justify-content:space-between;
   gap:16px;
   width:100%;
+  min-width:0;
   margin-bottom:18px;
 }
 .teamsplit-panel-title{
@@ -732,6 +749,7 @@ main::after{
   display:flex;
   gap:12px;
   width:100%;
+  min-width:0;
   align-items:center;
 }
 .teamsplit-action-stack{
@@ -835,6 +853,8 @@ main::after{
   color:#b9c7d8;
   font-size:14px;
   font-weight:700;
+  min-width:0;
+  width:100%;
 }
 .teamsplit-room-code span{
   font-size:32px;
@@ -922,6 +942,7 @@ main::after{
   gap:16px;
   align-items:stretch;
   width:100%;
+  min-width:0;
 }
 .teamsplit-team{
   min-width:0;
@@ -1048,7 +1069,13 @@ main::after{
       width:100%;
     }
     #module-teamsplit{max-width:100%;}
-  }
+  /* 内战转盘：640px 收紧 */
+  .challenge-machine{gap:14px;}
+  .machine-text.idle{font-size:14px;}
+  .teamsplit-panel{padding:16px 12px;}
+  .teamsplit-room-code span{font-size:20px;letter-spacing:1px;}
+  .teamsplit-room-code{padding:10px 14px;font-size:13px;}
+}
 /* ===== 主题切换按钮 ===== */
 #themeToggle {
   position: fixed;
@@ -1082,9 +1109,11 @@ main::after{
 }
 
 /* ===== 内战转盘模块 ===== */
-.challenge-machine{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:520px;}
+.challenge-machine{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:520px;min-width:0;}
 .machine-frame{
   width:100%;
+  max-width:100%;
+  min-width:0;
   background:linear-gradient(145deg,color-mix(in srgb,var(--card) 90%,#000),var(--card));
   border:2px solid color-mix(in srgb,var(--accent) 40%,var(--border));
   border-radius:16px;padding:24px 20px;position:relative;overflow:hidden;
@@ -1099,13 +1128,13 @@ main::after{
 .machine-display{
   background:color-mix(in srgb,#000 70%,var(--card));
   border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);
-  border-radius:10px;padding:20px 24px;min-height:80px;
+  border-radius:10px;padding:20px 24px;min-height:80px;min-width:0;
   display:flex;align-items:center;justify-content:center;
   text-align:center;position:relative;overflow:hidden;
   box-shadow:inset 0 0 30px rgba(255,70,85,0.08);
 }
 .machine-display::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.015) 2px,rgba(255,255,255,.015) 4px);pointer-events:none;}
-.machine-text{font-size:20px;font-weight:700;color:var(--text);line-height:1.5;position:relative;z-index:1;transition:color .2s;}
+.machine-text{font-size:20px;font-weight:700;color:var(--text);line-height:1.5;position:relative;z-index:1;transition:color .2s;min-width:0;word-break:break-word;}
 .machine-text.idle{color:var(--text-dim);font-weight:500;font-size:16px;}
 .machine-text.spinning{color:var(--accent2);font-size:18px;animation:textFlicker .1s infinite;}
 .machine-text.result{color:var(--accent);font-size:22px;text-shadow:0 0 20px color-mix(in srgb,var(--accent) 40%,transparent);}
@@ -1126,8 +1155,8 @@ main::after{
   background:linear-gradient(transparent,rgba(255,255,255,.1),transparent);
   transform:rotate(45deg);transition:all .6s;pointer-events:none;}
 .btn-machine:hover::after{left:100%;}
-.challenge-count{font-size:13px;color:var(--text-dim);text-align:center;}
-.challenge-history{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:520px;}
+.challenge-count{font-size:13px;color:var(--text-dim);text-align:center;min-width:0;width:100%;}
+.challenge-history{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:520px;width:100%;min-width:0;}
 .history-chip{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--text-dim);opacity:0;transform:translateY(8px);transition:all .3s ease;}
 .history-chip.show{opacity:1;transform:translateY(0);}
 .history-chip.latest{border-color:var(--accent);color:var(--accent);font-weight:700;background:color-mix(in srgb,var(--accent) 10%,var(--card));}
@@ -1150,9 +1179,20 @@ main::after{
   .spy-task-icon{font-size:18px;}
   .spy-task-title{font-size:13px;}
   .teamsplit-panel{padding:14px 8px;}
+  .teamsplit-room-code{padding:10px 12px;font-size:13px;}
+  .teamsplit-room-code span{font-size:18px;letter-spacing:1px;}
   .teamsplit-code-display{font-size:20px;}
   .teamsplit-player-row{padding:8px 10px;font-size:12px;}
   .teamsplit-input,.teamsplit-select{min-height:42px;font-size:13px;}
+  /* 内战转盘：极窄屏收紧 */
+  .challenge-machine{gap:12px;}
+  .machine-frame{padding:14px 10px;}
+  .machine-text{font-size:15px;}
+  .machine-text.idle{font-size:13px;}
+  .machine-text.result{font-size:17px;}
+  .btn-machine{padding:10px 20px;font-size:13px;}
+  /* 覆盖 inline 样式：强制分段按钮在极窄屏纵向排列 */
+  #module-teamsplit .teamsplit-action-stack > div{flex-direction:column!important;gap:8px;}
 }
 
 /* ===== 阶段二：核心体验动效 ===== */
