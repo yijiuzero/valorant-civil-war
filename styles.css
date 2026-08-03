@@ -312,6 +312,7 @@ main::after{
   padding:40px 20px;
   max-width:900px;
   width:100%;
+  min-width:0;
 }
 .hero-badge{
   display:inline-block;
