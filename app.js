@@ -477,6 +477,7 @@ async function init() {
       return;
     }
     initAgentUI();
+    initMapUI();
     navItems.forEach(i => i.addEventListener('click', () => switchModule(i.dataset.module)));
     
     // 网络状态检测
