@@ -182,6 +182,8 @@ main{
   flex:1;position:relative;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:40px 20px;
+  /* V4.5.23 锁定一屏高度：模块内容超高时不再撑破 body 导致整页滚动 */
+  height:100vh;height:100dvh;overflow:hidden;
   background-size:cover;background-position:center;
   background-image:url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg);
   transition:background-image .6s ease;
@@ -199,6 +201,8 @@ main::after{
   display:flex;flex-direction:column;align-items:center;
   width:100%;
   max-width:1300px;
+  /* V4.5.23 兜底：内容超过一屏时在模块窗口内部滚动，不撑破整页 */
+  max-height:100%;overflow-y:auto;overscroll-behavior:contain;
   animation:moduleFadeIn .35s ease;
 }
 .content-layer.home-hero{max-width:none!important;flex:1;align-self:stretch;display:flex;align-items:center;justify-content:center;}
@@ -212,11 +216,11 @@ main::after{
   font-size:22px;font-weight:700;margin-bottom:8px;color:var(--accent);
   font-family:var(--font-display);text-transform:uppercase;letter-spacing:3px;
 }
-.module-sub{font-size:13px;color:var(--text-dim);margin-bottom:32px;}
+.module-sub{font-size:13px;color:var(--text-dim);margin-bottom:24px;}
 
 /* ===== 抽奖主按钮 ===== */
 .btn-spin{
-  margin-top:36px;padding:14px 56px;
+  margin-top:28px;padding:14px 56px;
   font-size:18px;font-weight:700;letter-spacing:2px;
   background:var(--accent);color:#fff;border:none;border-radius:6px;
   cursor:pointer;transition:all .25s cubic-bezier(.25,.8,.25,1);
@@ -414,7 +418,7 @@ main::after{
 }
 
 /* ===== 随机特工模块 ===== */
-.agent-filters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
+.agent-filters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;}
 /* 角色筛选按钮 - 角色色辉光 */
 .af-btn{
   padding:6px 14px;border-radius:16px;border:1px solid var(--border);
@@ -429,7 +433,7 @@ main::after{
 .af-btn[data-role="控场者"].active{background:var(--role-controller);border-color:var(--role-controller);box-shadow:0 0 16px var(--glow-green);}
 .af-btn[data-role="哨卫"].active{background:var(--role-sentinel);border-color:var(--role-sentinel);box-shadow:0 0 16px var(--glow-orange);}
 
-.agent-count{display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
+.agent-count{display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:12px;flex-wrap:wrap;}
 .agent-count span{font-size:13px;color:var(--text-dim);}
 .ac-btn{
   width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
@@ -449,11 +453,11 @@ main::after{
 .ac-mode-btn:disabled{opacity:0.5;cursor:not-allowed;}
 
 #module-agent .agent-grid{
-  display:flex;flex-wrap:wrap;gap:12px;justify-content:center;
-  max-width:900px;margin-bottom:20px;
+  display:flex;flex-wrap:wrap;gap:10px;justify-content:center;
+  max-width:900px;margin-bottom:12px;
 }
 .agent-card{
-  width:72px;text-align:center;padding:6px 4px;border-radius:8px;
+  width:72px;text-align:center;padding:5px 4px;border-radius:8px;
   background:var(--card);border:2px solid transparent;
   cursor:default;transition:all .2s;position:relative;
 }
@@ -474,13 +478,13 @@ main::after{
   animation:agentPop .3s ease;
 }
 @keyframes agentPop{0%{transform:scale(1);opacity:.5}50%{transform:scale(1.2)}100%{transform:scale(1.12);opacity:1}}
-.agent-card img{width:48px;height:48px;border-radius:50%;object-fit:cover;background:var(--bg);}
+.agent-card img{width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--bg);}
 .agent-card .agent-name{font-size:11px;margin-top:4px;color:var(--text);line-height:1.2;}
 .agent-role-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle;}
 
 .agent-results{
   display:flex;gap:12px;flex-wrap:wrap;justify-content:center;
-  margin-top:8px;min-height:82px;align-items:center;
+  margin-top:8px;min-height:72px;align-items:center;
 }
 .agent-result-card{
   display:flex;align-items:center;gap:10px;
@@ -556,8 +560,10 @@ main::after{
     padding:20px 12px;
     min-height:100dvh;
     padding-top:64px;
+    /* V4.5.23 移动端维持原有整页滚动习惯，覆盖桌面端的一屏锁定 */
+    height:auto;overflow:visible;
   }
-  .content-layer{max-width:100%;}
+  .content-layer{max-width:100%;max-height:none;overflow-y:visible;}
   /* 修复 ID 优先级覆盖：确保这两个模块在移动端不超过视口宽度 */
   #module-teamsplit{max-width:100%;}
   .challenge-machine{max-width:100%;}

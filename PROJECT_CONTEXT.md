@@ -1,10 +1,10 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.5.22
+> **版本**: V4.5.23
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
-> **最后更新**: 2026-08-03
+> **最后更新**: 2026-10-12
 > **说明**：本文件现已随代码推送到 GitHub（2026-07-23 起，用户要求纳入版本管理）
 
 ---
@@ -296,6 +296,7 @@ start index.html
 | V4.5.3 | 2026-07-28 | Bug 修复（+0.0.1）：性能优化。包含：关键CSS内联（首屏渲染优化）、preconnect 第三方域名、SEO meta 标签（description/og:title）、styles.css 异步加载（rel=preload） |
 | V4.5.18 | 2026-07-31 | 内鬼模式入口居中修复：`#spyStandaloneEntry` 和 `.spy-entry-cards` 加 `align-items:stretch/center`，卡片内容 flex 居中，标题和副标题 width:100% 居中。缓存参数 styles21→22 |
 | V4.5.22 | 2026-08-03 | Bug修复（+0.0.1）：首页 hero-cards 移动端溢出全面加固。`.hero-content` 加 `min-width:0`（flex 子元素保险栓）；`.hero-cards` + `.hero-card` 加 `min-width:0`/`min-height:0`；768px `minmax(150px,1fr)`→`minmax(110px,1fr)` 收紧卡片字号/间距/图标；420px 固定 `repeat(2,1fr)` 避免 auto-fit 撑爆。 |
+| V4.5.23 | 2026-10-12 | Bug修复（+0.0.1）：整页纵向滚动溢出修复（首页/随机特工等模块点击后出现整页滚动条）。根因：`body min-height:100vh` + `main` 被拉伸，模块内容+padding 超视口时撑破 body 触发整页滚动（随机选图/内战专用因内容矮不溢出故正常）。修复：`main` 锁定 `height:100dvh; overflow:hidden` 杜绝整页滚动；`.content-layer` 加 `max-height:100%; overflow-y:auto` 兜底（内容超高时仅模块窗口内滚动，不带动侧边栏）；随机特工模块桌面端压缩间距/卡片（grid gap 12→10、卡片 padding 6→5、特工头像 48→44、结果区 min-height 82→72、module-sub/btn-spin 间距微调）使常见笔记本一屏完整显示；移动端媒体查询覆盖回 `height:auto; overflow:visible` 维持原整页滚动习惯。缓存参数 styles23→24。版本号 V4.5.22→V4.5.23 |
 | V4.5.21 | 2026-08-03 | Bug修复（+0.0.1）：首页 hero-cards 移动端溢出修复。`.hero-cards` 加 `min-width:0` + `width:100%`；`.hero-card` 加 `min-width:0` + `min-height:0`；768px `minmax(150px,1fr)`→`minmax(110px,1fr)` 并收紧卡片字号/间距/图标；420px 固定两列 `repeat(2,1fr)` 避免 auto-fit 撑爆。 |
 | V4.5.20 | 2026-08-03 | Bug修复（+0.0.1）：移动端内战专用/内战分队响应式溢出全面修复。`.challenge-machine` + `.machine-frame` + `.machine-display` 加 `min-width:0` + `max-width:100%`；`.machine-text` 加 `word-break:break-word`；`.teamsplit-panel` + `.teamsplit-room` + `.teamsplit-panel-head` + `.teamsplit-room-code` + `.teamsplit-join-row` + `.teamsplit-action-stack` + `.teamsplit-teams` 加 `min-width:0` + `width:100%`；`.teamsplit-panel` 加 `overflow:hidden`；`.challenge-count` + `.challenge-history` 加 `min-width:0`；768px 加 stats 模块字体/间距收紧；640px 加 stats 模块 + teamsplit 面板 padding 收紧；420px 加 `!important` 强制 inline flex 纵向排列 + 房间码字间距 1px。 |
 | V4.5.19 | 2026-08-03 | 移动端内战分队/内战专用模块溢出修复：teamsplit「段位分队/随机分队」两个按钮内联 flex 横排改为移动端纵向（命中 `#module-teamsplit .teamsplit-action-stack > div`）；修复 `#module-teamsplit` ID 优先级覆盖导致移动端 max-width 约束失效（加 ID 级 `max-width:100%`）；`.challenge-machine` 移动端 `max-width:100%`；`body` 加 `overflow-x:hidden` 兜底。缓存参数 styles22→23 |
