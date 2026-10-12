@@ -81,17 +81,22 @@ body{
     radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.03) 0%, transparent 50%);
 }
 
-/* 暗色模式细微网格 */
-.theme-dark main::before {
+/* 主区域氛围背景：网格纹理（暗色模式加深） */
+main::before {
   content: '';
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
   background-size: 60px 60px;
   pointer-events: none;
   z-index: 0;
+}
+.theme-dark main::before {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
 }
 .sidebar{
   width:220px;min-width:220px;background:var(--sidebar-bg);
@@ -185,9 +190,23 @@ main{
   /* V4.5.23 锁定一屏高度：模块内容超高时不再撑破 body 导致整页滚动 */
   height:100vh;height:100dvh;overflow:hidden;
   background-size:cover;background-position:center;
-  background-image:url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg);
+  /* V4.5.24 真实背景图优先；CDN 偶发不可达时回落到内置渐变，不再变空白 */
+  background-color:#16202c;
+  background-image:
+    url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg),
+    radial-gradient(ellipse at 18% 12%, rgba(255,70,85,0.16), transparent 45%),
+    radial-gradient(ellipse at 85% 90%, rgba(59,130,246,0.14), transparent 50%),
+    linear-gradient(140deg, #1a2735 0%, #121a24 60%, #0f1923 100%);
   transition:background-image .6s ease;
-  background-color:var(--bg);
+}
+/* 暗色模式加深主区域氛围 */
+.theme-dark main{
+  background-color:#0f1923;
+  background-image:
+    url(https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/c07f29d903296e00ab9462d7515d7b8d38f53903-1920x1080.jpg),
+    radial-gradient(ellipse at 18% 12%, rgba(255,70,85,0.22), transparent 45%),
+    radial-gradient(ellipse at 85% 90%, rgba(59,130,246,0.18), transparent 50%),
+    linear-gradient(140deg, #162232 0%, #0f1923 60%, #0b1219 100%);
 }
 main::after{
   content:'';position:absolute;inset:0;

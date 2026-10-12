@@ -195,7 +195,8 @@ function drawMaps() {
           // 预加载背景图
           const bgImg = new Image();
           bgImg.onload = () => { mainArea.style.backgroundImage = `url(${w[0].img})`; showMapResults(w); };
-          bgImg.onerror = () => { mainArea.style.backgroundImage = `url(${w[0].img})`; showMapResults(w); };
+          // V4.5.24 图片拉不到时清除内联背景，回退到 CSS 内置渐变（避免空白）
+          bgImg.onerror = () => { mainArea.style.backgroundImage = ''; showMapResults(w); };
           bgImg.src = w[0].img;
         }
       }, 800);
