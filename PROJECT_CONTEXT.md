@@ -1,10 +1,10 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.5.25
+> **版本**: V4.6.0
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
-> **最后更新**: 2026-10-12
+> **最后更新**: 2026-10-13
 > **说明**：本文件现已随代码推送到 GitHub（2026-07-23 起，用户要求纳入版本管理）
 
 ---
@@ -293,6 +293,7 @@ start index.html
 | V3.7.0 | 2026-07-21 | Supabase Auth 昵称注册/登录模块（auth.js） |
 | V3.6.1 | 2026-07-20 | Bug修复（内鬼查看身份后无法返回、B队内鬼标签错误、变量命名歧义） |
 | V3.6.0 | 2026-07-20 | 内鬼模式支持独立手动组队（localStorage驱动）；双入口架构 |
+| V4.6.0 | 2026-10-13 | 安全加固与架构重构（+0.1.0，基于四路并行安全审计，3×P0 + 7×P1）。**P0**：①修存储型 XSS——`esc()`/`escapeHtml()` 原走 `textContent→innerHTML` 只转义 `& < >` 不转义引号，昵称拼入双引号属性可注入 `on*` 窃取 Supabase token 冒充房主，改为属性安全版本 + `t.title/t.desc` 补转义；②加固人机验证——原两位数加减法答案域仅 60 种且 verify 无限制，60 次请求即可爆破注册，改为三数两运算符（答案域 -194~294 共 489 种）+ nonce 尝试次数限制；③内鬼身份保密——新增 `migrate-spy-secrets.sql`，内鬼身份从客户端可见的 `rooms.spy_state` 移入独立表 `spy_identities`（RLS 行级隔离，Realtime 不推送），新增 `lobby_get_my_spy` 按调用者下发本人身份，附前端配套说明。**架构**：接入 `supabase.auth.onAuthStateChange`（此前全项目零监听）统一广播登出清理；新增 `resetTeamSplitIdentity`/`resetSpyIdentity`/`setCurrentUserRank`；`getUserId` 改为每次读 session；`updateSidebar` 中 `syncCurrentUser` 移出提前 return（此前"侧边栏元素是否存在"间接决定全站登出清理）。**功能**：抽图按钮切标签页永久灰化、隐私模式全站白屏、段位分队 1 vs 5、昵称冒名顶替、`doSplit` 假成功死局、段位 desync、多处 setTimeout 未存句柄、主题偏好被丢弃、特工文案 30→29。缓存参数 styles26→27、auth25→26、teamsplit17→18、spy-mode19→20、app17→18 |
 | V4.5.3 | 2026-07-28 | Bug 修复（+0.0.1）：性能优化。包含：关键CSS内联（首屏渲染优化）、preconnect 第三方域名、SEO meta 标签（description/og:title）、styles.css 异步加载（rel=preload） |
 | V4.5.18 | 2026-07-31 | 内鬼模式入口居中修复：`#spyStandaloneEntry` 和 `.spy-entry-cards` 加 `align-items:stretch/center`，卡片内容 flex 居中，标题和副标题 width:100% 居中。缓存参数 styles21→22 |
 | V4.5.22 | 2026-08-03 | Bug修复（+0.0.1）：首页 hero-cards 移动端溢出全面加固。`.hero-content` 加 `min-width:0`（flex 子元素保险栓）；`.hero-cards` + `.hero-card` 加 `min-width:0`/`min-height:0`；768px `minmax(150px,1fr)`→`minmax(110px,1fr)` 收紧卡片字号/间距/图标；420px 固定 `repeat(2,1fr)` 避免 auto-fit 撑爆。 |

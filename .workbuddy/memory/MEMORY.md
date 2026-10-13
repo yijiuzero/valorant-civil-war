@@ -1,28 +1,44 @@
 # 项目惯例
 
-## 🔴🔴 P0-0待修：人机验证可脚本爆破（2026-10-13，实测）
+> **2026-10-13 更新**：V4.6.0 已修复下列 P0 与多数 P1。标注「✅已修」的条目仅记录根因与修法，**改同类代码时仍需注意**；标注「⏳待执行」的需用户手动操作。
+> 完整审计报告见 `AUDIT_2026-10-13.md`（及 AUDIT_SPY_MODE.md / AUDIT_app_app-data_2026-10-13.md）。
+
+## ✅已修 P0-0：人机验证可脚本爆破（V4.6.0）
+- 根因：原出题 `Math.random()*20+1` 两位数加减法，答案取值域仅 **-19~40 共 60 个整数**，anon key 在前端可无限次调用 verify → 单次注册最多 60 次请求即可爆破。
+- 修法：三数两运算符（a,b,c 各 1~99）使答案域升到 **489 种** + nonce 尝试次数限制 `MAX_ATTEMPTS=3`（验过即废）。
+- **⚠️ 关键教训**：中途第一版改法失败——把减法改 `Math.max-min` 取绝对值后，答案被压缩到 **0~50（51 种）反而比原来更差**。**破解成本取决于「答案取值的种数」，与题目形态数无关**（题目从800 种涨到 16000 种毫无意义）。设计这类题时务必先算答案域。
+- ⏳ 待执行：需 `supabase functions deploy turnstile-verify` 才生效。
+
+## ✅已修 P0-1：存储型 XSS（V4.6.0）
+- **根因**：`esc()` / `escapeHtml()` 原用 `div.textContent → innerHTML`，**只转义 `& < >`，不转义 `" '`**；昵称被拼进**双引号属性** `data-name="..."`（spy-mode.js:344），昵称含 `"` 即可闭合属性注入 `on*` 事件处理器。
+- 已验证修复后：恶意昵称被完全转义，且经浏览器实体反转义能精确还原原值（分队 `find(x => x.name === name)` 姓名比对无回归）。
+- **修法**：全站统一属性安全版本 `String(s == null ? '' : s).replace(/[&<>"']/g, c => ({...}[c]))`。**改任何新的转义函数都必须同时转义引号**，否则下一个把它拼进属性的人会重新引入漏洞。
+- 同类已补：`spy-mode.js` 的 `t.title`/`t.desc`（服务端数据流直接进 innerHTML）。
+
+## 🔴 P0-2 待修：内鬼身份可被任意读取（方案已就绪，⏳待执行）
+- `rooms` 表 RLS 读策略 `USING (auth.role()='authenticated')` 对全体登录用户开放，**无成员校验**。实测 anon key 直接 `GET /rest/v1/rooms?select=code,status,spy_state` 返回 **HTTP 200 全库房间**。
+- `spy_state` 明文存 `team_a_spy_name`/`team_b_spy_name` → 任何用户可读走内鬼身份。内鬼模式核心玩法安全性已破。
+- 房间码本身安全（crypto.getRandomValues + 32 字符集，6 位~10^9），但**不需要猜码**，策略直接吐全库。
+- **⚠️ Realtime 同样泄露**：`spy-mode.js:52-59`/`:253-263` 订阅把 `payload.new.spy_state` 整行落地，而 Postgres Changes **不受 SELECT 策略裁剪** → 收紧 RLS 不足以修复，**必须把内鬼身份移出 `spy_state`**。
+- **✅ 修复方案已写好**：`migrate-spy-secrets.sql` + `migrate-spy-secrets-前端说明.md`。核心：内鬼身份移入**独立表 `spy_identities`**（RLS 行级隔离，且不在 Realtime 推送范围）+ 新增 `lobby_get_my_spy(p_code)` 只返回"我是否内鬼+我的任务"。
+- **⚠️ 执行顺序：必须先改 spy-mode.js 前端，再执行 SQL**，否则内鬼面板拿不到身份会坏掉。
+- 附带：`lobby_start_spy` 的 tasks 仍按 name 为键（SQL + `spy-mode.js:403`），重名玩家任务互相覆盖；建议连同 P0 一并把键改 user_id。
+
+## P1 跨文件缺陷（V4.6.0 已修多数）
+- **✅昵称冒名**：`teamsplit.js` 的 autoJoinLobby 已改为按 `user_id` 认领，同名不同人明确拒绝（原按昵称认领可抢走他人玩家行）。
+- **✅ 段位 desync**：已引入 `window.setCurrentUserRank()` 统一 setter，teamsplit 两处写入改为经它回写 auth.js 的 currentUser。
+- **✅ 登出残留**：已接入 `supabase.auth.onAuthStateChange`（此前全项目零监听），SIGNED_OUT 时广播各模块清理。
+- **✅ 段位分队 1v5**：已改为人数优先决策，实测「1赋能+5黑铁」→ 3v3；`rank=0`（新用户默认无段位）不再全塞进同一队。
+- **✅ 抽取按钮永久灰化**：`visibilitychange` 已改传 `true`。
+- **✅ 隐私模式全站白屏**：app.js 全部 localStorage 改走 `lsGet`/`lsSet`/`lsRemove`（内部 try/catch）。
+- ✅ 系统主题偏好已用上 `matchMedia` 结果并注册 change 监听；特工文案已 30→29。
+- **⏳ spy_state 双向摧毁待修**：`teamsplit.js` 写 `{split}`、`spy-mode.js` 写 `{phase,team_*_spy,tasks,revealed}`，**双方均整体覆盖、无字段合并** → 后写者赢，另一方数据消失。修法：改 `jsonb_set` 定点更新或统一走 RPC 在单事务内合并。
 - `supabase/functions/turnstile-verify/index.ts:30-37` 出题是**两位数加减法**（`Math.random()*20+1`，运算符 ±）。实测答案空间仅 **−19~40 共 60 个整数**，题目形态仅 800 种。
 - anon key 硬编码在前端、verify 可无限次调用 → **单次注册最多 60 次请求**即可脚本爆破，注册门禁形同虚设。HMAC 设计本身正确（答案不下发、签名校验无误），**问题是题目太简单**。
 - 另：减法可出**负数答案**（`3 - 17 = ?` → -14），占 1/3，若输入框无非负约束会误判。
 - 修法：三数两运算符（答案空间升万级）+ 失败 N 次锁 nonce + 按 IP 限流（10次/分）+ 题目侧保证 `a >= b` 或答案非负 + 输入框 `type="number"`。
 
-## 🔴🔴 P0-1 待修：存储型 XSS（2026-10-13 审计发现，已实测复现）
-- **根因**：`esc()`（spy-mode.js:5-9）用 `div.textContent → innerHTML` 转义，**只转义 `& < >`，不转义 `" '`**。
-- **注入点**：spy-mode.js:344 等多处把 `esc(p.name)` 直接拼进**双引号属性** `data-name="..."`；昵称含 `"` 即可闭合属性、注入 `on*` 事件处理器。
-- **存储型**：昵称经 `lobby_add_player`（无成员校验）写入 `spy_state.players[].name`，渲染时全房触发 → 攻击者一个恶意昵称即可打同房所有人（尤其房主）。后果：读 `localStorage` 的 Supabase token → **冒充房主**踢人/揭晓内鬼/改队伍。
-- **修法（改动极小，优先做）**：全站统一 esc 实现，补 `.replace(/"/g,'&quot;').replace(/'/g,'&#39;')`；或属性值改 `dataset`+`addEventListener`。
-- **范围更正**：别以为 teamsplit.js 已安全——`escapeHtml()`（teamsplit.js:60-64）同样只转义 `& < > " '`，只是它用于 **HTML 内容上下文**（恰好安全），而非属性上下文；真正 100% 安全的只有 app.js 的 6 处 innerHTML（硬编码常量）。
-- **同类待查**：`assignTeamFromCard(this,'...')`、`getRankIcon`（URL 未encode）、`spy-mode.js:397-399/431-432/439-440`（`t.title`/`t.desc` 未转义，当前硬编码故无害）。
-
-## 🔴 P0-2 待修：内鬼身份可被任意读取（2026-10-13 审计发现，实测确认）
-- `rooms` 表 RLS 读策略 `USING (auth.role()='authenticated')` 对全体登录用户开放，**无成员校验**。实测 anon key 直接 `GET /rest/v1/rooms?select=code,status,spy_state` 返回 **HTTP 200 全库房间**。
-- `spy_state` 明文存 `team_a_spy_name`/`team_b_spy_name` → 任何用户可读走内鬼身份。内鬼模式核心玩法安全性已破。
-- 房间码本身安全（crypto.getRandomValues + 32 字符集，6 位~10^9），但**不需要猜码**，策略直接吐全库。
-- **内鬼判定用 display_name 而非 user_id**（`spy-mode.js:383`）。V4.2.3 已把房主判定改user_id，内鬼判定遗漏。
-- **⚠️ Realtime 同样泄露**：`:52-59`/`:253-263` 订阅把 `payload.new.spy_state` 整行落地，而 Postgres Changes **不受 SELECT 策略裁剪** → 收紧 RLS 不足以修复，**必须把内鬼身份移出 `spy_state`**（方案 A 是唯一有效解）。
-- **附带 P1**：`lobby_start_spy` 的 tasks 按 name 为键（SQL 335-340 行 + `spy-mode.js:403`），重名玩家任务互相覆盖、且重名时两人都会被判内鬼。建议连同 P0 一并把键改user_id。
-
-## 🔧 架构性根因（2026-10-13 审计归纳，修复时优先处理）
+## 🔧 架构性根因（V4.6.0 已根治，但机制需记住）
 项目普遍采用「模块级变量 + 全局 window 变量」**双份状态，但只有一处被同步**，这是反复出 bug 的共同上游：
 | 状态 | 副本 A | 副本 B | 同步方 | 后果 |
 |---|---|---|---|---|
@@ -33,20 +49,6 @@
 - **根治方向**：① 身份只留单一权威源（auth.js 的 `currentUser`），其余位置读取而非缓存副本；② **接入 `supabase.auth.onAuthStateChange`（全项目当前零监听）** 在 SIGNED_OUT 时统一广播清理，替代 auth.js 手动逐个调模块（每加一个模块就漏一个）；③ 段位等资料一律走 auth.js 统一 setter，禁止其他模块直写 `window._currentUser*`。
 - 其中 ② 能一次性消解：换号残留、房主判定矛盾、订阅不退订、段位 desync 等一批问题，**性价比最高**。
 - **高危耦合（易随 DOM 调整静默失效）**：`auth.js:203` `updateSidebar()` 开头 `if (!entry) return;` 决定 `syncCurrentUser()` 是否执行 → 决定 `window._currentUser` 是否清理 → 决定 `leaveRoom:518` 能否正确判房主。即"侧边栏某元素是否存在"间接控制全站登出清理。**登出清理必须显式实现，不得依赖 updateSidebar 副作用**。
-
-## P1 跨文件缺陷（2026-10-13 补，均已复核）
-- **昵称冒名抢身份**：`teamsplit.js:243-254` 查到同名行直接 `currentPlayerId = existing.id` 认领，**不比对 user_id** → 用别人昵称加入即可抢走其玩家行。修法：认领前须 `eq('user_id', getUserId())`。
-- **`spy_state` 互相摧毁**：`teamsplit.js:472` 写 `{split}`、`spy-mode.js:100-104` 写 `{phase,team_*_spy,tasks,revealed}`，**双方均整体覆盖、无字段合并** → 后写者赢，另一方数据消失（内鬼桥接后结果页白屏）。修法：改 `jsonb_set` 定点更新或统一走 RPC 在单事务内合并。
-- **登出残留**：`doSignOut()`（auth.js:88-94）只清模块内 `currentUser`，**全项目无 `onAuthStateChange`**（grep 零命中）→ `window._currentUser` 残留、守卫误判为已登录、Realtime 不退订、换号会闪现上一位用户的内鬼面板。修法：加 `resetSpyIdentity()`/`resetTeamSplitIdentity()`（清订阅+状态）并在 doSignOut 调用。
-- **段位 desync**：见上方架构根因表。`teamsplit.js:236/287` 只写 window 不回写 `currentUser`，任一次 `syncCurrentUser()` 即回退为 0，并经 `spy-mode.js:206` 污染内鬼房间落库 rank=0。修法：对齐 `auth.js:315-319` 范式或走统一 setter。
-
-## P1 待修（2026-10-13 审计，已复核）
-- **退出登录残留**：`doSignOut()`（auth.js:88-94）只清模块内 `currentUser`，**全项目无 `onAuthStateChange` 监听**（grep 零命中）→ `window._currentUser` 残留旧对象、`switchModule` 登录守卫误判为已登录、Realtime 订阅不退订、`lobbyState` 不清。修法：统一 `window.resetSpyIdentity()` 清订阅+状态，勿只委托 `unsubscribe`。
-- **段位分队无人数约束**（teamsplit.js:456-465）：只比段位和，实测可出 **1 vs 5**；且`rank=0`（新用户默认无段位）因 `sumB += 0` 永不增长而**全被塞进 B 队**。修法：`teamA.length` 优先于分数决策。
-- **抽取按钮永久灰化**（app.js:498-500）：`visibilitychange` 传 `false` 导致 `if(resetButtons)` 整段跳过恢复，与 V4.5.25 同类。改传 `true`。
-- **隐私模式全站白屏**（app.js:423/433）：`localStorage` 无 try/catch，抛异常被 init 的 catch 吞掉致其后全部初始化未执行。teamsplit.js:536 已有兜底，app.js 漏了。
-- **系统主题偏好被丢弃**（app.js:424-425）：`matchMedia` 结果 `d` 从未使用，无本地偏好时恒强制暗色。
-- **特工数量 29 vs 文案 30**：`app-data.js` 实测 29 条（8/7/7/7），`index.html` 与 `PROJECT_CONTEXT.md:24/:49` 写 30。
 
 ## RPC 身份校验的隐性依赖（重要）
 - `lobby_add_player` / `lobby_remove_player` / `lobby_set_player_team` 函数体内**无 `auth.uid()` 校验**，仅靠 `check_spy_room_update` BEFORE UPDATE 触发器在语句层兜住。
