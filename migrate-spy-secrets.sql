@@ -202,7 +202,7 @@ END;
 $$;
 
 -- 把内鬼身份写入独立表 + 同时下发给房主的 RPC（供房主持有揭晓权）
-DROP FUNCTION IF EXISTS public.lobby_set_spy_identity(text, text, text);
+DROP FUNCTION IF EXISTS public.lobby_set_spy_identity(text, text, text, text, text);
 CREATE OR REPLACE FUNCTION public.lobby_set_spy_identity(
   p_code    text,
   p_spy_a_id text,
@@ -232,6 +232,52 @@ BEGIN
         updated_at      = now();
 
   RETURN jsonb_build_object('ok', true);
+END;
+$$;
+
+
+-- ------------------------------------------------------------
+-- 4b. 桥接路径（teamsplit → spy-mode）专用揭晓
+-- ------------------------------------------------------------
+-- 内战分队页「开启内鬼模式」走的是 spy-mode.js 的 assignSpies/revealSpies，
+-- 房主在客户端随机选内鬼并调 lobby_set_spy_identity 写入独立表，
+-- 揭晓时不经过 lobby_reveal_spy（那个要求 status='lobby' 且会删记录）。
+-- 本函数供桥接路径调用：把身份写回 spy_state 并置 phase='revealed'。
+DROP FUNCTION IF EXISTS public.spy_reveal_bridge(text);
+CREATE OR REPLACE FUNCTION public.spy_reveal_bridge(p_code text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_state   jsonb;
+  v_host    uuid;
+  v_secrets jsonb;
+BEGIN
+  SELECT spy_state, host_user_id INTO v_state, v_host
+  FROM rooms WHERE code = p_code FOR UPDATE;
+
+  IF v_state IS NULL THEN
+    RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+  IF v_host IS NULL OR v_host != auth.uid() THEN
+    RAISE EXCEPTION '仅房主可揭晓内鬼';
+  END IF;
+
+  SELECT * INTO v_secrets FROM spy_identities WHERE room_code = p_code;
+  IF v_secrets IS NULL THEN
+    RAISE EXCEPTION '内鬼身份尚未分配';
+  END IF;
+
+  -- 揭晓 = 身份公开，此刻才写回 spy_state 供全员渲染
+  v_state := jsonb_set(v_state, '{team_a_spy_id}', to_jsonb(v_secrets->>'team_a_spy_id'));
+  v_state := jsonb_set(v_state, '{team_b_spy_id}', to_jsonb(v_secrets->>'team_b_spy_id'));
+  v_state := jsonb_set(v_state, '{phase}', '"revealed"');
+  v_state := jsonb_set(v_state, '{revealed}', 'true');
+
+  UPDATE rooms SET spy_state = v_state WHERE code = p_code RETURNING spy_state INTO v_state;
+
+  RETURN v_state;
 END;
 $$;
 

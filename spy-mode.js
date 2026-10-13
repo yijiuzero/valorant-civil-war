@@ -1,6 +1,12 @@
 // ========== 内鬼模式模块 (V3 精简版) ==========
 async function getSupabase() { return await window._getSupabase(); }
 
+// ========== 我的内鬼身份（服务端下发）==========
+// 内鬼身份已从 rooms.spy_state 移入服务端独立表 spy_identities（见 migrate-spy-secrets.sql）。
+// 客户端不再持有"谁是不是内鬼"，只由服务端告诉我"我是不是内鬼 + 我的任务"。
+// 结构：{ phase, is_spy, team, task, players }
+let myIdentity = null;
+
 // ========== 工具函数 ==========
 // 转义 & " ' < > —— 同时覆盖 HTML 文本节点与双引号/单引号属性两种上下文。
 // 历史缺陷：原实现走 div.textContent → innerHTML 往返，浏览器只转义 & < >，
@@ -59,9 +65,29 @@ async function subscribeSpyState() {
         if (payload.new && payload.new.spy_state) {
           spyState = payload.new.spy_state;
           renderCurrentPhase();
+          // 内鬼身份不在 spy_state 里，每次状态变化都要向服务端重新确认
+          refreshBridgeIdentity();
         }
       })
     .subscribe();
+}
+
+// 桥接路径（内战分队 → 内鬼模式）的身份查询。
+// 与 lobby 路径分开，避免污染 lobbyRoomCode / lobbyChannel 等 lobby 专属状态。
+async function refreshBridgeIdentity() {
+  if (!spyRoomCode) return;
+  try {
+    var sb = await getSupabase();
+    var res = await sb.rpc('lobby_get_my_spy', { p_code: spyRoomCode });
+    if (res.error) {
+      // RPC 不存在（SQL 迁移脚本尚未执行）时静默降级，兼容过渡期
+      console.warn('[spy] lobby_get_my_spy 不可用（需先执行 migrate-spy-secrets.sql）：', res.error && res.error.message);
+      return;
+    }
+    if (res.data) { myIdentity = res.data; renderCurrentPhase(); }
+  } catch (e) {
+    console.warn('[spy] 桥接身份查询异常：', e);
+  }
 }
 
 function renderCurrentPhase() {
@@ -101,13 +127,28 @@ async function assignSpies() {
   crypto.getRandomValues(randTaskB);
   var taskB = randTaskB[0] % window.spyTasks.length;
   if (taskB === taskA && window.spyTasks.length > 1) taskB = (taskA + 1) % window.spyTasks.length;
-  var newState = { phase: 'playing', team_a_spy: spyA.id, team_b_spy: spyB.id, tasks: {}, revealed: false };
+  // 身份写入服务端独立表 spy_identities，spy_state 里不再存任何内鬼标识
+  var newState = { phase: 'playing', tasks: {}, revealed: false };
   newState.tasks[String(spyA.id)] = taskA;
   newState.tasks[String(spyB.id)] = taskB;
   try {
-    var result = await (await getSupabase()).from('rooms').update({ spy_state: newState }).eq('code', spyRoomCode);
+    var sb = await getSupabase();
+    // 1) 先写独立表（仅房主可写，有 RLS 保护）
+    var setRes = await sb.rpc('lobby_set_spy_identity', {
+      p_code: spyRoomCode,
+      p_spy_a_id: String(spyA.id), p_spy_b_id: String(spyB.id),
+      p_spy_a_name: spyA.name, p_spy_b_name: spyB.name
+    });
+    if (setRes.error) {
+      // RPC 不存在（SQL 迁移脚本尚未执行）时降级：不阻断旧流程
+      console.warn('[spy] lobby_set_spy_identity 不可用（需先执行 migrate-spy-secrets.sql）：', setRes.error.message);
+    }
+    // 2) 再更新 spy_state（不含内鬼标识）
+    var result = await sb.from('rooms').update({ spy_state: newState }).eq('code', spyRoomCode);
     if (result.error) throw result.error;
     spyState = newState; renderSpyPlaying();
+    // 3) 立即向服务端确认自己身份（房主可能正是内鬼，需立刻看到自己的任务）
+    refreshBridgeIdentity();
   } catch (e) { window.showToast && window.showToast('分配失败: ' + e.message, 3000); }
 }
 
@@ -116,15 +157,17 @@ function renderSpyAssigning() { showSpyView('spyAssigning'); }
 function renderSpyPlaying() {
   showSpyView('spyPlaying');
   if (!spyState) return;
-  var isSpy = (spyPlayerId === spyState.team_a_spy || spyPlayerId === spyState.team_b_spy);
+  // 内鬼身份由服务端判定（myIdentity.is_spy），本地不再持有 team_*_spy
+  var isSpy = !!(myIdentity && myIdentity.is_spy === true);
   var spyPanel = document.getElementById('spyIdentityPanel');
   var normalPanel = document.getElementById('spyNormalPanel');
   if (spyPanel) spyPanel.style.display = isSpy ? '' : 'none';
   if (normalPanel) normalPanel.style.display = isSpy ? 'none' : '';
   if (isSpy) {
-    var teamLabel = spyPlayerId === spyState.team_a_spy ? '🔴 A队' : '🔵 B队';
+    var teamLabel = (myIdentity && myIdentity.team === 'A') ? '🔴 A队' : '🔵 B队';
     var who = document.getElementById('spyTeamLabel'); if (who) who.textContent = teamLabel;
-    var taskIdx = spyState.tasks[String(spyPlayerId)];
+    var taskIdx = (myIdentity && myIdentity.task != null) ? myIdentity.task
+                : spyState.tasks[String(spyPlayerId)];
     var task = window.spyTasks[taskIdx];
     if (task) {
       var ti = document.getElementById('spyTaskIcon'), tt = document.getElementById('spyTaskTitle'), td = document.getElementById('spyTaskDesc');
@@ -140,25 +183,33 @@ function renderSpyPlaying() {
 
 async function revealSpies() {
   if (!isSpyHost() || !spyState || !spyRoomCode) return;
-  spyState.phase = 'revealed'; spyState.revealed = true;
   // 仪式感延迟：先揭晓中...
   renderSpyAssigning();
   await new Promise(r => setTimeout(r, 1200));
   try {
-    await (await getSupabase()).from('rooms').update({ spy_state: spyState }).eq('code', spyRoomCode);
+    var sb = await getSupabase();
+    // 由服务端把身份从独立表写回 spy_state 并置 revealed（客户端不持有身份）
+    var res = await sb.rpc('spy_reveal_bridge', { p_code: spyRoomCode });
+    if (res.error) {
+      window.showToast && window.showToast('揭晓失败: ' + (res.error.message || '未知错误'), 3000);
+      return;
+    }
+    if (res.data) spyState = res.data;
     renderSpyRevealed();
+    myIdentity = null; // 揭晓后身份已公开，无需再查
   } catch (e) { window.showToast && window.showToast('揭晓失败: ' + e.message, 3000); }
 }
 
 function renderSpyRevealed() {
   showSpyView('spyRevealed');
   if (!spyState) return;
-  var spyA = findPlayerById(spyState.team_a_spy), spyB = findPlayerById(spyState.team_b_spy);
+  // 揭晓后服务端已把 team_*_spy_id 写回 spy_state（此刻公开是设计意图）
+  var spyA = findPlayerById(spyState.team_a_spy_id), spyB = findPlayerById(spyState.team_b_spy_id);
   var aName = document.getElementById('revealSpyA'), bName = document.getElementById('revealSpyB');
   if (aName) aName.textContent = spyA ? spyA.name : '未知';
   if (bName) bName.textContent = spyB ? spyB.name : '未知';
-  var taskA = window.spyTasks[spyState.tasks[String(spyState.team_a_spy)]];
-  var taskB = window.spyTasks[spyState.tasks[String(spyState.team_b_spy)]];
+  var taskA = window.spyTasks[spyState.tasks[String(spyState.team_a_spy_id)]];
+  var taskB = window.spyTasks[spyState.tasks[String(spyState.team_b_spy_id)]];
   var at = document.getElementById('revealTaskA'), bt = document.getElementById('revealTaskB');
   if (at && taskA) at.textContent = taskA.icon + ' ' + taskA.title + '：' + taskA.desc;
   if (bt && taskB) bt.textContent = taskB.icon + ' ' + taskB.title + '：' + taskB.desc;
@@ -182,10 +233,34 @@ async function initSpyMode(ctx) {
   setupSpyContext(ctx);
   await loadSpyState();
   subscribeSpyState();
+  // 桥接路径同样走服务端身份判定（内鬼身份已移入服务端独立表）
+  refreshBridgeIdentity();
 }
 
 // ========== 在线 Lobby 房间 ==========
 let lobbyChannel = null, lobbyRoomCode = null, lobbyState = null;
+
+// 我的内鬼身份，由 RPC lobby_get_my_spy 按调用者下发。
+// 为什么不能客户端自己算：修复前内鬼姓名明文存在 rooms.spy_state 里，
+// 任何登录用户（甚至 anon）都能直接读走，内鬼模式的核心玩法形同虚设。
+// 现在服务端只告诉我"我是不是内鬼 + 我的任务"，别人是不是内鬼我不该知道。
+// （myIdentity 声明在文件顶部，供桥接与lobby 两条路径共用）
+
+async function refreshMyIdentity() {
+  if (!lobbyRoomCode) return;
+  try {
+    var sb = await getSupabase();
+    var res = await sb.rpc('lobby_get_my_spy', { p_code: lobbyRoomCode });
+    if (res.error) {
+      // RPC 不存在（SQL 迁移脚本尚未执行）时静默降级，兼容过渡期
+      console.warn('[spy] lobby_get_my_spy 调用失败：', res.error && res.error.message);
+      return;
+    }
+    if (res.data) { myIdentity = res.data; renderSpyLobby(); }
+  } catch (e) {
+    console.warn('[spy] 拉取身份异常：', e);
+  }
+}
 
 async function cleanupSpyLobbyRooms() {
   try {
@@ -209,11 +284,13 @@ async function createSpyLobby() {
     phase: 'lobby', host_name: hostName, host_user_id: hostId,
     players: [{ name: hostName, user_id: hostId, team: null, rank: window._currentUserRank || 0 }],
     team_a: [], team_b: [],
-    team_a_spy_name: null, team_b_spy_name: null, tasks: {}
+    // 注意：不再初始化 team_a_spy_name / team_b_spy_name。
+    // 内鬼身份在开始时由服务端写入独立表 spy_identities，客户端一律拿不到。
+    tasks: {}
   };
   try {
     await sb.from('rooms').insert({ code: code, status: 'lobby', host_user_id: hostId, spy_state: initState });
-    lobbyRoomCode = code; lobbyState = initState;
+    lobbyRoomCode = code; lobbyState = initState; myIdentity = null;
     subscribeSpyLobby(code); showSpyLobbyView();
     window.showToast && window.showToast('房间创建成功！', 2000);
   } catch (e) { window.showToast && window.showToast('创建失败: ' + e.message, 3000); }
@@ -245,6 +322,8 @@ async function joinSpyLobby(inputCode) {
     }
     lobbyRoomCode = code;
     subscribeSpyLobby(code); showSpyLobbyView();
+    // 可能是中途加入：向服务端确认自己当前身份
+    refreshMyIdentity();
   } catch (e) {
     window.showToast && window.showToast('加入失败: ' + (e.message || '未知错误'), 3000);
   }
@@ -263,6 +342,9 @@ function subscribeSpyLobby(code) {
               lobbyState.host_user_id = payload.new.host_user_id;
             }
             renderSpyLobby();
+            // 内鬼身份不在 spy_state 里（已移入服务端独立表），
+            // 因此每次状态变化都要向服务端重新确认「我是不是内鬼」
+            refreshMyIdentity();
           }
         })
       .subscribe();
@@ -383,9 +465,11 @@ function renderLobbyGameView() {
     if (el) el.innerHTML = '<div class="spy-reveal-card"><div class="spy-reveal-icon">🔒</div><div class="spy-reveal-title">房间已关闭</div><div style="font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:8px;">房主已离开，本次内鬼房间结束。</div><button class="spy-setup-back" onclick="leaveLobbyRoom()">返回</button></div>';
     return;
   }
-  var myName = window._currentUserDisplayName || '';
-  var isSpy = (myName === lobbyState.team_a_spy_name || myName === lobbyState.team_b_spy_name);
-  var teamLabel = (lobbyState.team_a && lobbyState.team_a.some(function(p) { return p.name === myName; })) ? '🔴 A队' : '🔵 B队';
+  // 内鬼身份由服务端下发（myIdentity.is_spy），不再用昵称比对 spy_state
+  var isSpy = !!(myIdentity && myIdentity.is_spy === true);
+  var myTaskIdx = (myIdentity && myIdentity.task != null) ? myIdentity.task : null;
+  var myTeam = (myIdentity && myIdentity.team) ? myIdentity.team : null;
+  var teamLabel = myTeam === 'A' ? '🔴 A队' : (myTeam === 'B' ? '🔵 B队' : '');
   function rankTagOf(name) {
     var rk = 0; var ps = lobbyState.players || [];
     for (var i = 0; i < ps.length; i++) { if (ps[i].name === name) { rk = ps[i].rank || 0; break; } }
@@ -430,17 +514,16 @@ function renderLobbyGameView() {
         ? '<div class="spy-card-body">' +
           '<div style="font-size:18px;font-weight:900;color:var(--accent);margin-bottom:8px;">🕵️ 你是内鬼！</div>' +
           '<div class="spy-team-label" style="font-size:14px;margin-bottom:12px;">' + teamLabel + '</div>' +
+          // 任务索引由服务端 lobby_get_my_spy 直接下发（myIdentity.task）
           (function() {
-            var idx = lobbyState.tasks && lobbyState.tasks[myName];
-            var t = (idx != null && window.spyTasks[idx]) ? window.spyTasks[idx] : null;
+            var t = (myTaskIdx != null && window.spyTasks[myTaskIdx]) ? window.spyTasks[myTaskIdx] : null;
             return t ? '<div class="spy-task-card"><span class="spy-task-icon">' + t.icon + '</span><span class="spy-task-title">' + esc(t.title) + '</span><div class="spy-task-desc">' + esc(t.desc) + '</div></div>' : '';
           })() +
           '<p class="spy-warning">⚠️ 注意隐蔽！完成任务不被发现。</p>' +
           '</div>'
         : '<div class="spy-card-body"><p>✅ 你不是内鬼！</p><p class="spy-hint">队伍：' + teamLabel + '</p>' +
           (function() {
-            var idx = lobbyState.tasks && lobbyState.tasks[myName];
-            var t = (idx != null && window.spyTasks[idx]) ? window.spyTasks[idx] : null;
+            var t = (myTaskIdx != null && window.spyTasks[myTaskIdx]) ? window.spyTasks[myTaskIdx] : null;
             return t ? '<div class="spy-task-card" style="margin-top:12px;"><span class="spy-task-icon">' + t.icon + '</span><span class="spy-task-title">' + esc(t.title) + '</span><div class="spy-task-desc">' + esc(t.desc) + '</div></div>' : '';
           })() +
           '<p class="spy-hint">你的目标是与队伍一起赢得比赛。</p></div>') +
@@ -482,6 +565,8 @@ async function startLobbySpy() {
     }
     lobbyState = result.data;
     renderSpyLobby();
+    // 内鬼身份已由服务端写入独立表，此刻立即确认自己是否内鬼
+    refreshMyIdentity();
   } catch (e) { window.showToast && window.showToast('开始失败: ' + e.message, 3000); }
 }
 
@@ -496,6 +581,8 @@ async function lobbyRevealSpies() {
     }
     lobbyState = result.data;
     renderSpyLobby();
+    // 揭晓后服务端已把内鬼姓名写回 spy_state，无需再查身份
+    myIdentity = null;
   } catch (e) { window.showToast && window.showToast('揭晓失败: ' + e.message, 3000); }
 }
 
@@ -510,6 +597,8 @@ async function resetLobbySpy() {
     }
     lobbyState = result.data;
     renderSpyLobby();
+    // 重置后服务端已清空身份记录，本地也必须清，否则会残留上一局的内鬼身份
+    myIdentity = null;
   } catch (e) { window.showToast && window.showToast('重置失败: ' + e.message, 3000); }
 }
 
@@ -597,4 +686,5 @@ window.resetSpyIdentity = function() {
   spyUserId = null; spyPlayerId = null; spyHostUserId = null; spyRoomCode = null;
   spyTeamA = []; spyTeamB = []; spyState = null;
   lobbyRoomCode = null; lobbyState = null;
+  myIdentity = null;
 };

@@ -1,8 +1,8 @@
 # 内鬼身份保密修复 · 前端配套说明
 
 > 配套脚本：`migrate-spy-secrets.sql`
-> 执行顺序：**先改前端 → 再执行 SQL 脚本**
-> 若先执行 SQL 而前端未改，内鬼面板会拿不到身份数据（功能会坏）。
+> **执行顺序：先改前端（已完成）→ 再执行 SQL 脚本**
+> 前端改动已完成并提交（见 spy-mode.js），现在可以执行 SQL 脚本了。
 
 ---
 
@@ -25,8 +25,8 @@ rooms.spy_state = { phase, players[], tasks, team_a_spy_name, team_b_spy_name, .
 ## 二、新架构
 
 ```
-rooms.spy_state     → { phase, players[], tasks }        ← 客户端可见，但不含内鬼身份
-spy_identities 表   → { team_a_spy_id, team_b_spy_name } ← 仅房间成员可读
+rooms.spy_state      → { phase, players[], tasks }            ← 客户端可见，但不含内鬼身份
+spy_identities 表    → { team_a_spy_id, team_b_spy_name }     ← 仅房间成员可读
 ```
 
 判定「我是不是内鬼」由服务端完成：
@@ -39,68 +39,75 @@ const { data } = await sb.rpc('lobby_get_my_spy', { p_code: code });
 //        ↑ 只有自己的身份，没有别人的
 ```
 
-揭晓时（`lobby_reveal_spy`）服务端才把内鬼姓名写回 `spy_state`——**此刻公开是设计意图**。
+揭晓时服务端才把内鬼姓名写回 `spy_state`——**此刻公开是设计意图**。
 
 ---
 
-## 三、前端需要改的地方（spy-mode.js）
+## 三、前端改动清单（已完成）
 
-### 3.1 `renderSpyLobby` 的内鬼判定（第 383 行附近）
-
-**改前**（依赖客户端持有身份字段）：
-```js
-var isSpy = (myName === lobbyState.team_a_spy_name || myName === lobbyState.team_b_spy_name);
-```
-
-**改后**（用 RPC 返回的 `is_spy`）：
-```js
-var isSpy = myIdentity.is_spy === true;
-```
-
-### 3.2 任务读取
-
-**改前**：
-```js
-var idx = lobbyState.tasks && lobbyState.tasks[myName];
-```
-
-**改后**（`lobby_get_my_spy` 已直接返回 `task` 索引）：
-```js
-var t = myIdentity.task != null ? window.spyTasks[myIdentity.task] : null;
-```
-
-### 3.3 新增：订阅时同步拉取自己身份
-
-Realtime 事件到达后（队伍/玩家变化），需要重新确认自己身份：
-
-```js
-async function refreshMyIdentity() {
-  if (!lobbyRoomCode) return;
-  try {
-    const sb = await getSupabase();
-    const { data, error } = await sb.rpc('lobby_get_my_spy', { p_code: lobbyRoomCode });
-    if (error) { console.warn('[spy] 拉取身份失败', error); return; }
-    if (data) { myIdentity = data; renderSpyLobby(); }
-  } catch (e) {
-    console.warn('[spy] 拉取身份异常', e);
-  }
-}
-```
-
-在 `lobby_start_spy` 成功回调、以及 Realtime 的 `payload.new` 回调里各调一次。
-
-### 3.4 模块变量
+### 3.1 新增全局变量（文件顶部）
 
 ```js
 let myIdentity = null;   // { phase, is_spy, team, task, players }
 ```
 
-记得在 `resetSpyIdentity()` 里一并清空（否则换号会残留上一位的身份）。
+### 3.2 两条路径各自的身份查询
 
-### 3.5 揭晓视图
+| 路径 | 函数 | 用哪个房间码 |
+|---|---|---|
+| 在线 Lobby | `refreshMyIdentity()` | `lobbyRoomCode` |
+| 内战分队桥接 | `refreshBridgeIdentity()` | `spyRoomCode` |
 
-揭晓时 `phase === 'revealed'`，此时服务端已把 `team_a_spy_name` 写回 `spy_state`，
-**原有揭晓渲染逻辑无需改动**——它读的就是 `lobbyState.team_a_spy_name`。
+**刻意分成两个函数**：最初想共用，但桥接路径若复用 `lobbyRoomCode` 会污染 lobby 专属状态（`lobbyChannel` 等），且存在 TDZ 风险。分开后互不干扰。
+
+### 3.3 内鬼判定改为服务端下发
+
+**改前**（客户端持有身份字段）：
+```js
+var isSpy = (myName === lobbyState.team_a_spy_name || myName === lobbyState.team_b_spy_name);
+```
+**改后**：
+```js
+var isSpy = !!(myIdentity && myIdentity.is_spy === true);
+```
+
+### 3.4 任务读取改为服务端下发
+
+**改前**：客户端按昵称查表 `lobbyState.tasks[myName]`
+**改后**：`myIdentity.task`（服务端已直接返回索引）
+
+### 3.5 触发时机（共 5 处）
+
+| 时机 | 函数 |
+|---|---|
+| 开始内鬼成功后 | `startLobbySpy` / `assignSpies` |
+| Realtime 事件到达 | `subscribeSpyLobby` 回调 / `subscribeSpyState` 回调 |
+| 加入房间后 | `joinSpyLobby` |
+| 进入桥接模式 | `initSpyMode` |
+| 揭晓 / 重置 / 离开 | 清空 `myIdentity = null` |
+
+### 3.6 桥接路径的额外改造
+
+`assignSpies`（原直写 `spy_state` 含身份）改为两步：
+
+```js
+// 1) 身份写入服务端独立表（仅房主可写，有 RLS 保护）
+await sb.rpc('lobby_set_spy_identity', { p_code, p_spy_a_id, p_spy_b_id, p_spy_a_name, p_spy_b_name });
+// 2) spy_state 只存 phase/tasks，不含任何内鬼标识
+await sb.from('rooms').update({ spy_state: { phase, tasks, revealed } });
+```
+
+`revealSpies` 改调 `spy_reveal_bridge`（SQL 新增函数），由服务端把身份写回并置 revealed。
+
+### 3.7 揭晓视图无需改动
+
+揭晓时 `phase === 'revealed'`，服务端已把 `team_a_spy_name` 写回 `spy_state`，
+**原有揭晓渲染逻辑正确，无需改动**。
+
+### 3.8 过渡期兼容
+
+所有新 RPC 调用都做了降级处理：SQL 脚本尚未执行时 RPC 不存在，
+只打 `console.warn` 提示需先执行迁移脚本，不阻断旧流程。
 
 ---
 
@@ -113,10 +120,19 @@ let myIdentity = null;   // { phase, is_spy, team, task, players }
 | 1 | 未登录执行 `GET /rest/v1/rooms?select=code,status,spy_state` | 只返回空数组或无权访问（**不再返回全库房间**） |
 | 2 | 登录后 `GET /rest/v1/rooms?select=spy_state` | 只能看到自己是成员的房间 |
 | 3 | 登录后 `GET /rest/v1/spy_identities?select=*` | 只能看到自己是成员的房间身份 |
-| 4 | 建房 → 分队 → 开始内鬼 | `rooms.spy_state` 中**不含** `team_a_spy_name` / `team_b_spy_name` |
+| 4 | 建房 → 分队 → 开始内鬼 | `rooms.spy_state` 中**不含** `team_*_spy_*` 字段 |
 | 5 | 同房间另一台浏览器观察 | 无法在 Console 或网络请求中看到内鬼是谁 |
 | 6 | 房主点揭晓 | 全员正常看到内鬼姓名与任务（揭晓功能不受影响） |
 | 7 | 点「再来一局」重置 | 身份被清空，可重新开始 |
+| 8 | 内战分队页「开启内鬼模式」 | 桥接路径同样正常，且 `spy_state` 不含身份 |
+
+> **验证第 5 项的方法**：A 浏览器开房并开始内鬼，B 浏览器加入同一房间码，
+> 然后在 B 的 Console 执行：
+> ```js
+> const sb = await window._getSupabase();
+> (await sb.from('rooms').select('spy_state').eq('code','<房间码>').single()).data.spy_state
+> ```
+> 返回的对象里**不应出现** `team_a_spy_name` / `team_b_spy_name`。
 
 ---
 
@@ -127,7 +143,6 @@ let myIdentity = null;   // { phase, is_spy, team, task, players }
 ```sql
 -- 回滚 rooms 读策略
 DROP POLICY IF EXISTS "Allow read members only" ON rooms;
-DROP POLICY IF EXISTS "Allow read for authenticated" ON rooms;
 CREATE POLICY "Allow read for authenticated" ON rooms
   FOR SELECT USING (auth.role() = 'authenticated');
 
@@ -136,3 +151,4 @@ CREATE POLICY "Allow read for authenticated" ON rooms
 ```
 
 **但注意**：回滚等于恢复内鬼身份泄露，请优先排查问题而非直接回滚。
+回滚后前端会因 `lobby_get_my_spy` 不存在而降级（console 警告），内鬼面板将无法判定身份。
