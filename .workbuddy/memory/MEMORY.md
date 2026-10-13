@@ -15,14 +15,15 @@
 - **修法**：全站统一属性安全版本 `String(s == null ? '' : s).replace(/[&<>"']/g, c => ({...}[c]))`。**改任何新的转义函数都必须同时转义引号**，否则下一个把它拼进属性的人会重新引入漏洞。
 - 同类已补：`spy-mode.js` 的 `t.title`/`t.desc`（服务端数据流直接进 innerHTML）。
 
-## 🔴 P0-2 待修：内鬼身份可被任意读取（方案已就绪，⏳待执行）
+## 🔴 P0-2 待修：内鬼身份可被任意读取（方案已就绪，⏳待执行 SQL）
 - `rooms` 表 RLS 读策略 `USING (auth.role()='authenticated')` 对全体登录用户开放，**无成员校验**。实测 anon key 直接 `GET /rest/v1/rooms?select=code,status,spy_state` 返回 **HTTP 200 全库房间**。
 - `spy_state` 明文存 `team_a_spy_name`/`team_b_spy_name` → 任何用户可读走内鬼身份。内鬼模式核心玩法安全性已破。
 - 房间码本身安全（crypto.getRandomValues + 32 字符集，6 位~10^9），但**不需要猜码**，策略直接吐全库。
-- **⚠️ Realtime 同样泄露**：`spy-mode.js:52-59`/`:253-263` 订阅把 `payload.new.spy_state` 整行落地，而 Postgres Changes **不受 SELECT 策略裁剪** → 收紧 RLS 不足以修复，**必须把内鬼身份移出 `spy_state`**。
-- **✅ 修复方案已写好**：`migrate-spy-secrets.sql` + `migrate-spy-secrets-前端说明.md`。核心：内鬼身份移入**独立表 `spy_identities`**（RLS 行级隔离，且不在 Realtime 推送范围）+ 新增 `lobby_get_my_spy(p_code)` 只返回"我是否内鬼+我的任务"。
-- **⚠️ 执行顺序：必须先改 spy-mode.js 前端，再执行 SQL**，否则内鬼面板拿不到身份会坏掉。
-- 附带：`lobby_start_spy` 的 tasks 仍按 name 为键（SQL + `spy-mode.js:403`），重名玩家任务互相覆盖；建议连同 P0 一并把键改 user_id。
+- **⚠️ Realtime 同样泄露**：`spy-mode.js` 订阅把 `payload.new.spy_state` 整行落地，而 Postgres Changes **不受 SELECT 策略裁剪** → 收紧 RLS 不足以修复，**必须把内鬼身份移出 `spy_state`**。
+- **✅ 前后端方案均已写好（V4.6.0）**：`migrate-spy-secrets.sql` + `migrate-spy-secrets-前端说明.md` + spy-mode.js 改造（commit 1cda9ae）。核心：内鬼身份移入**独立表 `spy_identities`**（RLS 行级隔离，不在 Realtime 推送范围）+ `lobby_get_my_spy(p_code)` 只返回"我是否内鬼+我的任务"。
+- **✅ 架构提醒（已踩过的坑）**：前端 `myIdentity` 声明必须在**文件顶部**，否则 `refreshBridgeIdentity`（靠前）引用会TDZ；两条路径（Lobby / teamsplit 桥接）**刻意用两个查询函数**，复用 `lobbyRoomCode` 会污染 lobby 专属状态。
+- **⚠️ 现只剩执行 SQL**：脚本含 7 个函数（新增 `spy_reveal_bridge` 供桥接路径揭晓），前端已全部接好并带降级兼容。
+- 附带未修：`lobby_start_spy` 的 tasks 仍按 name 为键，重名玩家任务互相覆盖；`spy_state` 被两条路径整体覆盖会互相摧毁。
 
 ## P1 跨文件缺陷（V4.6.0 已修多数）
 - **✅昵称冒名**：`teamsplit.js` 的 autoJoinLobby 已改为按 `user_id` 认领，同名不同人明确拒绝（原按昵称认领可抢走他人玩家行）。
