@@ -4,10 +4,29 @@ let agentRole = 'all', agentCount = 1, agentTimer = null, agentMode = 'count', m
 let challengeHistory = [];
 let navItems = [], contentLayers = [], mainArea = null;
 let mapCardsRendered = false, agentsRendered = false;
+let mapRevealTimer = null; // drawMaps 收尾揭示的 setTimeout 句柄
+let challengeTimer = null; // spinChallenge 递归 setTimeout 句柄
+let drawerTimer = null;    // 侧边栏抽屉关闭动画句柄
+
+// 辅助函数：安全读写 localStorage
+// Safari 无痕模式 / 禁用 Cookie / iframe 沙箱下 localStorage 会抛 SecurityError，
+// 该异常若冒泡到 init() 的 try 块会导致其后全部初始化未执行（全站瘫痪）。
+function lsGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, val); } catch (e) {}
+}
+function lsRemove(key) {
+  try { localStorage.removeItem(key); } catch (e) {}
+}
 
 // ---------- 辅助函数:停止抽奖(清理定时器、恢复按钮)----------
 function stopMapSpin(resetButtons = true) {
   if (mapTimer) { cancelAnimationFrame(mapTimer); mapTimer = null; }
+  // 收尾揭示的 setTimeout 也要管：否则切模块后它仍会触发，
+  // 把旧结果写进界面并覆盖 mainArea 的背景图
+  if (mapRevealTimer) { clearTimeout(mapRevealTimer); mapRevealTimer = null; }
   if (resetButtons) {
     const s = document.getElementById('btnSpin');
     if (s) s.disabled = false;
@@ -30,6 +49,9 @@ function stopAgentSpin(resetButtons = true) {
 
 function stopChallenge() {
   machineSpinning = false;
+  // 递归 setTimeout 的句柄也要清：仅翻转布尔值的话，快速切走再回来抽取时
+  // 旧链条的下一次 tick 仍会通过守卫，写入上一轮结果并污染历史记录
+  if (challengeTimer) { clearTimeout(challengeTimer); challengeTimer = null; }
   const b = document.getElementById('btnChallengeSpin');
   const t = document.getElementById('challengeText');
   if (b) b.disabled = false;
@@ -188,22 +210,26 @@ function drawMaps() {
       const losers = Array.from(document.querySelectorAll('.map-card:not(.banned)')).filter(c => !w.some(x => x.en === c.dataset.map));
       losers.forEach(c => c.classList.add('loser-fade'));
       w.forEach(x => { const c = document.querySelector(`.map-card[data-map="${x.en}"]`); if (c) { c.classList.remove('loser-fade'); c.classList.add('spotlight'); } });
-      // 延迟揭晓结果卡片，预加载背景图
-      setTimeout(() => {
+      // 延迟揭晓结果卡片，预加载背景图。
+      // 句柄存入 mapRevealTimer，使 stopMapSpin / switchModule 能取消它——
+      // 否则抽取完成瞬间再抽一次会被上一轮结果覆盖，切模块则会被篡改背景图。
+      mapRevealTimer = setTimeout(() => {
+        mapRevealTimer = null;
         w.forEach(x => { const c = document.querySelector(`.map-card[data-map="${x.en}"]`); if (c) c.classList.remove('spotlight'); });
         if (w.length) { 
           // 预加载背景图
           const bgImg = new Image();
-          bgImg.onload = () => { mainArea.style.backgroundImage = `url(${w[0].img})`; showMapResults(w); };
+          bgImg.onload = () => { if (mainArea) mainArea.style.backgroundImage = `url(${w[0].img})`; showMapResults(w); };
           // V4.5.24 图片拉不到时清除内联背景，回退到 CSS 内置渐变（避免空白）
-          bgImg.onerror = () => { mainArea.style.backgroundImage = ''; showMapResults(w); };
+          bgImg.onerror = () => { if (mainArea) mainArea.style.backgroundImage = ''; showMapResults(w); };
           bgImg.src = w[0].img;
         }
+        // 结果真正渲染后再解锁按钮：此前在 setTimeout 之前解锁，
+        // 允许用户在 800ms 空窗内重抽，导致两轮动画互相覆盖
+        b.disabled = false;
+        document.querySelectorAll('.mc-btn').forEach(x => x.disabled = false);
       }, 800);
-      b.disabled = false;
-      document.querySelectorAll('.mc-btn').forEach(x => x.disabled = false);
-      // "再来一次" 按钮文本
-      if (b) b.textContent = '再来一次 🔄';
+      if (b) b.textContent = '揭晓中...';
     } else {
       mapTimer = requestAnimationFrame(tick);
     }
@@ -244,7 +270,14 @@ function initAgentUI() {
   if (cb) cb.addEventListener('click', function() {
     if (this.disabled) return;
     agentMode = agentMode === 'champion' ? 'count' : 'champion';
-    if (agentMode === 'champion') document.querySelectorAll('.ac-btn').forEach(b => b.classList.remove('active'));
+    const btns = document.querySelectorAll('.ac-btn');
+    if (agentMode === 'champion') {
+      btns.forEach(b => b.classList.remove('active'));
+    } else {
+      // 切回 count 模式：恢复与 agentCount 匹配的高亮，
+      // 否则界面无任何数量按钮被选中，用户无法得知将抽几人
+      btns.forEach(b => b.classList.toggle('active', +b.dataset.count === agentCount));
+    }
     syncChampionButton();
   });
 }
@@ -357,7 +390,7 @@ function spinChallenge() {
     const ci = (li + 1 + Math.floor(Math.random() * 3)) % challengeRules.length;
     if (t) t.textContent = challengeRules[ci];
     li = ci;
-    if (el < maxDuration && pg < 1) setTimeout(() => requestAnimationFrame(tick), iv);
+    if (el < maxDuration && pg < 1) challengeTimer = setTimeout(() => { challengeTimer = null; requestAnimationFrame(tick); }, iv);
     else {
       if (el >= maxDuration) showToast('抽取超时，请重试', 2000);
       if (t) { t.textContent = challengeRules[ti]; t.className = 'machine-text result'; }
@@ -403,6 +436,8 @@ let navHamburger = null, navDrawerOverlay = null;
 
 function openNavDrawer() {
   if (!navHamburger) return;
+  // 清除待执行的关闭动画，否则 300ms 内重开抽屉会被残留的定时器置为 display:none
+  if (drawerTimer) { clearTimeout(drawerTimer); drawerTimer = null; }
   document.body.classList.add('drawer-open');
   navHamburger.setAttribute('aria-expanded', 'true');
   navDrawerOverlay.style.display = 'block';
@@ -413,24 +448,33 @@ function closeNavDrawer() {
   document.body.classList.remove('drawer-open');
   navHamburger.setAttribute('aria-expanded', 'false');
   navDrawerOverlay.classList.remove('open');
-  setTimeout(() => { navDrawerOverlay.style.display = 'none'; }, 300);
+  drawerTimer = setTimeout(() => { navDrawerOverlay.style.display = 'none'; drawerTimer = null; }, 300);
 }
 function toggleNavDrawer() {
   if (document.body.classList.contains('drawer-open')) closeNavDrawer();
   else openNavDrawer();
 }
 function applyThemeFromStorage() {
-  const s = localStorage.getItem('ui-theme');
-  const d = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const u = s ? s === 'dark' : true;
-  document.documentElement.classList.toggle('theme-dark', u);
+  const s = lsGet('ui-theme');
+  const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+  // 无本地偏好时跟随系统（此前 d 被计算却从未使用，导致恒强制暗色）
+  const useDark = s ? s === 'dark' : !!(mq && mq.matches);
+  document.documentElement.classList.toggle('theme-dark', useDark);
   updateThemeToggleLabel();
+  // 用户运行中切换系统主题时跟随（仅当用户未手动指定过）
+  if (mq && typeof mq.addEventListener === 'function') {
+    mq.addEventListener('change', function(e) {
+      if (lsGet('ui-theme')) return;
+      document.documentElement.classList.toggle('theme-dark', e.matches);
+      updateThemeToggleLabel();
+    });
+  }
 }
 
 function toggleTheme() {
   const d = !document.documentElement.classList.contains('theme-dark');
   document.documentElement.classList.toggle('theme-dark', d);
-  localStorage.setItem('ui-theme', d ? 'dark' : 'light');
+  lsSet('ui-theme', d ? 'dark' : 'light');
   updateThemeToggleLabel();
 }
 
@@ -493,10 +537,16 @@ async function init() {
     }
     window.addEventListener('online', updateNetStatus);
     window.addEventListener('offline', updateNetStatus);
-    
+    // 初始调用一次：断网状态加载页面时 online/offline 事件不会触发，横幅将不显示
+    updateNetStatus();
+
     // 页面可见性变化：暂停/恢复动画
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) { stopMapSpin(false); stopAgentSpin(false); }
+      if (document.hidden) {
+        // 必须传 true 恢复按钮：此前传 false 导致 stopMapSpin 的
+        // if(resetButtons) 整段跳过，切回标签页后抽取按钮与数量选择器永久灰化
+        stopMapSpin(true); stopAgentSpin(true); stopChallenge();
+      }
     });
     
     // 键盘可达性

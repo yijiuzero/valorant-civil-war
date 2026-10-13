@@ -524,10 +524,14 @@ main::after{
   border-radius:40px; font-size:14px; font-weight:500;
   z-index:1000; opacity:0; transition:opacity 0.2s ease;
   white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.3);
-  cursor:pointer; pointer-events:auto;
+  /* 隐藏（opacity:0）时不得拦截点击，否则淡出后仍占据底部一条横向区域挡住按钮 */
+  pointer-events:none;
   display:flex;align-items:center;gap:8px;
   padding-right:16px;
 }
+/* 仅关闭按钮可点击 */
+#globalToast.visible{pointer-events:none;}
+#globalToast .toast-close{pointer-events:auto;cursor:pointer;}
 /* ===== 移动端:侧边栏→侧滑抽屉 ===== */
 @media(max-width:768px){
   body{

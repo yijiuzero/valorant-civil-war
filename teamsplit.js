@@ -13,17 +13,37 @@ let isLeaving = false;
 let currentPlayers = [];
 
 // ========== 身份获取 ==========
+// localStorage 安全封装：Safari 无痕 / 禁用 Cookie 时会抛 SecurityError，
+// 未兜底会让加入流程在写 localStorage 处直接失败
+function lsSet(key, val) {
+  try { localStorage.setItem(key, val); } catch (e) {}
+}
+function lsGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function lsRemove(key) {
+  try { localStorage.removeItem(key); } catch (e) {}
+}
+
+// 权威源为 supabase session。历史问题：本模块曾缓存 currentUserId 且永不清空，
+// 登出换号后会带着上一位用户的 id 去建房/加入（被 RLS 拒绝），并认领他人玩家行。
+// 现每次从 session 读取，并在身份变化时清空全部派生状态。
 async function getUserId() {
-  if (currentUserId) return currentUserId;
+  let uid = null;
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      currentUserId = session.user.id;
-      return currentUserId;
-    }
+    uid = session?.user?.id || null;
   } catch (e) {}
-  // 未登录：不再匿名登录（与"内战分队强制登录"一致），交由守卫/UI 提示去登录
-  return null;
+  if (uid !== currentUserId) {
+    // 身份变了（登录 / 换号 / 登出）：丢弃所有派生状态，避免跨账号残留
+    currentUserId = uid;
+    currentHostUserId = null;
+    currentPlayerId = null;
+    currentPlayerName = '';
+    currentPlayers = [];
+    currentRoomCode = null;
+  }
+  return currentUserId;
 }
 
 // ========== 工具函数 ==========
@@ -57,10 +77,14 @@ function showTeamsplitView(view) {
   }
 }
 
+// 转义 & " ' < > —— 覆盖文本节点与引号属性两种上下文。
+// 原实现走 textContent → innerHTML 只转义 & < >；当前昵称仅出现在文本上下文故恰好安全，
+// 但作为模块级通用工具，下一个使用者拼进 title="..." 就会立刻成为真漏洞。
+// 同时修掉 null/undefined 被转成字符串 "null" 的问题。
 function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
 }
 
 function getRankName(rank) {
@@ -233,33 +257,54 @@ async function autoJoinLobby() {
   var rankSel = document.getElementById('playerRankSelect');
   if (!rank && rankSel && rankSel.value) {
     rank = parseInt(rankSel.value, 10);
-    try { await supabase.auth.updateUser({ data: { rank: rank } }); window._currentUserRank = rank; } catch (e) {}
+    // 必须检查 error：updateUser 不抛异常，此前 catch 是死代码，
+    // 失败时仍写 window._currentUserRank，把失败伪装成成功。
+    // 且需经 setCurrentUserRank 回写 auth.js 的 currentUser，
+    // 否则下一次 syncCurrentUser() 会用旧 user_metadata 把段位回滚为 0。
+    const { error: rankErr } = await supabase.auth.updateUser({ data: { rank: rank } });
+    if (rankErr) {
+      console.warn('[teamsplit] 段位保存失败', rankErr);
+      showToast('段位保存失败，仅本次生效', 2500);
+    } else if (window.setCurrentUserRank) {
+      window.setCurrentUserRank(rank);
+    } else {
+      window._currentUserRank = rank;
+    }
   }
   if (!rank) { if (rankSel) rankSel.style.display = ''; showToast('请选择你的段位', 2000); return; }
   if (rank < 1 || rank > 9) { showToast('段位无效', 2000); return; }
   try {
     var userId = await getUserId();
-    // 检查重名
-    var dupResult = await supabase.from('players').select('id,name').eq('room_code', currentRoomCode).ilike('name', name);
-    if (dupResult.data && dupResult.data.length > 0) {
-      // 可能是自己（之前离开又回来）
-      var existing = dupResult.data[0];
-      currentPlayerId = existing.id;
-      localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
-      localStorage.setItem('ts_player_name', name);
-      localStorage.setItem('ts_player_rank', String(rank));
+    if (!userId) { showToast('请先登录', 2000); return; }
+    // 恢复身份：只能认领「user_id 等于自己」的行。
+    // 历史缺陷：此前只按昵称查重并直接认领第一条命中，未比对 user_id，
+    // 任何用他人昵称加入的用户都会抢走对方的玩家行（冒名顶替）。
+    var mine = await supabase.from('players').select('id,name')
+      .eq('room_code', currentRoomCode).eq('user_id', userId).limit(1);
+    if (mine.data && mine.data.length > 0) {
+      currentPlayerId = mine.data[0].id;
+      lsSet('ts_player_' + currentRoomCode, currentPlayerId);
+      lsSet('ts_player_name', name);
+      lsSet('ts_player_rank', String(rank));
       currentPlayerName = name;
+      if (rankSel) { rankSel.value = ''; rankSel.style.display = 'none'; }
       showToast('已恢复身份', 2000);
       return;
     }
-    var insertData = { room_code: currentRoomCode, name: name, rank: rank };
-    if (userId) insertData.user_id = userId;
+    // 同名但不是自己：明确拒绝，不认领他人行
+    var sameName = await supabase.from('players').select('id')
+      .eq('room_code', currentRoomCode).ilike('name', name).limit(1);
+    if (sameName.data && sameName.data.length > 0) {
+      showToast('昵称「' + name + '」已被占用，请先修改昵称', 3000);
+      return;
+    }
+    var insertData = { room_code: currentRoomCode, name: name, rank: rank, user_id: userId };
     var insertResult = await supabase.from('players').insert(insertData).select().single();
     if (insertResult.error) throw insertResult.error;
     currentPlayerId = insertResult.data.id;
-    localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
-    localStorage.setItem('ts_player_name', name);
-    localStorage.setItem('ts_player_rank', String(rank));
+    lsSet('ts_player_' + currentRoomCode, currentPlayerId);
+    lsSet('ts_player_name', name);
+    lsSet('ts_player_rank', String(rank));
     currentPlayerName = name;
     if (rankSel) { rankSel.value = ''; rankSel.style.display = 'none'; }
     showToast('已加入分队', 2000);
@@ -284,13 +329,25 @@ async function joinLobby() {
   let rank = window._currentUserRank || 0;
   if (!rank && rankSel && rankSel.value) {
     rank = parseInt(rankSel.value, 10);
-    try { await supabase.auth.updateUser({ data: { rank: rank } }); window._currentUserRank = rank; } catch (e) {}
+    // 必须检查 error：updateUser 不抛异常，此前 catch 是死代码，
+    // 失败时仍写 window._currentUserRank，把失败伪装成成功。
+    // 且需经 setCurrentUserRank 回写 auth.js 的 currentUser，
+    // 否则下一次 syncCurrentUser() 会用旧 user_metadata 把段位回滚为 0。
+    const { error: rankErr } = await supabase.auth.updateUser({ data: { rank: rank } });
+    if (rankErr) {
+      console.warn('[teamsplit] 段位保存失败', rankErr);
+      showToast('段位保存失败，仅本次生效', 2500);
+    } else if (window.setCurrentUserRank) {
+      window.setCurrentUserRank(rank);
+    } else {
+      window._currentUserRank = rank;
+    }
   }
   if (!rank) { if (rankSel) rankSel.style.display = ''; showToast('请选择你的段位', 2000); return; }
   if (rank < 1 || rank > 9) { showToast('段位无效', 2000); return; }
   try {
     const userId = await getUserId();
-    const savedId = localStorage.getItem('ts_player_' + currentRoomCode);
+    const savedId = lsGet('ts_player_' + currentRoomCode);
     let dupQuery = supabase.from('players').select('id,name').eq('room_code', currentRoomCode).ilike('name', name);
     if (savedId) dupQuery = dupQuery.neq('id', savedId);
     const dupResult = await dupQuery;
@@ -300,12 +357,12 @@ async function joinLobby() {
     }
     const insertData = { room_code: currentRoomCode, name: name, rank: rank };
     if (userId) insertData.user_id = userId;
-    const insertResult = await supabase.from('players').insert(insertData).select().single();
+    var insertResult = await supabase.from('players').insert(insertData).select().single();
     if (insertResult.error) throw insertResult.error;
     currentPlayerId = insertResult.data.id;
-    localStorage.setItem('ts_player_' + currentRoomCode, currentPlayerId);
-    localStorage.setItem('ts_player_name', name);
-    localStorage.setItem('ts_player_rank', rank);
+    lsSet('ts_player_' + currentRoomCode, currentPlayerId);
+    lsSet('ts_player_name', name);
+    lsSet('ts_player_rank', rank);
     currentPlayerName = name;
     document.getElementById('playerNameInput').value = '';
     if (rankSel) { rankSel.value = ''; rankSel.style.display = 'none'; }
@@ -397,7 +454,7 @@ function handlePlayersChanged(payload) {
       if (currentPlayerId && oldRow.id === currentPlayerId) {
         showToast('\u4f60\u5df2\u88ab\u623f\u4e3b\u79fb\u51fa\u623f\u95f4', 3000);
         if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
-        if (currentRoomCode) localStorage.removeItem('ts_player_' + currentRoomCode);
+        if (currentRoomCode) lsRemove('ts_player_' + currentRoomCode);
         currentRoomCode = null;
         currentPlayerId = null;
         // 注意：此处不清 currentPlayerName。被踢者已退订频道，不会再收到任何广播；
@@ -453,25 +510,48 @@ async function doSplit(mode) {
     }
     const teamA = [], teamB = [];
     let sumA = 0, sumB = 0;
-    for (let i = 0; i < players.length; i++) {
-      const p = players[i];
-      const r = p.rank || 0;
-      if (mode === 'random') {
-        if (teamA.length <= teamB.length) teamA.push(p);
-        else teamB.push(p);
-      } else {
-        if (sumA <= sumB) { teamA.push(p); sumA += r; }
+    if (mode === 'random') {
+      for (let i = 0; i < players.length; i++) {
+        if (teamA.length <= teamB.length) teamA.push(players[i]);
+        else teamB.push(players[i]);
+      }
+    } else {
+      // 段位分队：人数优先、段位次之。
+      // 历史缺陷：原实现只比较段位和（sumA <= sumB），完全没有人数约束，
+      // 实测「1 名赋能 + 5 名黑铁」会分出 1 vs 5；且 rank=0（新用户默认无段位）
+      // 因 sumB += 0 永不增长，导致所有未设段位者被塞进同一队。
+      for (let i = 0; i < players.length; i++) {
+        const p = players[i];
+        const r = p.rank || 0;
+        const diff = teamA.length - teamB.length;
+        // 人数差 > 1：强制补人少的一边；人数相等：比段位和；人数差 == 1：比段位和
+        if (diff > 0) { teamB.push(p); sumB += r; }
+        else if (diff < 0) { teamA.push(p); sumA += r; }
+        else if (sumA <= sumB) { teamA.push(p); sumA += r; }
         else { teamB.push(p); sumB += r; }
       }
     }
-    document.getElementById('teamAPlayers').innerHTML = teamA.map(teamRow).join('');
-    document.getElementById('teamBPlayers').innerHTML = teamB.map(teamRow).join('');
+    // 顺序：先落库成功，再切视图 / 写 localStorage。
+    // 历史缺陷：先渲染后落库且不检查 update 返回值（supabase-js 不抛异常，
+    // 失败只填 error），失败时房主本地已进结果页并禁用按钮，服务端仍是 waiting
+    // → 其他玩家永远看不到结果，房间继续接人，而房主按钮已禁用无法重试。
+    const { error: splitErr } = await supabase.from('rooms')
+      .update({ status: 'done', spy_state: { split: { teamA: teamA, teamB: teamB } } })
+      .eq('code', currentRoomCode);
+    if (splitErr) throw splitErr;
+
+    const ta = document.getElementById('teamAPlayers');
+    const tb = document.getElementById('teamBPlayers');
+    if (!ta || !tb) throw new Error('页面未就绪，请刷新重试');
+    ta.innerHTML = teamA.map(teamRow).join('');
+    tb.innerHTML = teamB.map(teamRow).join('');
     showTeamsplitView('result');
-    localStorage.setItem('ts_last_result', JSON.stringify({ roomCode: currentRoomCode, teamA: teamA, teamB: teamB }));
-    localStorage.setItem('ts_spy_teams', JSON.stringify({ roomCode: currentRoomCode, teamA: teamA, teamB: teamB }));
-    await supabase.from('rooms').update({ status: 'done', spy_state: { split: { teamA: teamA, teamB: teamB } } }).eq('code', currentRoomCode);
+    lsSet('ts_last_result', JSON.stringify({ roomCode: currentRoomCode, teamA: teamA, teamB: teamB }));
+    lsSet('ts_spy_teams', JSON.stringify({ roomCode: currentRoomCode, teamA: teamA, teamB: teamB }));
   } catch (e) {
-    showToast('分队失败: ' + e.message, 3000);
+    // 失败必须恢复按钮，否则房主被永久禁用
+    updateHostControls(isCurrentUserHost(), currentPlayers.length);
+    showToast('分队失败: ' + (e.message || '未知错误'), 3000);
   }
 }
 
@@ -480,11 +560,12 @@ async function resetSplit() {
   try {
     const players = currentPlayers;
     if (!isCurrentUserHost()) { showToast('只有房主可以重新分队', 2000); return; }
-    await supabase.from('rooms').update({ status: 'waiting' }).eq('code', currentRoomCode);
+    const { error: resetErr } = await supabase.from('rooms').update({ status: 'waiting' }).eq('code', currentRoomCode);
+    if (resetErr) throw resetErr;
     showTeamsplitView('lobby');
     updatePlayerList(players);
   } catch (e) {
-    showToast('重新分队失败: ' + e.message, 3000);
+    showToast('重新分队失败: ' + (e.message || '未知错误'), 3000);
   }
 }
 
@@ -515,7 +596,10 @@ async function kickPlayer(playerId) {
 
 async function leaveRoom() {
   isLeaving = true;
-  const isHost = !!(currentHostUserId && window._currentUser && currentHostUserId === window._currentUser.id);
+  // 房主判定必须与 isCurrentUserHost() 同源（读 currentUserId）。
+  // 历史缺陷：此处读 window._currentUser，而 UI 显示与此处读的是两个不同副本，
+  // 登出/ 换号时二者不一致，房主会被误当普通成员而删掉自己的 players 行。
+  const isHost = isCurrentUserHost();
   // 普通成员离开：先广播「X 已离开」（必须在退订前发送，否则其余客户端收不到），再退订并删除自己行
   if (currentRoomCode && !isHost && currentPlayerId && roomSubscription && currentPlayerName) {
     try {
@@ -530,17 +614,17 @@ async function leaveRoom() {
   if (currentRoomCode && !isHost && currentPlayerId) {
     // 普通成员离开：从服务器移除自己（释放名额）
     try { await supabase.from('players').delete().eq('id', currentPlayerId); } catch (e) {}
-    localStorage.removeItem('ts_player_' + currentRoomCode);
+    lsRemove('ts_player_' + currentRoomCode);
   } else if (currentRoomCode && isHost) {
     // 房主离开：保留服务器房间与自身的占位，仅本地退出，可重新进入恢复房主身份（方案 Y）
-    try { localStorage.setItem('ts_current_room', currentRoomCode); } catch (e) {}
+    lsSet('ts_current_room', currentRoomCode);
   }
   currentRoomCode = null;
   currentPlayerId = null;
   currentPlayerName = '';
   currentPlayers = [];
-  localStorage.removeItem('ts_spy_teams');
-  localStorage.removeItem('ts_last_result');
+  lsRemove('ts_spy_teams');
+  lsRemove('ts_last_result');
   const ri = document.getElementById('roomCodeInput');
   if (ri) ri.value = '';
   const pi = document.getElementById('playerNameInput');
@@ -560,16 +644,16 @@ async function initTeamSplitView() {
   if (ri) ri.value = '';
   const pi = document.getElementById('playerNameInput');
   if (pi) {
-    const savedName = localStorage.getItem('ts_player_name') || '';
+    const savedName = lsGet('ts_player_name') || '';
     pi.value = savedName;
   }
   const rs = document.getElementById('playerRankSelect');
   if (rs && !rs.value) {
-    const savedRank = localStorage.getItem('ts_player_rank') || '';
+    const savedRank = lsGet('ts_player_rank') || '';
     rs.value = savedRank;
   }
   if (!currentRoomCode) {
-    const savedRoom = localStorage.getItem('ts_current_room');
+    const savedRoom = lsGet('ts_current_room');
     if (savedRoom) currentRoomCode = savedRoom;
   }
   if (currentRoomCode) {
@@ -578,13 +662,13 @@ async function initTeamSplitView() {
     if (autoJoined) {
       await refreshPlayers();
       subscribeToRoom(currentRoomCode);
-      localStorage.removeItem('ts_current_room');
+      lsRemove('ts_current_room');
       return;
     }
     currentRoomCode = null;
-    localStorage.removeItem('ts_current_room');
+    lsRemove('ts_current_room');
   }
-  const lastResult = localStorage.getItem('ts_last_result');
+  const lastResult = lsGet('ts_last_result');
   if (lastResult) {
     try {
       const parsed = JSON.parse(lastResult);
@@ -598,11 +682,11 @@ async function initTeamSplitView() {
         document.getElementById('teamAPlayers').innerHTML = parsed.teamA.map(teamRow).join('');
         document.getElementById('teamBPlayers').innerHTML = parsed.teamB.map(teamRow).join('');
         showTeamsplitView('result');
-        localStorage.removeItem('ts_last_result');
+        lsRemove('ts_last_result');
         return;
       }
     } catch (e) {}
-    localStorage.removeItem('ts_last_result');
+    lsRemove('ts_last_result');
   }
   if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
   currentRoomCode = null;
@@ -654,7 +738,7 @@ window.leaveRoom = leaveRoom;
 let spyTeamA = [], spyTeamB = [];
 
 function openSpyMode() {
-  const spyData = localStorage.getItem('ts_spy_teams');
+  const spyData = lsGet('ts_spy_teams');
   if (!spyData) { showToast('请先完成分队', 2000); return; }
   try {
     const parsed = JSON.parse(spyData);
@@ -708,4 +792,17 @@ window.closeSpyMode = closeSpyMode;
 // 供 app.js 的 switchModule 在切换模块时退订 Realtime 频道，避免连接泄漏（遗留 #7）
 window.cleanupTeamSplitChannel = function() {
   if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
+};
+
+// 登出 / 换号时由 auth.js:handleSessionLost 统一调用。
+// 退订 Realtime + 清空全部模块级身份缓存，避免下一位登录者继承上一位的房间身份。
+window.resetTeamSplitIdentity = function() {
+  if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
+  currentUserId = null;
+  currentHostUserId = null;
+  currentRoomCode = null;
+  currentPlayerId = null;
+  currentPlayerName = '';
+  currentPlayers = [];
+  isLeaving = false;
 };

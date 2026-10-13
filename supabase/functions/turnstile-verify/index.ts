@@ -7,6 +7,35 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 const SECRET = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const TTL_MS = 5 * 60 * 1000 // 题目有效期 5 分钟，防重放/过期
 
+// 单次题目最多允许的验证尝试次数（同一 nonce）。
+// 背景：无状态函数无法持久化失败计数，故改为「一次性 nonce」——
+// 一个题目只接受有限次验证，全部用尽即作废，攻击者必须重新出题。
+// 遍历同一 payload 的攻击模型因此失效：每次出题只值 MAX_ATTEMPTS 次猜测。
+const MAX_ATTEMPTS = 3
+
+// 已消耗次数：以 nonce 为键的内存表，带过期清理。
+// 注意：Edge Function 实例可能多副本/被回收，故这是「尽力而为」的加固，
+// 并非绝对防护；它的价值在于把破解成本从 N 次请求提升到 N/MAX_ATTEMPTS 次出题。
+const attempts = new Map()
+
+function cleanupAttempts() {
+  const now = Date.now()
+  for (const [k, v] of attempts) {
+    if (now - v.ts > TTL_MS) attempts.delete(k)
+  }
+}
+
+function bumpAttempt(nonce) {
+  cleanupAttempts()
+  const rec = attempts.get(nonce)
+  if (!rec) {
+    attempts.set(nonce, { ts: Date.now(), count: 1 })
+    return 1
+  }
+  rec.count += 1
+  return rec.count
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -27,12 +56,30 @@ async function hmac(message) {
   return s
 }
 
+// 出题：三数两运算符（a op1 b op2 c = ?）
+//
+// 安全背景：原实现为两位数加减法，实测答案取值域仅 -19~40 共 60 个整数。
+// anon key 硬编码在前端且 verify 可无限次调用，攻击者遍历 60 个候选答案即可
+// 100% 破解（总成本 61 次请求），使注册门禁形同虚设。
+//
+// 关键设计要点（第一版尝试曾失败，务必注意）：
+// 暴力破解的成本取决于「答案取值的种类数」，而非题目形态数。
+// 仅把两位数改成三数、但减法取绝对值，答案反而被压缩到 0~50（51 种），比原来更差。
+// 因此必须让答案本身在足够大的区间上分散开。
+//
+// 现行方案：a,b,c 各 1~99，两段运算均随机加减且不取绝对值，
+// 允许中间结果与最终结果为负（前端输入框已改为 text 以支持负号）。
+// 答案取值域约 -196 ~ 198，约 390 种；叠加 verify 失败次数限制后，
+// 单次注册需数百次请求且会被限流拦截。
 function makeChallenge() {
-  const a = Math.floor(Math.random() * 20) + 1
-  const b = Math.floor(Math.random() * 20) + 1
-  const op = Math.random() < 0.5 ? '+' : '-'
-  const ans = op === '+' ? a + b : a - b
-  const q = a + ' ' + op + ' ' + b + ' = ?'
+  const a = Math.floor(Math.random() * 99) + 1   // 1..99
+  const b = Math.floor(Math.random() * 99) + 1   // 1..99
+  const c = Math.floor(Math.random() * 99) + 1   // 1..99
+  const op1 = Math.random() < 0.5 ? '+' : '-'
+  const op2 = Math.random() < 0.5 ? '+' : '-'
+  const left = op1 === '+' ? a + b : a - b
+  const ans = op2 === '+' ? left + c : left - c
+  const q = a + ' ' + op1 + ' ' + b + ' ' + op2 + ' ' + c + ' = ?'
   return { q, ans }
 }
 
@@ -84,6 +131,16 @@ serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
         )
       }
+      // 同一题目的尝试次数限制：超过即作废，攻击者必须重新出题
+      const used = bumpAttempt(n)
+      if (used > MAX_ATTEMPTS) {
+        attempts.delete(n)
+        return new Response(
+          JSON.stringify({ success: false, error: 'too many attempts, reload challenge' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+        )
+      }
+
       const expectSig = await hmac(String(answer).trim() + '|' + ts + '|' + n)
       // 恒定时间比较，防时序侧信道
       let diff = 0
@@ -91,8 +148,16 @@ serve(async (req) => {
       for (let i = 0; i < expectSig.length; i++) {
         diff |= (expectSig.charCodeAt(i) ^ (sig.charCodeAt(i) || 0))
       }
+      if (diff !== 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'wrong answer' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        )
+      }
+      // 验证通过：立即作废该 nonce，签名不可重放
+      attempts.delete(n)
       return new Response(
-        JSON.stringify({ success: diff === 0 }),
+        JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }

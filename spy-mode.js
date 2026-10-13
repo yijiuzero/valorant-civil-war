@@ -2,10 +2,14 @@
 async function getSupabase() { return await window._getSupabase(); }
 
 // ========== 工具函数 ==========
+// 转义 & " ' < > —— 同时覆盖 HTML 文本节点与双引号/单引号属性两种上下文。
+// 历史缺陷：原实现走 div.textContent → innerHTML 往返，浏览器只转义 & < >，
+// 不转义引号。昵称含 " 时可闭合 data-name="..." 属性并注入 on* 事件处理器
+// （存储型 XSS，可窃取 Supabase token 冒充房主）。
 function esc(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
 }
 
 // ========== Teamsplit 桥接 ==========
@@ -394,9 +398,9 @@ function renderLobbyGameView() {
   if (lobbyState.phase === 'revealed') {
     // 内鬼身份
     var taskA = lobbyState.tasks && lobbyState.tasks[lobbyState.team_a_spy_name];
-    var taskAD = (taskA != null && window.spyTasks[taskA]) ? window.spyTasks[taskA].icon + ' ' + window.spyTasks[taskA].title : '';
+    var taskAD = (taskA != null && window.spyTasks[taskA]) ? window.spyTasks[taskA].icon + ' ' + esc(window.spyTasks[taskA].title) : '';
     var taskB = lobbyState.tasks && lobbyState.tasks[lobbyState.team_b_spy_name];
-    var taskBD = (taskB != null && window.spyTasks[taskB]) ? window.spyTasks[taskB].icon + ' ' + window.spyTasks[taskB].title : '';
+    var taskBD = (taskB != null && window.spyTasks[taskB]) ? window.spyTasks[taskB].icon + ' ' + esc(window.spyTasks[taskB].title) : '';
     // 所有玩家任务列表
     var allTaskRows = (lobbyState.players || []).map(function(p, idx) {
       var isSpyP = (p.name === lobbyState.team_a_spy_name || p.name === lobbyState.team_b_spy_name);
@@ -429,7 +433,7 @@ function renderLobbyGameView() {
           (function() {
             var idx = lobbyState.tasks && lobbyState.tasks[myName];
             var t = (idx != null && window.spyTasks[idx]) ? window.spyTasks[idx] : null;
-            return t ? '<div class="spy-task-card"><span class="spy-task-icon">' + t.icon + '</span><span class="spy-task-title">' + t.title + '</span><div class="spy-task-desc">' + t.desc + '</div></div>' : '';
+            return t ? '<div class="spy-task-card"><span class="spy-task-icon">' + t.icon + '</span><span class="spy-task-title">' + esc(t.title) + '</span><div class="spy-task-desc">' + esc(t.desc) + '</div></div>' : '';
           })() +
           '<p class="spy-warning">⚠️ 注意隐蔽！完成任务不被发现。</p>' +
           '</div>'
@@ -437,7 +441,7 @@ function renderLobbyGameView() {
           (function() {
             var idx = lobbyState.tasks && lobbyState.tasks[myName];
             var t = (idx != null && window.spyTasks[idx]) ? window.spyTasks[idx] : null;
-            return t ? '<div class="spy-task-card" style="margin-top:12px;"><span class="spy-task-icon">' + t.icon + '</span><span class="spy-task-title">' + t.title + '</span><div class="spy-task-desc">' + t.desc + '</div></div>' : '';
+            return t ? '<div class="spy-task-card" style="margin-top:12px;"><span class="spy-task-icon">' + t.icon + '</span><span class="spy-task-title">' + esc(t.title) + '</span><div class="spy-task-desc">' + esc(t.desc) + '</div></div>' : '';
           })() +
           '<p class="spy-hint">你的目标是与队伍一起赢得比赛。</p></div>') +
       (isHost() ? '<button class="btn-spy-mode" onclick="lobbyRevealSpies()" style="margin-top:12px;">揭晓内鬼 🎭</button>' : '<p style="font-size:13px;color:var(--text-dim);margin-top:8px;">等待房主揭晓结果...</p>') +
@@ -581,4 +585,16 @@ window.assignTeamFromCard = assignTeamFromCard;
 window.cleanupSpyChannel = function() {
   if (lobbyChannel) { lobbyChannel.unsubscribe(); lobbyChannel = null; }
   if (spyChannel) { spyChannel.unsubscribe(); spyChannel = null; }
+};
+
+// 登出 / 换号时由 auth.js:handleSessionLost 统一调用。
+// 退订两条路径的频道 + 清空全部身份缓存。cleanupSpyChannel 只退订不清状态，
+// 若不额外清理，上一位用户的 lobbyState 会残留，导致下一位登录者进入同房间码时
+// 渲染出上一位的内鬼面板（"你是内鬼！"闪现）。
+window.resetSpyIdentity = function() {
+  if (lobbyChannel) { lobbyChannel.unsubscribe(); lobbyChannel = null; }
+  if (spyChannel) { spyChannel.unsubscribe(); spyChannel = null; }
+  spyUserId = null; spyPlayerId = null; spyHostUserId = null; spyRoomCode = null;
+  spyTeamA = []; spyTeamB = []; spyState = null;
+  lobbyRoomCode = null; lobbyState = null;
 };
