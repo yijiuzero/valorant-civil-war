@@ -478,6 +478,10 @@ function handleRoomChanged(payload) {
         const tb = document.getElementById('teamBPlayers');
         if (ta) ta.innerHTML = split.teamA.map(teamRow).join('');
         if (tb) tb.innerHTML = split.teamB.map(teamRow).join('');
+        // 非房主也要能开内鬼面板：ts_spy_teams 原先只有房主 doSplit 时写过，
+        // 其他玩家点「内鬼模式」会被 "请先完成分队" 挡住，永远看不到自己的身份
+        // （2026-10-14 静态核对发现，桥接路径功能缺陷之一）。
+        lsSet('ts_spy_teams', JSON.stringify({ roomCode: currentRoomCode, teamA: split.teamA, teamB: split.teamB }));
         showTeamsplitView('result');
       }
     }

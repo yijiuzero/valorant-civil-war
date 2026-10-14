@@ -127,26 +127,37 @@ async function assignSpies() {
   crypto.getRandomValues(randTaskB);
   var taskB = randTaskB[0] % window.spyTasks.length;
   if (taskB === taskA && window.spyTasks.length > 1) taskB = (taskA + 1) % window.spyTasks.length;
-  // 身份写入服务端独立表 spy_identities，spy_state 里不再存任何内鬼标识
+  // 身份写入服务端独立表 spy_identities，spy_state 里不再存任何内鬼标识。
+  // ⚠️ spy_id 必须用 user_id（auth.uid() 空间）：lobby_get_my_spy 按 auth.uid()
+  // 比对判断"我是不是内鬼"。历史缺陷：这里传的是 players 行 ID，与服务端
+  // 比对的 ID 空间永远对不上 → is_spy 恒为 false → 内鬼面板谁也不显示，
+  // 且没有任何报错（静默死亡，2026-10-14 静态核对定位）。
+  // tasks 键同步改用 user_id；服务端 lobby_get_my_spy 按 name 查任务会落空，
+  // 由 renderSpyPlaying 的 fallback（spyState.tasks[spyUserId]）兜底。
   var newState = { phase: 'playing', tasks: {}, revealed: false };
-  newState.tasks[String(spyA.id)] = taskA;
-  newState.tasks[String(spyB.id)] = taskB;
+  newState.tasks[String(spyA.user_id)] = taskA;
+  newState.tasks[String(spyB.user_id)] = taskB;
   try {
     var sb = await getSupabase();
     // 1) 先写独立表（仅房主可写，有 RLS 保护）
     var setRes = await sb.rpc('lobby_set_spy_identity', {
       p_code: spyRoomCode,
-      p_spy_a_id: String(spyA.id), p_spy_b_id: String(spyB.id),
+      p_spy_a_id: String(spyA.user_id), p_spy_b_id: String(spyB.user_id),
       p_spy_a_name: spyA.name, p_spy_b_name: spyB.name
     });
     if (setRes.error) {
       // RPC 不存在（SQL 迁移脚本尚未执行）时降级：不阻断旧流程
       console.warn('[spy] lobby_set_spy_identity 不可用（需先执行 migrate-spy-secrets.sql）：', setRes.error.message);
     }
-    // 2) 再更新 spy_state（不含内鬼标识）
-    var result = await sb.from('rooms').update({ spy_state: newState }).eq('code', spyRoomCode);
+    // 2) 再合并更新 spy_state（不含内鬼标识）。
+    // 历史缺陷：原为整体覆盖，把 teamsplit 写入的 split 数据当场抹掉（P1-h 实证路径），
+    // 先读当前值做字段级合并；根治仍靠服务端 RPC 单事务合并（待办）。
+    var curRes = await sb.from('rooms').select('spy_state').eq('code', spyRoomCode).single();
+    if (curRes.error) throw curRes.error;
+    var merged = Object.assign({}, (curRes.data && curRes.data.spy_state) || {}, newState);
+    var result = await sb.from('rooms').update({ spy_state: merged }).eq('code', spyRoomCode);
     if (result.error) throw result.error;
-    spyState = newState; renderSpyPlaying();
+    spyState = merged; renderSpyPlaying();
     // 3) 立即向服务端确认自己身份（房主可能正是内鬼，需立刻看到自己的任务）
     refreshBridgeIdentity();
   } catch (e) { window.showToast && window.showToast('分配失败: ' + e.message, 3000); }
@@ -166,8 +177,10 @@ function renderSpyPlaying() {
   if (isSpy) {
     var teamLabel = (myIdentity && myIdentity.team === 'A') ? '🔴 A队' : '🔵 B队';
     var who = document.getElementById('spyTeamLabel'); if (who) who.textContent = teamLabel;
+    // 服务端按 name 查任务在桥接路径会落空（桥接 tasks 以 user_id 为键），
+    // 用本地 user_id 再查一次兜底；spyUserId 与 auth.uid() 同空间。
     var taskIdx = (myIdentity && myIdentity.task != null) ? myIdentity.task
-                : spyState.tasks[String(spyPlayerId)];
+                : spyState.tasks[String(spyUserId)];
     var task = window.spyTasks[taskIdx];
     if (task) {
       var ti = document.getElementById('spyTaskIcon'), tt = document.getElementById('spyTaskTitle'), td = document.getElementById('spyTaskDesc');
@@ -203,8 +216,10 @@ async function revealSpies() {
 function renderSpyRevealed() {
   showSpyView('spyRevealed');
   if (!spyState) return;
-  // 揭晓后服务端已把 team_*_spy_id 写回 spy_state（此刻公开是设计意图）
-  var spyA = findPlayerById(spyState.team_a_spy_id), spyB = findPlayerById(spyState.team_b_spy_id);
+  // 揭晓后服务端已把 team_*_spy_id 写回 spy_state（此刻公开是设计意图）。
+  // 该 ID 是 user_id（auth.uid() 空间），必须按 user_id 查找——
+  // 历史缺陷：原按 players 行 ID（p.id）查找，永远匹配不上，揭晓页显示「未知」。
+  var spyA = findPlayerByUserId(spyState.team_a_spy_id), spyB = findPlayerByUserId(spyState.team_b_spy_id);
   var aName = document.getElementById('revealSpyA'), bName = document.getElementById('revealSpyB');
   if (aName) aName.textContent = spyA ? spyA.name : '未知';
   if (bName) bName.textContent = spyB ? spyB.name : '未知';
@@ -220,8 +235,11 @@ function renderSpyRevealed() {
   names.forEach(function(n) { n.classList.remove('spy-name-flash'); void n.offsetWidth; n.classList.add('spy-name-flash'); });
 }
 
-function findPlayerById(id) {
-  return spyTeamA.concat(spyTeamB).find(function(p) { return p.id === id; });
+// 按 user_id 查找玩家（供揭晓视图按 team_*_spy_id 定位内鬼）。
+// 注意：DOM  self 高亮用的 data-pid 仍是 players 行 ID 空间（teamsplit 预览渲染），
+// 两套 ID 各有用途，不要混用。
+function findPlayerByUserId(uid) {
+  return spyTeamA.concat(spyTeamB).find(function(p) { return String(p.user_id) === String(uid); });
 }
 
 function leaveSpyMode() {
