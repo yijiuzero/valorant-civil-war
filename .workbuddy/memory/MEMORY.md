@@ -15,14 +15,12 @@
 - **修法**：全站统一属性安全版本 `String(s == null ? '' : s).replace(/[&<>"']/g, c => ({...}[c]))`。**改任何新的转义函数都必须同时转义引号**，否则下一个把它拼进属性的人会重新引入漏洞。
 - 同类已补：`spy-mode.js` 的 `t.title`/`t.desc`（服务端数据流直接进 innerHTML）。
 
-## 🔴 P0-2 待修：内鬼身份可被任意读取（方案已就绪，⏳待执行 SQL）
-- `rooms` 表 RLS 读策略 `USING (auth.role()='authenticated')` 对全体登录用户开放，**无成员校验**。实测 anon key 直接 `GET /rest/v1/rooms?select=code,status,spy_state` 返回 **HTTP 200 全库房间**。
-- `spy_state` 明文存 `team_a_spy_name`/`team_b_spy_name` → 任何用户可读走内鬼身份。内鬼模式核心玩法安全性已破。
-- 房间码本身安全（crypto.getRandomValues + 32 字符集，6 位~10^9），但**不需要猜码**，策略直接吐全库。
+## ✅已修 P0-2：内鬼身份泄露（V4.6.0 已上线并实测验证 2026-10-13）
+- **原症状**：`rooms` 表 RLS 读策略无成员校验，anon key 实测 `GET /rest/v1/rooms?select=spy_state` 返回 **HTTP 200 全库房间**；`spy_state` 明文存 `team_a_spy_name`/`team_b_spy_name`。
 - **⚠️ Realtime 同样泄露**：`spy-mode.js` 订阅把 `payload.new.spy_state` 整行落地，而 Postgres Changes **不受 SELECT 策略裁剪** → 收紧 RLS 不足以修复，**必须把内鬼身份移出 `spy_state`**。
 - **✅ 前后端方案均已写好（V4.6.0）**：`migrate-spy-secrets.sql` + `migrate-spy-secrets-前端说明.md` + spy-mode.js 改造（commit 1cda9ae）。核心：内鬼身份移入**独立表 `spy_identities`**（RLS 行级隔离，不在 Realtime 推送范围）+ `lobby_get_my_spy(p_code)` 只返回"我是否内鬼+我的任务"。
 - **✅ 架构提醒（已踩过的坑）**：前端 `myIdentity` 声明必须在**文件顶部**，否则 `refreshBridgeIdentity`（靠前）引用会TDZ；两条路径（Lobby / teamsplit 桥接）**刻意用两个查询函数**，复用 `lobbyRoomCode` 会污染 lobby 专属状态。
-- **⚠️ 现只剩执行 SQL**：脚本含 7 个函数（新增 `spy_reveal_bridge` 供桥接路径揭晓），前端已全部接好并带降级兼容。
+- **✅ 已执行并实测通过（2026-10-13）**：SQL 全部执行成功。实测结果 —— anon 读 `rooms` / 插入 `rooms` / 读 `spy_identities` **全部 401 permission denied**；`players` 返回 `[]`（RLS 生效）；三个 SECURITY DEFINER RPC 仍正常返回业务错误（`P0001 房间不存在` / `请先登录`），业务功能未破坏。
 - 附带未修：`lobby_start_spy` 的 tasks 仍按 name 为键，重名玩家任务互相覆盖；`spy_state` 被两条路径整体覆盖会互相摧毁。
 
 ## P1 跨文件缺陷（V4.6.0 已修多数）
@@ -50,6 +48,30 @@
 - **根治方向**：① 身份只留单一权威源（auth.js 的 `currentUser`），其余位置读取而非缓存副本；② **接入 `supabase.auth.onAuthStateChange`（全项目当前零监听）** 在 SIGNED_OUT 时统一广播清理，替代 auth.js 手动逐个调模块（每加一个模块就漏一个）；③ 段位等资料一律走 auth.js 统一 setter，禁止其他模块直写 `window._currentUser*`。
 - 其中 ② 能一次性消解：换号残留、房主判定矛盾、订阅不退订、段位 desync 等一批问题，**性价比最高**。
 - **高危耦合（易随 DOM 调整静默失效）**：`auth.js:203` `updateSidebar()` 开头 `if (!entry) return;` 决定 `syncCurrentUser()` 是否执行 → 决定 `window._currentUser` 是否清理 → 决定 `leaveRoom:518` 能否正确判房主。即"侧边栏某元素是否存在"间接控制全站登出清理。**登出清理必须显式实现，不得依赖 updateSidebar 副作用**。
+
+## 🔧 SQL 迁移实战经验（2026-10-13 踩坑 10 趟总结）
+**坑 1：`Allow all on rooms` 策略架空一切**
+- 症状：`rooms` 表 RLS + FORCE 都为 true，策略也建了，但 anon 仍能读全库、改了 4 次策略全无效。
+- 根因：存在一条历史遗留策略 `cmd=ALL, roles={public}, qual=true`。**Postgres 多个 PERMISSIVE 策略是 OR 关系**，一条 `qual=true` 即全放行，新建的策略全被架空。
+- **排查方法**（下次直接用）：`SELECT policyname,cmd,roles::text,qual FROM pg_policies WHERE tablename='xxx'` —— 找 `cmd=ALL` 且 `qual=true` 的行。
+- 修法：`DROP POLICY IF EXISTS "Allow all on rooms" ON rooms;` + **`REVOKE ALL ON TABLE public.rooms FROM anon;`**（RLS 只管行可见性，不管表权限，两层都要堵）+ `NOTIFY pgrst, 'reload schema';`
+
+**坑 2：RLS 收紧前必须查清前端有无「先查后插」流程**
+- 我第一版策略写成"仅成员可读 rooms"，但 `teamsplit.js:232/322` 的加入流程是「先 select 查房间 → 再 insert 玩家行」，新玩家加入前不是成员 → **照原样执行会让加入房间功能直接坏掉**。
+- 正确做法：按 `status` 分档放行 —— `status='waiting'`（内战分队等待中，尚无内鬼身份）允许任意登录用户读；`lobby`/`done` 仅房主+成员。
+- **改任何 RLS 前先 grep 前端所有 `from('表').select(...)` 调用点**，确认是否有非成员也要读的场景。
+
+**坑 3：长 SQL 脚本粘贴不可靠**
+- 514 行 / 200 行的脚本粘进 Supabase SQL Editor 可能执行不全或被截断，用户看到 "Success" 但部分语句没生效。
+- **改为每次只给 10 行以内的块**，执行完立即验证，再进行下一块。别一次贴一大坨。
+- `CREATE POLICY IF NOT EXISTS` 不存在，重复执行会报 `42710 policy already exists` 且**整条语句回滚**（含前面的 DROP），改用 `DROP POLICY IF EXISTS` + `CREATE` 分开写。
+
+**最终验证方式**：SQL Editor 内的 `SELECT` 是内部视角（可能带超级权限），**必须用 anon publishable key + curl 打真实 API 链路**才算数：
+```bash
+curl "https://<ref>.supabase.co/rest/v1/rooms?select=code,spy_state" -H "apikey: sb_publishable_..."
+# 期望 401 permission denied
+```
+同时验 RPC 仍可用（SECURITY DEFINER 绕过表权限）：期望返回业务错误（如 `P0001 房间不存在` / `请先登录`）而非权限错误。
 
 ## RPC 身份校验的隐性依赖（重要）
 - `lobby_add_player` / `lobby_remove_player` / `lobby_set_player_team` 函数体内**无 `auth.uid()` 校验**，仅靠 `check_spy_room_update` BEFORE UPDATE 触发器在语句层兜住。
