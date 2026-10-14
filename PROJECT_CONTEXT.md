@@ -1,6 +1,6 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.6.1
+> **版本**: V4.6.2
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
@@ -220,12 +220,14 @@ valorant-civil-war/
 - 注册/登录接口无限流（Supabase 自带限速，小群内使用风险可忽略）
 - `doSplit` 随机模式使用 `Math.random()`（娱乐场景，不影响安全）
 
-**V4.6.1 后仍待办（内鬼模式，按优先级）**：
+**V4.6.2 后仍待办（内鬼模式，按优先级）**：
 - `spy_state` 合并的正规修法：`assignSpies` 的前端合并仍有竞态窗口，根治需服务端 RPC 单事务 `jsonb_set` 合并（P1-h）
-- Lobby 路径 tasks 以 name 为键（`lobby_start_spy` SQL + 前端 `tasks[p.name]`）：重名玩家任务互覆盖。需 SQL + 前端联动改 user_id——Lobby 路径当前功能正常，仅理论风险（昵称注册机制下重名难以自然发生）
-- `renderCurrentPhase` 的 default 分支静默回未开始页、无日志，线上排查困难，建议补 `console.warn`
-- `rooms_delete_policy` 清理所有 >2h 的 done/lobby/waiting 房间，与前端 `cleanupOldRooms`（done >1天）阈值不一致，可能误删当天结束的 done 房间
-- `lobby_add_player`/`lobby_remove_player`/`lobby_set_player_team` 三个 RPC 函数体内无显式 `auth.uid()` 校验，仅靠 `check_spy_room_update` 触发器兜底，建议补显式校验
+- **一批 SQL 改动**（建议合成一次 Supabase SQL Editor 执行，长脚本分 ≤10 行小块粘贴）：
+  1. `lobby_add_player` 无 phase 守卫——游戏中加入的新玩家先被服务端收进 `players`（占名额、进揭晓列表），前端 toast 后才拒；应在函数体内加 `spy_state->>'phase' = 'lobby'` 检查
+  2. Lobby 路径 tasks 以 name 为键（`lobby_start_spy` + 前端 `tasks[p.name]`）：重名玩家任务互覆盖；需 SQL + 前端联动改 user_id（当前功能正常，仅理论风险——昵称注册机制下重名难以自然发生）
+  3. `lobby_add_player`/`lobby_remove_player`/`lobby_set_player_team` 三个 RPC 函数体内无显式 `auth.uid()` 校验，仅靠 `check_spy_room_update` 触发器兜底，建议补显式校验
+  4. `rooms_delete_policy` 清理所有 >2h 的 done/lobby/waiting 房间，与前端 `cleanupOldRooms`（done >1天）阈值不一致，可能误删当天结束的 done 房间
+- `auth.js` P2 遗留：`slug` 死代码；`toEmail` 用 32 位弱 hash（不同昵称可能撞同一邮箱导致无法注册，10 人群内概率极低）
 
 ---
 
@@ -302,6 +304,7 @@ start index.html
 | V3.6.0 | 2026-07-20 | 内鬼模式支持独立手动组队（localStorage驱动）；双入口架构 |
 | V4.6.0 | 2026-10-13 | 安全加固与架构重构（+0.1.0，基于四路并行安全审计，3×P0 + 7×P1）。**P0**：①修存储型 XSS——`esc()`/`escapeHtml()` 原走 `textContent→innerHTML` 只转义 `& < >` 不转义引号，昵称拼入双引号属性可注入 `on*` 窃取 Supabase token 冒充房主，改为属性安全版本 + `t.title/t.desc` 补转义；②加固人机验证——原两位数加减法答案域仅 60 种且 verify 无限制，60 次请求即可爆破注册，改为三数两运算符（答案域 -194~294 共 489 种）+ nonce 尝试次数限制；③内鬼身份保密——新增 `migrate-spy-secrets.sql`，内鬼身份从客户端可见的 `rooms.spy_state` 移入独立表 `spy_identities`（RLS 行级隔离，Realtime 不推送），新增 `lobby_get_my_spy` 按调用者下发本人身份，附前端配套说明。**架构**：接入 `supabase.auth.onAuthStateChange`（此前全项目零监听）统一广播登出清理；新增 `resetTeamSplitIdentity`/`resetSpyIdentity`/`setCurrentUserRank`；`getUserId` 改为每次读 session；`updateSidebar` 中 `syncCurrentUser` 移出提前 return（此前"侧边栏元素是否存在"间接决定全站登出清理）。**功能**：抽图按钮切标签页永久灰化、隐私模式全站白屏、段位分队 1 vs 5、昵称冒名顶替、`doSplit` 假成功死局、段位 desync、多处 setTimeout 未存句柄、主题偏好被丢弃、特工文案 30→29。缓存参数 styles26→27、auth25→26、teamsplit17→18、spy-mode19→20、app17→18 |
 | V4.6.1 | 2026-10-14 | Bug修复（+0.0.1）：内鬼模式**桥接路径三重修复**（静态核对前后端契约定位，早于人工 UI 实测）。① **spy_id ID 空间错误**——`assignSpies` 把分队玩家行 ID（players 表主键）当内鬼 ID 写入 `spy_identities`，而服务端 `lobby_get_my_spy` 按 `auth.uid()` 比对 → `is_spy` 恒为 false → 内鬼面板谁也不显示且无任何报错（静默死亡）；改为传 `user_id`，tasks 键同步改 user_id（服务端按 name 查任务落空时由 `renderSpyPlaying` fallback 兜底）。② **spy_state 被整体抹掉**——`assignSpies` 原整体覆盖写，把 teamsplit 写入的 split 数据当场摧毁（P1-h 实证路径）；改为先读当前值、字段级合并后写。③ **非房主进不了桥接面板**——`ts_spy_teams` 原先只有房主 `doSplit` 写过，其他人点「内鬼模式」被"请先完成分队"挡住；`handleRoomChanged` 收到 split 后补写。另：`renderSpyRevealed` 的玩家查找从行 ID 改为 user_id（原名按行 ID，揭晓页显示「未知」）。**纯前端修复，无需重新执行 Supabase SQL**；Lobby 路径契约本就一致未改动。缓存参数 teamsplit18→19、spy-mode20→21 |
+| V4.6.2 | 2026-10-14 | Bug修复（+0.0.1）：**Lobby 断线重连门禁修复**（全量通读 sweep 发现）。`joinSpyLobby` 原判断 `phase !== 'lobby'` 一刀切拒绝，游戏中刷新/重连的**老玩家**也被挡住（toast「游戏已开始」后不订阅不渲染）——与 PROJECT_CONTEXT 既有功能「断线重连：游戏中途退出可重新加入恢复身份」直接矛盾，手机端刷新必中。改为：仅拒绝「已关闭」与「进行中的新玩家」，回归成员（`lobby_add_player` 按 user_id 去重且保留老队伍，故"在 players 里且有 A/B 队"即回归）放行至 playing/revealed。另：`renderCurrentPhase` 的 default 分支补 `console.warn`（原静默回退，线上排查困难）；`leaveLobbyRoom` 补清 `myIdentity`（防上一位玩家身份残留闪现）。缓存参数 spy-mode21→22 |
 | V4.5.3 | 2026-07-28 | Bug 修复（+0.0.1）：性能优化。包含：关键CSS内联（首屏渲染优化）、preconnect 第三方域名、SEO meta 标签（description/og:title）、styles.css 异步加载（rel=preload） |
 | V4.5.18 | 2026-07-31 | 内鬼模式入口居中修复：`#spyStandaloneEntry` 和 `.spy-entry-cards` 加 `align-items:stretch/center`，卡片内容 flex 居中，标题和副标题 width:100% 居中。缓存参数 styles21→22 |
 | V4.5.22 | 2026-08-03 | Bug修复（+0.0.1）：首页 hero-cards 移动端溢出全面加固。`.hero-content` 加 `min-width:0`（flex 子元素保险栓）；`.hero-cards` + `.hero-card` 加 `min-width:0`/`min-height:0`；768px `minmax(150px,1fr)`→`minmax(110px,1fr)` 收紧卡片字号/间距/图标；420px 固定 `repeat(2,1fr)` 避免 auto-fit 撑爆。 |

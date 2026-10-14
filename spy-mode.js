@@ -96,7 +96,11 @@ function renderCurrentPhase() {
     case 'assigning': renderSpyAssigning(); break;
     case 'playing': renderSpyPlaying(); break;
     case 'revealed': renderSpyRevealed(); break;
-    default: renderSpyInit();
+    default:
+      // 历史缺陷：非预期 phase 静默回未开始页、无任何日志，线上排查困难
+      // （V4.6.1 修的桥接 is_spy 静默死亡同属这一类，诊断成本极高）。
+      console.warn('[spy] 未知 phase，回退到初始页：', spyState.phase);
+      renderSpyInit();
   }
 }
 
@@ -333,9 +337,19 @@ async function joinSpyLobby(inputCode) {
       return;
     }
     lobbyState = newState.data;
-    // 检查 phase：可能是已关闭的房间
-    if (lobbyState && lobbyState.phase && lobbyState.phase !== 'lobby') {
-      window.showToast && window.showToast('游戏已开始', 3000);
+    // phase 门禁：只拒绝「已关闭」与「进行中的新玩家」，回归老玩家放行。
+    // 历史缺陷：原判断 phase !== 'lobby' 一刀切，游戏中刷新/重连的老玩家也被
+    // 挡住（toast 后直接 return，不订阅不渲染）——与 PROJECT_CONTEXT 既有功能
+    // 「断线重连：游戏中途退出可重新加入恢复身份」直接矛盾，手机端刷新必中。
+    // 回归成员判定：lobby_add_player 按 user_id 去重且保留老玩家队伍，
+    // 故「在 players 里且有 A/B 队」即回归成员；新加入者 team 为 null 仍被拒。
+    var myRow = (lobbyState.players || []).find(function(p) { return p.user_id === uid; });
+    var isReturning = !!(myRow && (myRow.team === 'A' || myRow.team === 'B'));
+    var phaseOk = lobbyState.phase === 'lobby'
+      || (isReturning && (lobbyState.phase === 'playing' || lobbyState.phase === 'revealed'));
+    if (lobbyState.phase && !phaseOk) {
+      window.showToast && window.showToast(
+        (lobbyState.phase === 'closed' || lobbyState.phase === 'done') ? '房间已关闭' : '游戏已开始', 3000);
       return;
     }
     lobbyRoomCode = code;
@@ -634,7 +648,7 @@ async function leaveLobbyRoom() {
     } catch (e) { /* 忽略 */ }
   }
   if (lobbyChannel) { lobbyChannel.unsubscribe(); lobbyChannel = null; }
-  lobbyRoomCode = null; lobbyState = null;
+  lobbyRoomCode = null; lobbyState = null; myIdentity = null;
   backToSpyEntry();
 }
 
