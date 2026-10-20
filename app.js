@@ -1,5 +1,5 @@
 // ---------- 全局变量 ----------
-let mapCount = 1, mapTimer = null, bannedSet = new Set(), toastTimeout = null;
+let mapCount = 1, mapTimer = null, bannedSet = new Set(), toastTimeout = null, mapSpinText = '随机抽取 🎰';
 let agentRole = 'all', agentCount = 1, agentTimer = null, agentMode = 'count', machineSpinning = false;
 let challengeHistory = [];
 let navItems = [], contentLayers = [], mainArea = null;
@@ -29,7 +29,7 @@ function stopMapSpin(resetButtons = true) {
   if (mapRevealTimer) { clearTimeout(mapRevealTimer); mapRevealTimer = null; }
   if (resetButtons) {
     const s = document.getElementById('btnSpin');
-    if (s) s.disabled = false;
+    if (s) { s.disabled = false; s.textContent = mapSpinText; }
     document.querySelectorAll('.mc-btn').forEach(b => b.disabled = false);
   }
   document.querySelectorAll('.map-card').forEach(c => c.classList.remove('highlight','spotlight','loser-fade'));
@@ -178,6 +178,7 @@ function shuffleArray(a) {
 
 function drawMaps() {
   const b = document.getElementById('btnSpin');
+  if (b) mapSpinText = b.textContent;
   if (b.disabled) return;
   const p = maps.filter(m => !bannedSet.has(m.en));
   if (p.length === 0) { showToast('所有地图都被 Ban 了，请先解禁一些 🙏', 2500); return; }
@@ -227,6 +228,7 @@ function drawMaps() {
         // 结果真正渲染后再解锁按钮：此前在 setTimeout 之前解锁，
         // 允许用户在 800ms 空窗内重抽，导致两轮动画互相覆盖
         b.disabled = false;
+        b.textContent = mapSpinText;
         document.querySelectorAll('.mc-btn').forEach(x => x.disabled = false);
       }, 800);
       if (b) b.textContent = '揭晓中...';

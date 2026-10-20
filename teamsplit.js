@@ -539,8 +539,15 @@ async function doSplit(mode) {
     // 历史缺陷：先渲染后落库且不检查 update 返回值（supabase-js 不抛异常，
     // 失败只填 error），失败时房主本地已进结果页并禁用按钮，服务端仍是 waiting
     // → 其他玩家永远看不到结果，房间继续接人，而房主按钮已禁用无法重试。
+    // 合并式写入：先取当前 spy_state，仅用 split 字段覆盖，保住开内鬼后写入的
+    // phase/teams/tasks，避免「分队→开内鬼→重新分队」把内鬼状态整体抹掉（P1-h）。
+    const { data: curState, error: selErr } = await supabase.from('rooms')
+      .select('spy_state').eq('code', currentRoomCode).single();
+    if (selErr) throw selErr;
+    const baseState = (curState && curState.spy_state) || {};
+    const merged = Object.assign({}, baseState, { split: { teamA: teamA, teamB: teamB } });
     const { error: splitErr } = await supabase.from('rooms')
-      .update({ status: 'done', spy_state: { split: { teamA: teamA, teamB: teamB } } })
+      .update({ status: 'done', spy_state: merged })
       .eq('code', currentRoomCode);
     if (splitErr) throw splitErr;
 

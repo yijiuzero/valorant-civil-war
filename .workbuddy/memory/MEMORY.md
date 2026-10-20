@@ -107,3 +107,13 @@ curl "https://<ref>.supabase.co/rest/v1/rooms?select=code,spy_state" -H "apikey:
 - `rooms` 表有 `BEFORE UPDATE` 触发器 `trg_spy_room_update`（`check_spy_room_update` 函数，定义在 init-spy-db.sql）。该函数用 `uid text := auth.uid()::text` 后拿 `OLD.host_user_id = uid` 比较——`host_user_id` 是 UUID 列，会抛 `operator does not exist: uuid = text`，**杀掉所有 rooms 的 UPDATE**（建房间 INSERT 不受影响）。任何"内鬼模式改库后 UI 假死"先查这个触发器。
 - 定位 DB 层 bug 的利器：用 anon key + supabase-js 实测 `.update()`，看返回 error（比只看 JS 快）。Realtime 是否开启可用"先订阅再 INSERT 看事件是否送达"隔离验证。
 - SQL 改动（触发器/RLS）需用户到 Supabase SQL Editor 重新执行 init-spy-db.sql 才生效，代码 push 不会自动改库。
+
+## 🔧 V4.6.3 改动（2026-10-14，绘梨衣接手首日）
+- **doSplit 合并式写入（根治 P1-h）**：teamsplit.js `doSplit` 原整体覆盖 `spy_state: {split}`，开内鬼后再"重新分队"会抹掉内鬼状态。改为先 select 当前 spy_state、合并 split 字段再写（对齐 V4.6.1 assignSpies 的先读后合并模式）。
+- **auth.js slug 死代码删除**：`toEmail` 内 `const slug` 从未被引用；32 位弱 hash（`h`）**保留不动**——旧账号虚拟邮箱按它生成，改则旧账号无法登录。
+- **SQL 加固（init-spy-db.sql，需用户重新执行）**：`lobby_add_player` 加 phase 守卫（仅 lobby 阶段可加入，挡游戏中 ghost joiner）+ 显式 `auth.uid()` 校验（登录且 `p_user_id` 必须匹配调用者）；`lobby_remove_player`/`lobby_set_player_team` 补 `auth.uid()` 登录校验（防御纵深）；`rooms_delete_policy` 增加 `status='done' AND >1天` 分支，与前端 cleanupOldRooms 对齐。
+- **未做（理论风险，默认保留）**：Lobby 路径 tasks 仍以 name 为键（重名难自然发生）；如需改需 SQL `lobby_start_spy` 写 user_id 键 + `lobby_get_my_spy` 按 user_id 查 + 前端 `spy-mode.js:516/518/523` 改 user_id 键 三处联动。
+- **缓存参数**：auth26→27、teamsplit19→20。
+
+## 🔧 V4.6.4 改动（2026-10-20，绘梨衣）
+- **修 BUG：随机选图「揭晓中」按钮永久卡住**。根因：`drawMaps` 抽取结束设 `btnSpin.textContent='揭晓中...'`（app.js），但 800ms 收尾回调与 `stopMapSpin` 只复位 `disabled`、从不复位文本；800ms 空窗内切模块也会卡。修复：模块级 `mapSpinText`（默认"随机抽取 🎰"），`drawMaps` 开头存实际文本，收尾回调与 `stopMapSpin` 两处复位 `btnSpin.textContent`。四处改动（顶部声明 / 存文本 / 收尾复位 / stopMapSpin 复位），node --check 通过。缓存 app18→19。

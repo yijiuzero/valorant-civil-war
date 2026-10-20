@@ -51,8 +51,10 @@ CREATE POLICY "Allow cleanup old lobbies"
   ON rooms FOR DELETE
   USING (
     auth.role() = 'authenticated'
-    AND status = 'lobby'
-    AND created_at < (now() - interval '2 hours')
+    AND (
+      (status = 'lobby' AND created_at < (now() - interval '2 hours'))
+      OR (status = 'done' AND created_at < (now() - interval '1 day'))
+    )
   );
 
 -- 触发器：非房主 UPDATE 只允许"往 spy_state.players 追加自己"
@@ -146,6 +148,18 @@ BEGIN
     RAISE EXCEPTION '房间不存在或已关闭';
   END IF;
 
+  -- 防游戏中/已揭晓时仍有新玩家被服务端收下（ghost joiner）：仅 lobby 阶段允许加入
+  IF (v_state->>'phase') IS DISTINCT FROM 'lobby' THEN
+    RAISE EXCEPTION '游戏已开始或已结束';
+  END IF;
+  -- 防御纵深：必须登录且只能加入自己（防止 A 替 B 加入）
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION '请先登录';
+  END IF;
+  IF p_user_id <> auth.uid()::text THEN
+    RAISE EXCEPTION '只能加入自己';
+  END IF;
+
   SELECT count(*) > 0 INTO v_exists
   FROM jsonb_array_elements(v_state->'players') p
   WHERE p->>'user_id' = p_user_id;
@@ -205,6 +219,11 @@ BEGIN
 
   IF v_state IS NULL THEN
     RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  -- 防御纵深：必须登录（房主转移/权限已由触发器与下面逻辑兜底）
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION '请先登录';
   END IF;
 
   SELECT jsonb_agg(p) INTO v_remaining
@@ -267,6 +286,11 @@ BEGIN
 
   IF v_state IS NULL THEN
     RAISE EXCEPTION '房间不存在或已关闭';
+  END IF;
+
+  -- 防御纵深：必须登录（设队权限由触发器兜底：非房主只能改自己 team）
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION '请先登录';
   END IF;
 
   UPDATE rooms
