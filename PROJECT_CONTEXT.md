@@ -1,6 +1,6 @@
 # VALORANT 战术工具集 · 项目上下文
 
-> **版本**: V4.6.4
+> **版本**: V4.6.5
 > **作者**: zer0
 > **面向用户**: 云南瓦搭群
 > **仓库**: https://github.com/yijiuzero/valorant-civil-war
@@ -46,7 +46,7 @@ valorant-civil-war/
 - 背景图随抽中地图变化
 
 ### 3. 随机特工（Agent）
-- 29 个特工，按角色分类（决斗者/先锋/控场者/哨卫）
+- 30 个特工，按角色分类（决斗者/先锋/控场者/哨卫）
 - 支持按角色筛选 + 选择抽取数量
 - **冠军阵容模式**：每个位置各出一人
 - 图标来自 `media.valorant-api.com`
@@ -306,6 +306,7 @@ start index.html
 | V4.6.1 | 2026-10-14 | Bug修复（+0.0.1）：内鬼模式**桥接路径三重修复**（静态核对前后端契约定位，早于人工 UI 实测）。① **spy_id ID 空间错误**——`assignSpies` 把分队玩家行 ID（players 表主键）当内鬼 ID 写入 `spy_identities`，而服务端 `lobby_get_my_spy` 按 `auth.uid()` 比对 → `is_spy` 恒为 false → 内鬼面板谁也不显示且无任何报错（静默死亡）；改为传 `user_id`，tasks 键同步改 user_id（服务端按 name 查任务落空时由 `renderSpyPlaying` fallback 兜底）。② **spy_state 被整体抹掉**——`assignSpies` 原整体覆盖写，把 teamsplit 写入的 split 数据当场摧毁（P1-h 实证路径）；改为先读当前值、字段级合并后写。③ **非房主进不了桥接面板**——`ts_spy_teams` 原先只有房主 `doSplit` 写过，其他人点「内鬼模式」被"请先完成分队"挡住；`handleRoomChanged` 收到 split 后补写。另：`renderSpyRevealed` 的玩家查找从行 ID 改为 user_id（原名按行 ID，揭晓页显示「未知」）。**纯前端修复，无需重新执行 Supabase SQL**；Lobby 路径契约本就一致未改动。缓存参数 teamsplit18→19、spy-mode20→21 |
 | V4.6.2 | 2026-10-14 | Bug修复（+0.0.1）：**Lobby 断线重连门禁修复**（全量通读 sweep 发现）。`joinSpyLobby` 原判断 `phase !== 'lobby'` 一刀切拒绝，游戏中刷新/重连的**老玩家**也被挡住（toast「游戏已开始」后不订阅不渲染）——与 PROJECT_CONTEXT 既有功能「断线重连：游戏中途退出可重新加入恢复身份」直接矛盾，手机端刷新必中。改为：仅拒绝「已关闭」与「进行中的新玩家」，回归成员（`lobby_add_player` 按 user_id 去重且保留老队伍，故"在 players 里且有 A/B 队"即回归）放行至 playing/revealed。另：`renderCurrentPhase` 的 default 分支补 `console.warn`（原静默回退，线上排查困难）；`leaveLobbyRoom` 补清 `myIdentity`（防上一位玩家身份残留闪现）。缓存参数 spy-mode21→22 |
 | V4.6.3 | 2026-10-14 | Bug修复（+0.0.1）：①teamsplit.js `doSplit` 改为合并式写入 spy_state（先 select 当前状态再 `Object.assign` 合并 split 字段），根治「分队→开内鬼→重新分队」把内鬼状态整体抹掉的 P1-h；②auth.js 删除未使用的 `slug` 死代码（保留 32 位弱 hash——旧账号虚拟邮箱依赖它生成，动则旧账号无法登录）；③SQL 加固（init-spy-db.sql，需重新执行）：`lobby_add_player` 加 phase 守卫挡游戏中 ghost joiner + 显式 `auth.uid()` 校验（登录且只能加入自己），`lobby_remove_player`/`lobby_set_player_team` 补 `auth.uid()` 登录校验（防御纵深），`rooms_delete_policy` 增加 `status='done' AND >1天` 分支与前端 cleanupOldRooms 对齐。缓存参数 auth26→27、teamsplit19→20 |
+| V4.6.5 | 2026-11-02 | 内容更新（+0.0.1）：随机特工新增第30位特工「遐思/Hush」——广东出身中国决斗者，2026-10-27 随 13.09 版本上线，第9位决斗者，定位一突。app-data.js `agents` 数组补 Hush（role 决斗者 / rc #ff4655 / entryTag 一突 / id ddd5a15c-4fbe-42fa-3789-11a55ca5ee04）；首页 hero 文案「29 特工」→「30 特工」；缓存参数 app-data9→10 |
 | V4.6.4 | 2026-10-20 | Bug修复（+0.0.1）：随机选图抽取结束后「随机抽取」按钮文本永久卡在"揭晓中"。根因：`drawMaps` 在抽取结束设 `btnSpin.textContent='揭晓中...'`，但 800ms 收尾回调与 `stopMapSpin` 只恢复 `disabled`、从不复位文本；800ms 空窗内切模块也会卡。修复：模块级 `mapSpinText` 记住按钮原文本，在收尾回调与 `stopMapSpin` 两处复位。缓存参数 app18→19 |
 | V4.5.3 | 2026-07-28 | Bug 修复（+0.0.1）：性能优化。包含：关键CSS内联（首屏渲染优化）、preconnect 第三方域名、SEO meta 标签（description/og:title）、styles.css 异步加载（rel=preload） |
 | V4.5.18 | 2026-07-31 | 内鬼模式入口居中修复：`#spyStandaloneEntry` 和 `.spy-entry-cards` 加 `align-items:stretch/center`，卡片内容 flex 居中，标题和副标题 width:100% 居中。缓存参数 styles21→22 |
